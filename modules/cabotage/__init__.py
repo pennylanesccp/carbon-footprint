@@ -34,6 +34,9 @@ from .accounting import (
     , load_k_entries
     , summarize_Ks
     , choose_K
+    , load_hotel_entries
+    , build_hotel_factor_index
+    , allocate_hotel_fuel_from_json
 )
 
 __all__ = [
@@ -49,5 +52,6 @@ __all__ = [
       "fuel_cost", "fuel_cost_by_leg",
       "emissions_ttw", "emissions_ttw_by_leg",
       "load_k_entries", "summarize_Ks", "choose_K",
+      "load_hotel_entries", "build_hotel_factor_index", "allocate_hotel_fuel_from_json",
       "allocate_port_fuel_to_shipments", "port_fuel_from_handled_mass"
 ]

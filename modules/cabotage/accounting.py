@@ -510,3 +510,183 @@ def allocate_port_fuel_to_shipments(
             raise ValueError(f"Negative handled mass for shipment {sid}: {m_t}")
         out[sid] = m_t * K_port_kg_per_t
     return out
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Hotel @ berth (kg fuel per tonne handled) – from modules/cabotage/_data/hotel.json
+# ────────────────────────────────────────────────────────────────────────────────
+
+import json
+import os
+import re
+from typing import Tuple
+
+def load_hotel_entries(
+    *
+    , path: str = os.path.join("modules", "cabotage", "_data", "hotel.json")
+) -> dict:
+    """
+    Load hotel.json payload produced by calcs/hotel.py.
+    Expected shape:
+      {
+        "unit": "kg_fuel_per_tonne",
+        "scope": "hotel_at_berth",
+        "entries": [
+          {"city": "Santos", "uf": "São Paulo", "kg_fuel_per_t": 1.261514, ...},
+          ...
+        ]
+      }
+    Returns the parsed dict.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    unit = data.get("unit")
+    scope = data.get("scope")
+    if unit != "kg_fuel_per_tonne" or scope != "hotel_at_berth":
+        raise ValueError("hotel.json must have unit='kg_fuel_per_tonne' and scope='hotel_at_berth'.")
+    if not isinstance(data.get("entries"), list):
+        raise ValueError("hotel.json missing 'entries' list.")
+    return data
+
+
+def _norm_city(s: str) -> str:
+    """
+    Very light normalization for city labels coming from Leg.id like 'Santos→Suape'.
+    """
+    s = (s or "").strip()
+    # normalize spaces and dashes; keep accents as-is (we expect exact city names from ANTAQ)
+    s = re.sub(r"\s+", " ", s)
+    return s
+
+
+def build_hotel_factor_index(
+    *
+    , hotel_data: dict
+) -> dict:
+    """
+    Build a fast {city -> kg_fuel_per_t} index from hotel.json.
+    Ignores entries where kg_fuel_per_t is null.
+    """
+    idx = {}
+    for e in hotel_data.get("entries", []):
+        city = _norm_city(e.get("city", ""))
+        val  = e.get("kg_fuel_per_t")
+        if city and isinstance(val, (int, float)):
+            idx[city] = float(val)
+    if not idx:
+        raise ValueError("No usable city factors found in hotel.json entries.")
+    return idx
+
+
+def _split_ports_for_hotel(leg_id: str) -> Tuple[str, str]:
+    """
+    Split a leg label like 'Santos→Suape' or 'Santos->Suape' into ('Santos','Suape').
+    More lenient with separators but keeps city labels intact to match hotel.json.
+    """
+    if "→" in leg_id:
+        a, b = leg_id.split("→", 1)
+    elif "->" in leg_id:
+        a, b = leg_id.split("->", 1)
+    else:
+        # best-effort: try common hyphens/arrows consolidated into '->'
+        tmp = leg_id.replace("—", "->").replace("–", "->").replace("-", "->")
+        parts = [p.strip() for p in tmp.split("->") if p.strip()]
+        if len(parts) != 2:
+            raise ValueError(f"Cannot infer origin/destination from leg id: {leg_id}")
+        a, b = parts
+    return _norm_city(a), _norm_city(b)
+
+
+def allocate_hotel_fuel_from_json(
+    *
+    , legs: List[Leg]
+    , shipments: List[Shipment]
+    , hotel_json_path: str = os.path.join("modules", "cabotage", "_data", "hotel.json")
+    , default_kg_per_t: Optional[float] = None   # if a port city is missing, either use this fallback or skip
+    , on_missing: str = "skip"                   # 'skip' | 'use_default' | 'raise'
+) -> Dict[str, object]:
+    """
+    Allocate *hotel-at-berth* fuel to **handled cargo only**, using per-city kg_fuel_per_t
+    factors from hotel.json. For each shipment:
+      • load at the origin city of its first leg
+      • discharge at the destination city of its last leg
+    Each handling event adds:  weight_t * kg_fuel_per_t(city)
+
+    Returns a dict with:
+      {
+        'fuel_by_port_by_ship_kg': {city: {shipment_id: kg, ...}, ...},
+        'fuel_by_port_total_kg':   {city: kg_total, ...},
+        'fuel_by_shipment_total_kg': {shipment_id: kg, ...},
+        'fuel_total_kg': kg_sum,
+        'missing_cities': [city, ...]  # cities referenced by legs but not found in hotel.json
+      }
+
+    Notes:
+      • This follows your chosen convention (hotel fuel allocated to handled tonnes),
+        *not* to all onboard cargo during berth time.
+      • City labels must match what you used in hotel.json entries (after light normalization).
+    """
+    # Build leg origin/destination mapping
+    od_by_leg: Dict[int, Tuple[str, str]] = {}
+    for i, leg in enumerate(legs):
+        o, d = _split_ports_for_hotel(leg.id)
+        od_by_leg[i] = (o, d)
+
+    # Load and index per-city factors
+    hotel_data = load_hotel_entries(path=hotel_json_path)
+    factor_by_city = build_hotel_factor_index(hotel_data=hotel_data)
+
+    fuel_by_port_by_ship_kg: Dict[str, Dict[str, float]] = {}
+    fuel_by_port_total_kg: Dict[str, float] = {}
+    fuel_by_shipment_total_kg: Dict[str, float] = {}
+    missing_cities: List[str] = []
+
+    # Helper to fetch city factor with policy on missing
+    def _get_factor(city: str) -> Optional[float]:
+        if city in factor_by_city:
+            return factor_by_city[city]
+        if on_missing == "use_default" and default_kg_per_t is not None:
+            return float(default_kg_per_t)
+        if on_missing == "raise":
+            raise KeyError(f"City '{city}' not found in hotel.json and no default provided.")
+        # on_missing == 'skip'
+        if city not in missing_cities:
+            missing_cities.append(city)
+        return None
+
+    # For each shipment, add fuel at load port and at discharge port
+    for s in shipments:
+        if not s.on_legs:
+            continue
+        first_leg = min(s.on_legs)
+        last_leg  = max(s.on_legs)
+
+        load_city, _   = od_by_leg[first_leg]
+        _, discharge_city = od_by_leg[last_leg]
+
+        # load event
+        k_load = _get_factor(load_city)
+        if k_load is not None and s.weight_t > 0:
+            fuel = s.weight_t * k_load
+            fuel_by_port_by_ship_kg.setdefault(load_city, {})
+            fuel_by_port_by_ship_kg[load_city][s.id] = fuel_by_port_by_ship_kg[load_city].get(s.id, 0.0) + fuel
+            fuel_by_port_total_kg[load_city] = fuel_by_port_total_kg.get(load_city, 0.0) + fuel
+            fuel_by_shipment_total_kg[s.id]  = fuel_by_shipment_total_kg.get(s.id, 0.0) + fuel
+
+        # discharge event
+        k_disc = _get_factor(discharge_city)
+        if k_disc is not None and s.weight_t > 0:
+            fuel = s.weight_t * k_disc
+            fuel_by_port_by_ship_kg.setdefault(discharge_city, {})
+            fuel_by_port_by_ship_kg[discharge_city][s.id] = fuel_by_port_by_ship_kg[discharge_city].get(s.id, 0.0) + fuel
+            fuel_by_port_total_kg[discharge_city] = fuel_by_port_total_kg.get(discharge_city, 0.0) + fuel
+            fuel_by_shipment_total_kg[s.id]       = fuel_by_shipment_total_kg.get(s.id, 0.0) + fuel
+
+    fuel_total_kg = sum(fuel_by_port_total_kg.values())
+
+    return {
+          "fuel_by_port_by_ship_kg": fuel_by_port_by_ship_kg
+        , "fuel_by_port_total_kg":   fuel_by_port_total_kg
+        , "fuel_by_shipment_total_kg": fuel_by_shipment_total_kg
+        , "fuel_total_kg":           fuel_total_kg
+        , "missing_cities":          missing_cities
+    }

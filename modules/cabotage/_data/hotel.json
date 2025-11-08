@@ -1,0 +1,558 @@
+{
+  "unit": "kg_fuel_per_tonne",
+  "scope": "hotel_at_berth",
+  "R_hotel_kg_per_hour": 135.0,
+  "assumed_t_per_call": 6000.0,
+  "note": "Cabotagem only; kg_fuel_per_t = sum(hotel_fuel_kg)/sum(handled_t) per city. Berth time from Atracação→Desatracação, fallback Início→Término.",
+  "entries": [
+    {
+      "city": "Angra dos Reis",
+      "uf": "Rio de Janeiro",
+      "calls": 240,
+      "avg_berth_h": 32.923,
+      "total_hotel_fuel_kg": 1066711.5,
+      "total_handled_t": 1440000.0,
+      "kg_fuel_per_t": 0.740772
+    },
+    {
+      "city": "Antonina",
+      "uf": "Paraná",
+      "calls": 2,
+      "avg_berth_h": 19.267,
+      "total_hotel_fuel_kg": 5202.0,
+      "total_handled_t": 12000.0,
+      "kg_fuel_per_t": 0.4335
+    },
+    {
+      "city": "Aracruz",
+      "uf": "Espírito Santo",
+      "calls": 14,
+      "avg_berth_h": 22.477,
+      "total_hotel_fuel_kg": 42482.25,
+      "total_handled_t": 84000.0,
+      "kg_fuel_per_t": 0.505741
+    },
+    {
+      "city": "Areia Branca",
+      "uf": "Rio Grande do Norte",
+      "calls": 16,
+      "avg_berth_h": 89.277,
+      "total_hotel_fuel_kg": 192838.5,
+      "total_handled_t": 96000.0,
+      "kg_fuel_per_t": 2.008734
+    },
+    {
+      "city": "Armação dos Búzios",
+      "uf": "Rio de Janeiro",
+      "calls": 24,
+      "avg_berth_h": 9.667,
+      "total_hotel_fuel_kg": 31320.0,
+      "total_handled_t": 144000.0,
+      "kg_fuel_per_t": 0.2175
+    },
+    {
+      "city": "Balneário Camboriú",
+      "uf": "Santa Catarina",
+      "calls": 12,
+      "avg_berth_h": 10.521,
+      "total_hotel_fuel_kg": 17043.75,
+      "total_handled_t": 72000.0,
+      "kg_fuel_per_t": 0.236719
+    },
+    {
+      "city": "Barcarena",
+      "uf": "Pará",
+      "calls": 142,
+      "avg_berth_h": 56.492,
+      "total_hotel_fuel_kg": 1082958.75,
+      "total_handled_t": 852000.0,
+      "kg_fuel_per_t": 1.271078
+    },
+    {
+      "city": "Barra dos Coqueiros",
+      "uf": "Sergipe",
+      "calls": 13,
+      "avg_berth_h": 37.037,
+      "total_hotel_fuel_kg": 65000.25,
+      "total_handled_t": 78000.0,
+      "kg_fuel_per_t": 0.833337
+    },
+    {
+      "city": "Belmonte",
+      "uf": "Bahia",
+      "calls": 113,
+      "avg_berth_h": 56.892,
+      "total_hotel_fuel_kg": 867883.5,
+      "total_handled_t": 678000.0,
+      "kg_fuel_per_t": 1.280064
+    },
+    {
+      "city": "Belém",
+      "uf": "Pará",
+      "calls": 212,
+      "avg_berth_h": 35.661,
+      "total_hotel_fuel_kg": 1020629.25,
+      "total_handled_t": 1272000.0,
+      "kg_fuel_per_t": 0.802381
+    },
+    {
+      "city": "Cabedelo",
+      "uf": "Paraíba",
+      "calls": 33,
+      "avg_berth_h": 51.708,
+      "total_hotel_fuel_kg": 230357.25,
+      "total_handled_t": 198000.0,
+      "kg_fuel_per_t": 1.16342
+    },
+    {
+      "city": "Candeias",
+      "uf": "Bahia",
+      "calls": 133,
+      "avg_berth_h": 42.011,
+      "total_hotel_fuel_kg": 754308.0,
+      "total_handled_t": 798000.0,
+      "kg_fuel_per_t": 0.945248
+    },
+    {
+      "city": "Canoas",
+      "uf": "Rio Grande do Sul",
+      "calls": 3,
+      "avg_berth_h": 36.133,
+      "total_hotel_fuel_kg": 14634.0,
+      "total_handled_t": 18000.0,
+      "kg_fuel_per_t": 0.813
+    },
+    {
+      "city": "Charqueadas",
+      "uf": "Rio Grande do Sul",
+      "calls": 1,
+      "avg_berth_h": 136.667,
+      "total_hotel_fuel_kg": 18450.0,
+      "total_handled_t": 6000.0,
+      "kg_fuel_per_t": 3.075
+    },
+    {
+      "city": "Coari",
+      "uf": "Amazonas",
+      "calls": 47,
+      "avg_berth_h": 30.775,
+      "total_hotel_fuel_kg": 195266.25,
+      "total_handled_t": 282000.0,
+      "kg_fuel_per_t": 0.692434
+    },
+    {
+      "city": "Cubatão",
+      "uf": "São Paulo",
+      "calls": 12,
+      "avg_berth_h": 146.885,
+      "total_hotel_fuel_kg": 237953.25,
+      "total_handled_t": 72000.0,
+      "kg_fuel_per_t": 3.304906
+    },
+    {
+      "city": "Duque de Caxias",
+      "uf": "Rio de Janeiro",
+      "calls": 21,
+      "avg_berth_h": 102.507,
+      "total_hotel_fuel_kg": 290607.75,
+      "total_handled_t": 126000.0,
+      "kg_fuel_per_t": 2.306411
+    },
+    {
+      "city": "Fortaleza",
+      "uf": "Ceará",
+      "calls": 394,
+      "avg_berth_h": 37.804,
+      "total_hotel_fuel_kg": 2010820.5,
+      "total_handled_t": 2364000.0,
+      "kg_fuel_per_t": 0.850601
+    },
+    {
+      "city": "Galinhos",
+      "uf": "Rio Grande do Norte",
+      "calls": 118,
+      "avg_berth_h": 13.443,
+      "total_hotel_fuel_kg": 214143.75,
+      "total_handled_t": 708000.0,
+      "kg_fuel_per_t": 0.302463
+    },
+    {
+      "city": "Guamaré",
+      "uf": "Rio Grande do Norte",
+      "calls": 21,
+      "avg_berth_h": 78.577,
+      "total_hotel_fuel_kg": 222765.75,
+      "total_handled_t": 126000.0,
+      "kg_fuel_per_t": 1.767982
+    },
+    {
+      "city": "Guarujá",
+      "uf": "São Paulo",
+      "calls": 229,
+      "avg_berth_h": 25.793,
+      "total_hotel_fuel_kg": 797395.5,
+      "total_handled_t": 1374000.0,
+      "kg_fuel_per_t": 0.580346
+    },
+    {
+      "city": "Ilhéus",
+      "uf": "Bahia",
+      "calls": 11,
+      "avg_berth_h": 9.485,
+      "total_hotel_fuel_kg": 14085.0,
+      "total_handled_t": 66000.0,
+      "kg_fuel_per_t": 0.213409
+    },
+    {
+      "city": "Imbituba",
+      "uf": "Santa Catarina",
+      "calls": 40,
+      "avg_berth_h": 32.306,
+      "total_hotel_fuel_kg": 174453.75,
+      "total_handled_t": 240000.0,
+      "kg_fuel_per_t": 0.726891
+    },
+    {
+      "city": "Ipojuca",
+      "uf": "Pernambuco",
+      "calls": 844,
+      "avg_berth_h": 27.886,
+      "total_hotel_fuel_kg": 3177276.75,
+      "total_handled_t": 5064000.0,
+      "kg_fuel_per_t": 0.627424
+    },
+    {
+      "city": "Itacoatiara",
+      "uf": "Amazonas",
+      "calls": 69,
+      "avg_berth_h": 48.515,
+      "total_hotel_fuel_kg": 451921.5,
+      "total_handled_t": 414000.0,
+      "kg_fuel_per_t": 1.091598
+    },
+    {
+      "city": "Itaguaí",
+      "uf": "Rio de Janeiro",
+      "calls": 59,
+      "avg_berth_h": 33.812,
+      "total_hotel_fuel_kg": 269316.0,
+      "total_handled_t": 354000.0,
+      "kg_fuel_per_t": 0.76078
+    },
+    {
+      "city": "Itajaí",
+      "uf": "Santa Catarina",
+      "calls": 83,
+      "avg_berth_h": 29.044,
+      "total_hotel_fuel_kg": 325440.0,
+      "total_handled_t": 498000.0,
+      "kg_fuel_per_t": 0.653494
+    },
+    {
+      "city": "Juruti",
+      "uf": "Pará",
+      "calls": 94,
+      "avg_berth_h": 31.502,
+      "total_hotel_fuel_kg": 399755.25,
+      "total_handled_t": 564000.0,
+      "kg_fuel_per_t": 0.708786
+    },
+    {
+      "city": "Macau",
+      "uf": "Rio Grande do Norte",
+      "calls": 286,
+      "avg_berth_h": 9.603,
+      "total_hotel_fuel_kg": 370782.0,
+      "total_handled_t": 1716000.0,
+      "kg_fuel_per_t": 0.216073
+    },
+    {
+      "city": "Maceió",
+      "uf": "Alagoas",
+      "calls": 155,
+      "avg_berth_h": 39.092,
+      "total_hotel_fuel_kg": 818007.75,
+      "total_handled_t": 930000.0,
+      "kg_fuel_per_t": 0.879578
+    },
+    {
+      "city": "Madre de Deus",
+      "uf": "Bahia",
+      "calls": 208,
+      "avg_berth_h": 36.374,
+      "total_hotel_fuel_kg": 1021376.25,
+      "total_handled_t": 1248000.0,
+      "kg_fuel_per_t": 0.81841
+    },
+    {
+      "city": "Manaus",
+      "uf": "Amazonas",
+      "calls": 151,
+      "avg_berth_h": 77.958,
+      "total_hotel_fuel_kg": 1589179.5,
+      "total_handled_t": 906000.0,
+      "kg_fuel_per_t": 1.754061
+    },
+    {
+      "city": "Maragogipe",
+      "uf": "Bahia",
+      "calls": 1,
+      "avg_berth_h": 51.8,
+      "total_hotel_fuel_kg": 6993.0,
+      "total_handled_t": 6000.0,
+      "kg_fuel_per_t": 1.1655
+    },
+    {
+      "city": "Mossoró",
+      "uf": "Rio Grande do Norte",
+      "calls": 222,
+      "avg_berth_h": 10.049,
+      "total_hotel_fuel_kg": 301169.25,
+      "total_handled_t": 1332000.0,
+      "kg_fuel_per_t": 0.226103
+    },
+    {
+      "city": "Natal",
+      "uf": "Rio Grande do Norte",
+      "calls": 111,
+      "avg_berth_h": 44.669,
+      "total_hotel_fuel_kg": 669363.75,
+      "total_handled_t": 666000.0,
+      "kg_fuel_per_t": 1.005051
+    },
+    {
+      "city": "Navegantes",
+      "uf": "Santa Catarina",
+      "calls": 101,
+      "avg_berth_h": 9.478,
+      "total_hotel_fuel_kg": 129235.5,
+      "total_handled_t": 606000.0,
+      "kg_fuel_per_t": 0.21326
+    },
+    {
+      "city": "Oriximiná",
+      "uf": "Pará",
+      "calls": 87,
+      "avg_berth_h": 23.26,
+      "total_hotel_fuel_kg": 273188.25,
+      "total_handled_t": 522000.0,
+      "kg_fuel_per_t": 0.523349
+    },
+    {
+      "city": "Osório",
+      "uf": "Rio Grande do Sul",
+      "calls": 74,
+      "avg_berth_h": 25.846,
+      "total_hotel_fuel_kg": 258201.0,
+      "total_handled_t": 444000.0,
+      "kg_fuel_per_t": 0.581534
+    },
+    {
+      "city": "Paranaguá",
+      "uf": "Paraná",
+      "calls": 173,
+      "avg_berth_h": 32.909,
+      "total_hotel_fuel_kg": 768586.5,
+      "total_handled_t": 1038000.0,
+      "kg_fuel_per_t": 0.740449
+    },
+    {
+      "city": "Porto Alegre",
+      "uf": "Rio Grande do Sul",
+      "calls": 4,
+      "avg_berth_h": 51.208,
+      "total_hotel_fuel_kg": 27652.5,
+      "total_handled_t": 24000.0,
+      "kg_fuel_per_t": 1.152187
+    },
+    {
+      "city": "Porto Belo",
+      "uf": "Santa Catarina",
+      "calls": 12,
+      "avg_berth_h": 10.528,
+      "total_hotel_fuel_kg": 17055.0,
+      "total_handled_t": 72000.0,
+      "kg_fuel_per_t": 0.236875
+    },
+    {
+      "city": "Recife",
+      "uf": "Pernambuco",
+      "calls": 160,
+      "avg_berth_h": 125.157,
+      "total_hotel_fuel_kg": 2703381.75,
+      "total_handled_t": 960000.0,
+      "kg_fuel_per_t": 2.816023
+    },
+    {
+      "city": "Rio Grande",
+      "uf": "Rio Grande do Sul",
+      "calls": 520,
+      "avg_berth_h": 47.994,
+      "total_hotel_fuel_kg": 3369188.25,
+      "total_handled_t": 3120000.0,
+      "kg_fuel_per_t": 1.079868
+    },
+    {
+      "city": "Rio de Janeiro",
+      "uf": "Rio de Janeiro",
+      "calls": 514,
+      "avg_berth_h": 39.16,
+      "total_hotel_fuel_kg": 2717311.5,
+      "total_handled_t": 3084000.0,
+      "kg_fuel_per_t": 0.8811
+    },
+    {
+      "city": "Salvador",
+      "uf": "Bahia",
+      "calls": 201,
+      "avg_berth_h": 16.91,
+      "total_hotel_fuel_kg": 458856.0,
+      "total_handled_t": 1206000.0,
+      "kg_fuel_per_t": 0.380478
+    },
+    {
+      "city": "Santarém",
+      "uf": "Pará",
+      "calls": 13,
+      "avg_berth_h": 41.473,
+      "total_hotel_fuel_kg": 72785.25,
+      "total_handled_t": 78000.0,
+      "kg_fuel_per_t": 0.933144
+    },
+    {
+      "city": "Santos",
+      "uf": "São Paulo",
+      "calls": 531,
+      "avg_berth_h": 38.883,
+      "total_hotel_fuel_kg": 2787358.5,
+      "total_handled_t": 3186000.0,
+      "kg_fuel_per_t": 0.874877
+    },
+    {
+      "city": "Serra",
+      "uf": "Espírito Santo",
+      "calls": 34,
+      "avg_berth_h": 49.353,
+      "total_hotel_fuel_kg": 226532.25,
+      "total_handled_t": 204000.0,
+      "kg_fuel_per_t": 1.110452
+    },
+    {
+      "city": "São Francisco do Sul",
+      "uf": "Santa Catarina",
+      "calls": 155,
+      "avg_berth_h": 47.427,
+      "total_hotel_fuel_kg": 992403.0,
+      "total_handled_t": 930000.0,
+      "kg_fuel_per_t": 1.0671
+    },
+    {
+      "city": "São Gonçalo do Amarante",
+      "uf": "Ceará",
+      "calls": 332,
+      "avg_berth_h": 39.851,
+      "total_hotel_fuel_kg": 1786110.75,
+      "total_handled_t": 1992000.0,
+      "kg_fuel_per_t": 0.896642
+    },
+    {
+      "city": "São João da Barra",
+      "uf": "Rio de Janeiro",
+      "calls": 7717,
+      "avg_berth_h": 13.354,
+      "total_hotel_fuel_kg": 13911662.25,
+      "total_handled_t": 46302000.0,
+      "kg_fuel_per_t": 0.300455
+    },
+    {
+      "city": "São Luís",
+      "uf": "Maranhão",
+      "calls": 402,
+      "avg_berth_h": 44.033,
+      "total_hotel_fuel_kg": 2389644.0,
+      "total_handled_t": 2412000.0,
+      "kg_fuel_per_t": 0.990731
+    },
+    {
+      "city": "São Mateus",
+      "uf": "Espírito Santo",
+      "calls": 4,
+      "avg_berth_h": 92.8,
+      "total_hotel_fuel_kg": 50112.0,
+      "total_handled_t": 24000.0,
+      "kg_fuel_per_t": 2.088
+    },
+    {
+      "city": "São Sebastião",
+      "uf": "São Paulo",
+      "calls": 490,
+      "avg_berth_h": 34.414,
+      "total_hotel_fuel_kg": 2276498.25,
+      "total_handled_t": 2940000.0,
+      "kg_fuel_per_t": 0.774319
+    },
+    {
+      "city": "Triunfo",
+      "uf": "Rio Grande do Sul",
+      "calls": 1,
+      "avg_berth_h": 45.417,
+      "total_hotel_fuel_kg": 6131.25,
+      "total_handled_t": 6000.0,
+      "kg_fuel_per_t": 1.021875
+    },
+    {
+      "city": "Vila Velha",
+      "uf": "Espírito Santo",
+      "calls": 144,
+      "avg_berth_h": 51.033,
+      "total_hotel_fuel_kg": 992079.0,
+      "total_handled_t": 864000.0,
+      "kg_fuel_per_t": 1.14824
+    },
+    {
+      "city": "Vitória",
+      "uf": "Espírito Santo",
+      "calls": 137,
+      "avg_berth_h": 61.483,
+      "total_hotel_fuel_kg": 1137132.0,
+      "total_handled_t": 822000.0,
+      "kg_fuel_per_t": 1.383372
+    }
+  ],
+  "header_debug": {
+    "original_headers": [
+      "IDAtracacao",
+      "CDTUP",
+      "IDBerco",
+      "Berço",
+      "Porto Atracação",
+      "Coordenadas",
+      "Apelido Instalação Portuária",
+      "Complexo Portuário",
+      "Tipo da Autoridade Portuária",
+      "Data Atracação",
+      "Data Chegada",
+      "Data Desatracação",
+      "Data Início Operação",
+      "Data Término Operação",
+      "Ano",
+      "Mes",
+      "Tipo de Operação",
+      "Tipo de Navegação da Atracação",
+      "Nacionalidade do Armador",
+      "FlagMCOperacaoAtracacao",
+      "Terminal",
+      "Município",
+      "UF",
+      "SGUF",
+      "Região Geográfica",
+      "Região Hidrográfica",
+      "Instalação Portuária em Rio",
+      "Nº da Capitania",
+      "Nº do IMO"
+    ],
+    "filter": {
+      "Tipo de Navegação da Atracação": "Cabotagem"
+    }
+  }
+}
