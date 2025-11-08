@@ -1,14 +1,18 @@
 # modules/routes_provider.py
 # ────────────────────────────────────────────────────────────────────────────────
-# OpenRouteService client with verbose logging, caching, CEP fixes (ViaCEP),
-# and route snapping retry for off-network points.
+# OpenRouteService client tuned for TRUCK ROUTES (driving-hgv) by default.
+# - Verbose logging
+# - SQLite caching
+# - CEP handling with ViaCEP fallback (optional)
+# - Automatic SNAP retry when a point is off-network (404)
+# - Truck profile options injected automatically (vehicle_type + restrictions)
 #
-# pip install requests python-dotenv  # dotenv optional
+# pip install requests python-dotenv
 #
 # Env:
 #   ORS_API_KEY=...
 #   ORS_LOG_LEVEL=DEBUG|INFO|WARNING|ERROR   (default INFO)
-#   ORS_ALLOW_VIACEP=1|0                     (default 1 -> use ViaCEP fallback)
+#   ORS_ALLOW_VIACEP=1|0                     (default 1)
 # ────────────────────────────────────────────────────────────────────────────────
 
 from __future__ import annotations
@@ -54,6 +58,15 @@ def _short(v: _Any, maxlen: int = 420) -> str:
 
 # ─────────────────────────────── config & utils
 class ORSConfig:
+    """
+    Defaults are tailored for heavy vehicles (container trucks).
+
+    You can override the truck defaults here or per-call:
+      - hgv_vehicle_type: "goods" | "hgv"
+      - hgv_restrictions: dict with keys like
+            weight (kg), axleload (kg), height/width/length (m), hazmat (bool)
+      - avoid_features_default: e.g. ["ferries"]
+    """
     def __init__(
           self
         , api_key: str | None = None
@@ -65,30 +78,47 @@ class ORSConfig:
         , cache_path: str = "cache/ors_cache.sqlite"
         , cache_ttl_s: int = 30 * 24 * 3600  # 30 days
         , default_country: str = "BR"
-        , default_profile: str = "driving-car"
-        , user_agent: str = "Cabosupernet-ORSClient/3.0"
+        , default_profile: str = "driving-hgv"                 # <<<<<<<<<< default = TRUCK
+        , user_agent: str = "Cabosupernet-ORSClient/4.0"
         , snap_retry_on_404: bool = True
         , snap_radius_m: int = 2500
         , allow_viacep: bool | None = None
+        # truck defaults (can be tuned to your TF assumptions)
+        , hgv_vehicle_type: str = "goods"                      # or "hgv"
+        , hgv_restrictions: _Optional[_Dict[str, _Any]] = None
+        , avoid_features_default: _Optional[_List[str]] = None
     ):
-        self.api_key             = (api_key or _os.getenv("ORS_API_KEY", "")).strip()
-        self.base_url            = base_url.rstrip("/")
-        self.connect_timeout_s   = connect_timeout_s
-        self.read_timeout_s      = read_timeout_s
-        self.max_retries         = max_retries
-        self.backoff_s           = backoff_s
-        self.cache_path          = _os.path.abspath(_os.path.expanduser(cache_path))
-        # ensure parent dir exists
+        self.api_key           = (api_key or _os.getenv("ORS_API_KEY", "")).strip()
+        self.base_url          = base_url.rstrip("/")
+        self.connect_timeout_s = connect_timeout_s
+        self.read_timeout_s    = read_timeout_s
+        self.max_retries       = max_retries
+        self.backoff_s         = backoff_s
+        self.cache_path        = _os.path.abspath(_os.path.expanduser(cache_path))
         _os.makedirs(_os.path.dirname(self.cache_path), exist_ok=True)
-        self.cache_ttl_s         = cache_ttl_s
-        self.default_country     = (default_country or "BR").upper()
-        self.default_profile     = default_profile
-        self.user_agent          = user_agent
-        self.snap_retry_on_404   = bool(snap_retry_on_404)
-        self.snap_radius_m       = int(snap_radius_m)
-        env_flag                 = _os.getenv("ORS_ALLOW_VIACEP")
-        self.allow_viacep        = (allow_viacep if allow_viacep is not None
-                                    else (False if env_flag == "0" else True))
+        self.cache_ttl_s       = cache_ttl_s
+        self.default_country   = (default_country or "BR").upper()
+        self.default_profile   = default_profile
+        self.user_agent        = user_agent
+        self.snap_retry_on_404 = bool(snap_retry_on_404)
+        self.snap_radius_m     = int(snap_radius_m)
+
+        env_flag               = _os.getenv("ORS_ALLOW_VIACEP")
+        self.allow_viacep      = (allow_viacep if allow_viacep is not None
+                                  else (False if env_flag == "0" else True))
+
+        # default heavy-vehicle params (typical BR articulated truck)
+        self.hgv_vehicle_type  = hgv_vehicle_type
+        self.hgv_restrictions  = hgv_restrictions or {
+            "weight":   40000,   # kg (gross)
+            "axleload": 10000,   # kg
+            "height":   4.20,    # m
+            "width":    2.60,    # m
+            "length":   18.60,   # m
+            "hazmat":   False
+        }
+        self.avoid_features_default = avoid_features_default or ["ferries"]
+
         if not self.api_key:
             raise RuntimeError("ORS_API_KEY not set. Export ORS_API_KEY or pass api_key= to ORSConfig().")
 
@@ -266,8 +296,7 @@ class ORSClient:
         m = _re.match(r"^\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*$", s)
         if not m:
             return None
-        lat = float(m.group(1))
-        lon = float(m.group(2))
+        lat = float(m.group(1)); lon = float(m.group(2))
         if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
             return None
         return (lat, lon)
@@ -459,7 +488,6 @@ class ORSClient:
             cep = self._is_cep(value)
             if cep:
                 hyph = f"{cep[:5]}-{cep[5:]}"
-                # ORS structured → (if none) structured with hyphen → (if none) text
                 hits = (self.geocode_structured(postalcode=cep, country=self.cfg.default_country, size=1)
                         or self.geocode_structured(postalcode=hyph, country=self.cfg.default_country, size=1)
                         or self.geocode_text(hyph, size=1, country=self.cfg.default_country))
@@ -470,7 +498,6 @@ class ORSClient:
                     _log.info(f"RESOLVE (CEP via ORS) -> {out}")
                     return out
 
-                # ViaCEP fallback
                 if self.cfg.allow_viacep:
                     via = self._viacep_lookup(cep)
                     if via and (via["localidade"] or via["uf"] or via["logradouro"]):
@@ -519,6 +546,16 @@ class ORSClient:
         _log.debug(f"SNAP result={_short(snapped)}")
         return snapped
 
+    # ─────────────────── helpers: inject truck options
+    def _inject_hgv_options(self, payload: _Dict[str, _Any],
+                            vehicle_type: _Optional[str],
+                            restrictions: _Optional[_Dict[str, _Any]]) -> None:
+        payload.setdefault("options", {})
+        if vehicle_type:
+            payload["options"]["vehicle_type"] = vehicle_type  # "goods" or "hgv"
+        if restrictions:
+            payload["options"].setdefault("profile_params", {})["restrictions"] = restrictions
+
     # ─────────────────── directions (single route)
     def route_road(
           self
@@ -528,9 +565,12 @@ class ORSClient:
         , geometry: bool = False
         , extra_info: _Optional[_List[str]] = None
         , avoid_features: _Optional[_List[str]] = None
+        , vehicle_type: _Optional[str] = None
+        , hgv_restrictions: _Optional[_Dict[str, _Any]] = None
     ) -> _Dict[str, _Any]:
         o = self._resolve_point(origin)
         d = self._resolve_point(destination)
+
         prof = (profile or self.cfg.default_profile)
 
         payload: _Dict[str, _Any] = {
@@ -540,8 +580,21 @@ class ORSClient:
         }
         if extra_info:
             payload["extra_info"] = list(extra_info)
+
+        # Avoid features
+        final_avoids = list(self.cfg.avoid_features_default or [])
         if avoid_features:
-            payload["options"] = {"avoid_features": list(avoid_features)}
+            final_avoids.extend([x for x in avoid_features if x not in final_avoids])
+        if final_avoids:
+            payload.setdefault("options", {})["avoid_features"] = final_avoids
+
+        # Inject truck options if profile is driving-hgv
+        if prof == "driving-hgv":
+            self._inject_hgv_options(
+                payload,
+                vehicle_type or self.cfg.hgv_vehicle_type,
+                hgv_restrictions or self.cfg.hgv_restrictions
+            )
 
         _log.info(f"ROUTE try1 {prof} coords={payload['coordinates']}")
         try:
@@ -555,7 +608,7 @@ class ORSClient:
                 if snapped != payload["coordinates"]:
                     payload["coordinates"] = snapped
                     _log.info(f"ROUTE try2 after SNAP {prof} coords={payload['coordinates']}")
-                    data = self._post(f"/v2/directions/{prof}", payload)  # will raise if still failing
+                    data = self._post(f"/v2/directions/{prof}", payload)  # may raise again
                 else:
                     _log.warning("ROUTE SNAP made no change; re-raising.")
                     raise
@@ -615,6 +668,9 @@ class ORSClient:
             , "metrics": ["distance", "duration"]
             , "units": "m"
         }
+
+        # NOTE: The public Matrix endpoint supports profile=driving-hgv,
+        # but may ignore profile_params.restrictions. We *do not* inject them here.
         _log.info(f"MATRIX {prof} n_origins={len(os_)} n_destinations={len(ds_)}")
         data = self._post(f"/v2/matrix/{prof}", payload)
         _log.debug(f"MATRIX resp keys={list(data.keys())}")
