@@ -1,0 +1,81 @@
+{
+  "unit": "kg_fuel_per_tonne_km",
+  "scope": "TTW",
+  "entries": [
+    {
+      "id": "icct_2022_cabotage_avg",
+      "K_kg_per_tkm": 0.002495,
+      "unit": "kg_fuel_per_tonne_km",
+      "scope": "TTW",
+      "fuel_CO2_factor_used": "3.206 kgCO2/kg fuel (MGO/MDO)",
+      "source": "ICCT Brazil cabotage average (8 g CO2/t-km)",
+      "assumptions": {}
+    },
+    {
+      "id": "usp_2019_ccwg_util70_teu10t",
+      "K_kg_per_tkm": 0.003456,
+      "unit": "kg_fuel_per_tonne_km",
+      "scope": "TTW",
+      "fuel_CO2_factor_used": "3.206 kgCO2/kg fuel (MGO/MDO)",
+      "source": "USP/CCWG route (utilization-adjusted), TEU payload = 10 t",
+      "assumptions": {
+        "teu_payload_t": 10
+      }
+    },
+    {
+      "id": "usp_2019_ccwg_util70_teu12t",
+      "K_kg_per_tkm": 0.00288,
+      "unit": "kg_fuel_per_tonne_km",
+      "scope": "TTW",
+      "fuel_CO2_factor_used": "3.206 kgCO2/kg fuel (MGO/MDO)",
+      "source": "USP/CCWG route (utilization-adjusted), TEU payload = 12 t",
+      "assumptions": {
+        "teu_payload_t": 12
+      }
+    },
+    {
+      "id": "usp_2019_ccwg_util70_teu14t",
+      "K_kg_per_tkm": 0.002468,
+      "unit": "kg_fuel_per_tonne_km",
+      "scope": "TTW",
+      "fuel_CO2_factor_used": "3.206 kgCO2/kg fuel (MGO/MDO)",
+      "source": "USP/CCWG route (utilization-adjusted), TEU payload = 14 t",
+      "assumptions": {
+        "teu_payload_t": 14
+      }
+    },
+    {
+      "id": "usp_2019_energy_teu10t",
+      "K_kg_per_tkm": 0.003291,
+      "unit": "kg_fuel_per_tonne_km",
+      "scope": "TTW",
+      "fuel_CO2_factor_used": "3.206 kgCO2/kg fuel (MGO/MDO)",
+      "source": "USP/Energy-based route, TEU payload = 10 t",
+      "assumptions": {
+        "teu_payload_t": 10
+      }
+    },
+    {
+      "id": "usp_2019_energy_teu12t",
+      "K_kg_per_tkm": 0.002742,
+      "unit": "kg_fuel_per_tonne_km",
+      "scope": "TTW",
+      "fuel_CO2_factor_used": "3.206 kgCO2/kg fuel (MGO/MDO)",
+      "source": "USP/Energy-based route, TEU payload = 12 t",
+      "assumptions": {
+        "teu_payload_t": 12
+      }
+    },
+    {
+      "id": "usp_2019_energy_teu14t",
+      "K_kg_per_tkm": 0.002351,
+      "unit": "kg_fuel_per_tonne_km",
+      "scope": "TTW",
+      "fuel_CO2_factor_used": "3.206 kgCO2/kg fuel (MGO/MDO)",
+      "source": "USP/Energy-based route, TEU payload = 14 t",
+      "assumptions": {
+        "teu_payload_t": 14
+      }
+    }
+  ]
+}
