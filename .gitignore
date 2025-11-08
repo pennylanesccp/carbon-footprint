@@ -1,3 +1,6 @@
+# ── .ors_cache ────────────────────────────────────────
+cache
+
 # ── Secrets (keep example file tracked) ────────────────────────────────────────
 .env
 .env.*
