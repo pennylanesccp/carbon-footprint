@@ -467,3 +467,46 @@ if __name__ == "__main__":
         , gwp100=gwp100_ar6
     )
     print("Per-shipment report:", report)
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Port handling – single constant K_port (kg fuel per tonne handled)
+# ────────────────────────────────────────────────────────────────────────────────
+
+def port_fuel_from_handled_mass(
+      handled_mass_t: float
+    , K_port_kg_per_t: float = 0.48
+) -> float:
+    """
+    Fuel used in a port call for loading/unloading.
+    Args:
+        handled_mass_t   : total tonnes actually moved ship↔yard in this call
+        K_port_kg_per_t  : kg fuel per tonne handled (default ≈ 0.48 kg/t)
+    Returns:
+        fuel_kg          : kg fuel for this port call
+    """
+    if handled_mass_t < 0:
+        raise ValueError("handled_mass_t must be >= 0.")
+    if K_port_kg_per_t < 0:
+        raise ValueError("K_port_kg_per_t must be >= 0.")
+    return handled_mass_t * K_port_kg_per_t
+
+
+def allocate_port_fuel_to_shipments(
+      handled_mass_by_shipment_t: Dict[str, float]
+    , K_port_kg_per_t: float = 0.48
+) -> Dict[str, float]:
+    """
+    Allocate port fuel directly to the shipments that were handled (loaded/discharged).
+    Args:
+        handled_mass_by_shipment_t : {shipment_id: tonnes moved at this port}
+        K_port_kg_per_t            : kg fuel per tonne handled
+    Returns:
+        fuel_by_shipment_kg        : {shipment_id: kg fuel attributed at this port}
+    """
+    out: Dict[str, float] = {}
+    for sid, m_t in handled_mass_by_shipment_t.items():
+        if m_t < 0:
+            raise ValueError(f"Negative handled mass for shipment {sid}: {m_t}")
+        out[sid] = m_t * K_port_kg_per_t
+    return out

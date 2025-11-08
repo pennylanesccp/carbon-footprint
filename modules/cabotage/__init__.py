@@ -24,7 +24,9 @@ from .accounting import (
     , calibrate_K_from_observation
     , predict_fuel_from_K
     , allocate_fuel_by_leg_and_shipment
-    , allocate_costs_emissions           # ← added
+    , allocate_costs_emissions
+    , allocate_port_fuel_to_shipments
+    , port_fuel_from_handled_mass
     , fuel_cost
     , fuel_cost_by_leg
     , emissions_ttw
@@ -43,8 +45,9 @@ __all__ = [
       "Leg", "Shipment", "compute_tonne_km",
       "calibrate_K_from_observation", "predict_fuel_from_K",
       "allocate_fuel_by_leg_and_shipment",
-      "allocate_costs_emissions",       # ← added
+      "allocate_costs_emissions", 
       "fuel_cost", "fuel_cost_by_leg",
       "emissions_ttw", "emissions_ttw_by_leg",
       "load_k_entries", "summarize_Ks", "choose_K",
+      "allocate_port_fuel_to_shipments", "port_fuel_from_handled_mass"
 ]
