@@ -118,7 +118,8 @@ def estimate_road_trip(
         , "co2e_kg_per_kg":      co2e_total_kg / cargo_kg
         , "co2_kg_per_kg":       co2_kg / cargo_kg
         , "cost_brl_per_kg":     fuel_cost_brl / cargo_kg
-        , "gco2e_per_tkm":       (co2e_total_kg / (cargo_t * distance_km)) * 1e6  # g CO₂e / t·km
+        , "gco2e_per_tkm": (co2e_total_kg / (cargo_t * distance_km)) * 1e3  # g CO₂e / t·km
+        , "kgco2e_per_tkm": (co2e_total_kg / (cargo_t * distance_km))
     }
 
     return {
