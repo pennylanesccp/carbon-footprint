@@ -1,0 +1,360 @@
+[
+  {
+    "name": "Santos",
+    "city": "Santos",
+    "state": "SP",
+    "lat": -23.9527,
+    "lon": -46.3273,
+    "aliases": [
+      "Porto de Santos",
+      "Santos",
+      "BRSSZ"
+    ],
+    "gates": [
+      {
+        "label": "Ponta da Praia",
+        "lat": -23.9608,
+        "lon": -46.3336
+      }
+    ]
+  },
+  {
+    "name": "Rio de Janeiro",
+    "city": "Rio de Janeiro",
+    "state": "RJ",
+    "lat": -22.9008,
+    "lon": -43.167,
+    "aliases": [
+      "Porto do Rio de Janeiro",
+      "Rio de Janeiro",
+      "BRRIO",
+      "Cais do Porto do Rio"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Itaguaí (Sepetiba)",
+    "city": "Itaguaí",
+    "state": "RJ",
+    "lat": -22.9341,
+    "lon": -43.8497,
+    "aliases": [
+      "Porto de Itaguaí",
+      "Sepetiba",
+      "BRIGI"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Paranaguá",
+    "city": "Paranaguá",
+    "state": "PR",
+    "lat": -25.508,
+    "lon": -48.503,
+    "aliases": [
+      "Porto de Paranaguá",
+      "TCP",
+      "BRPNG"
+    ],
+    "gates": []
+  },
+  {
+    "name": "São Francisco do Sul",
+    "city": "São Francisco do Sul",
+    "state": "SC",
+    "lat": -26.2486,
+    "lon": -48.6345,
+    "aliases": [
+      "Porto de São Francisco do Sul",
+      "SFS",
+      "BRSFS"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Itapoá",
+    "city": "Itapoá",
+    "state": "SC",
+    "lat": -26.1155,
+    "lon": -48.6181,
+    "aliases": [
+      "Porto Itapoá",
+      "BRIOA"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Navegantes (Portonave)",
+    "city": "Navegantes",
+    "state": "SC",
+    "lat": -26.8889,
+    "lon": -48.6517,
+    "aliases": [
+      "Portonave",
+      "Navegantes",
+      "BRNVT"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Itajaí",
+    "city": "Itajaí",
+    "state": "SC",
+    "lat": -26.9025,
+    "lon": -48.6599,
+    "aliases": [
+      "Porto de Itajaí",
+      "BRITJ"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Imbituba",
+    "city": "Imbituba",
+    "state": "SC",
+    "lat": -28.2406,
+    "lon": -48.657,
+    "aliases": [
+      "Porto de Imbituba",
+      "BRIBB"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Rio Grande",
+    "city": "Rio Grande",
+    "state": "RS",
+    "lat": -32.0332,
+    "lon": -52.091,
+    "aliases": [
+      "Porto do Rio Grande",
+      "BRRIG"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Vitória / TVV (Vila Velha)",
+    "city": "Vila Velha",
+    "state": "ES",
+    "lat": -20.3274,
+    "lon": -40.3072,
+    "aliases": [
+      "Porto de Vitória",
+      "TVV",
+      "Vila Velha",
+      "BRVIX"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Salvador",
+    "city": "Salvador",
+    "state": "BA",
+    "lat": -12.9677,
+    "lon": -38.5142,
+    "aliases": [
+      "Porto de Salvador",
+      "Tecon Salvador",
+      "BRSSA"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Aratu-Candeias",
+    "city": "Candeias",
+    "state": "BA",
+    "lat": -12.778,
+    "lon": -38.546,
+    "aliases": [
+      "Porto de Aratu",
+      "Aratu",
+      "Candeias",
+      "BRATU"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Suape",
+    "city": "Ipojuca",
+    "state": "PE",
+    "lat": -8.3866,
+    "lon": -34.9458,
+    "aliases": [
+      "Porto de Suape",
+      "BRSUA",
+      "Complexo de Suape"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Recife",
+    "city": "Recife",
+    "state": "PE",
+    "lat": -8.061,
+    "lon": -34.871,
+    "aliases": [
+      "Porto do Recife",
+      "BRREC"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Cabedelo",
+    "city": "Cabedelo",
+    "state": "PB",
+    "lat": -6.966,
+    "lon": -34.836,
+    "aliases": [
+      "Porto de Cabedelo",
+      "BRCAB"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Natal",
+    "city": "Natal",
+    "state": "RN",
+    "lat": -5.771,
+    "lon": -35.2,
+    "aliases": [
+      "Porto de Natal",
+      "BRNAT"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Maceió",
+    "city": "Maceió",
+    "state": "AL",
+    "lat": -9.677,
+    "lon": -35.726,
+    "aliases": [
+      "Porto de Maceió",
+      "BRMAC"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Pecém",
+    "city": "São Gonçalo do Amarante",
+    "state": "CE",
+    "lat": -3.5321,
+    "lon": -38.8031,
+    "aliases": [
+      "Porto do Pecém",
+      "BRPEC"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Fortaleza (Mucuripe)",
+    "city": "Fortaleza",
+    "state": "CE",
+    "lat": -3.711,
+    "lon": -38.475,
+    "aliases": [
+      "Porto de Fortaleza",
+      "Mucuripe",
+      "BRFOR"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Vila do Conde",
+    "city": "Barcarena",
+    "state": "PA",
+    "lat": -1.5319,
+    "lon": -48.7552,
+    "aliases": [
+      "Porto de Vila do Conde",
+      "BRVLC",
+      "Barcarena"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Belém",
+    "city": "Belém",
+    "state": "PA",
+    "lat": -1.4429,
+    "lon": -48.505,
+    "aliases": [
+      "Porto de Belém",
+      "BRELM"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Santarém",
+    "city": "Santarém",
+    "state": "PA",
+    "lat": -2.422,
+    "lon": -54.719,
+    "aliases": [
+      "Porto de Santarém",
+      "BRSTM"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Santana (AP)",
+    "city": "Santana",
+    "state": "AP",
+    "lat": 0.054,
+    "lon": -51.174,
+    "aliases": [
+      "Porto de Santana",
+      "Macapá",
+      "BRSNT"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Manaus",
+    "city": "Manaus",
+    "state": "AM",
+    "lat": -3.1567,
+    "lon": -60.0079,
+    "aliases": [
+      "Porto de Manaus",
+      "BRMAO"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Itaqui",
+    "city": "São Luís",
+    "state": "MA",
+    "lat": -2.5828,
+    "lon": -44.3686,
+    "aliases": [
+      "Porto do Itaqui",
+      "BRIQI"
+    ],
+    "gates": []
+  },
+  {
+    "name": "São Sebastião",
+    "city": "São Sebastião",
+    "state": "SP",
+    "lat": -23.801,
+    "lon": -45.401,
+    "aliases": [
+      "Porto de São Sebastião",
+      "BRSSO"
+    ],
+    "gates": []
+  },
+  {
+    "name": "Angra dos Reis",
+    "city": "Angra dos Reis",
+    "state": "RJ",
+    "lat": -23.0066,
+    "lon": -44.3197,
+    "aliases": [
+      "Porto de Angra dos Reis",
+      "BRADR"
+    ],
+    "gates": []
+  }
+]

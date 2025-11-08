@@ -1,48 +1,101 @@
 # modules/cabotage/ports_index.py
-# Load container terminals (CTs) and find nearest by truck time.
+# Gate-aware Brazilian ports loader (JSON) + backward-compat 'load_cts'
 
 from __future__ import annotations
-import os, json, math
-from typing import Any, Dict, List
-from modules.road.ors_client import ORSClient
+from typing import Any as _Any, Dict as _Dict, List as _List, Optional as _Opt, Tuple as _T
+import json, os
 
-# Look for data/ports_index.json; if missing, use a tiny built-in fallback.
-_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-_FALLBACK_CTS = [
-    { "code": "BRSSZ", "name": "Santos (SP)", "state": "SP", "lat": -23.9527, "lon": -46.3273, "thc_brl": 1300.0 },
-    { "code": "BRRJO", "name": "Rio de Janeiro (RJ)", "state": "RJ", "lat": -22.9008, "lon": -43.1670, "thc_brl": 1300.0 },
-    { "code": "BRPNG", "name": "Paranaguá (PR)", "state": "PR", "lat": -25.5149, "lon": -48.5091, "thc_brl": 1200.0 },
-]
+_REQUIRED_KEYS = ("name", "city", "state", "lat", "lon")
+_GATE_KEYS     = ("label", "lat", "lon")
 
-def load_cts() -> List[Dict[str, Any]]:
-    path = os.path.abspath(os.path.join(_DATA_DIR, "ports_index.json"))
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return _FALLBACK_CTS
+def _as_float(x, default=None):
+    try:
+        return float(x)
+    except Exception:
+        return default
 
-def _hav(lat1, lon1, lat2, lon2) -> float:
-    R = 6371_000.0
-    import math as m
-    phi1, phi2 = m.radians(lat1), m.radians(lat2)
-    dphi = phi2 - phi1; dl = m.radians(lon2 - lon1)
-    a = m.sin(dphi/2)**2 + m.cos(phi1)*m.cos(phi2)*m.sin(dl/2)**2
-    return 2*R*m.asin(m.sqrt(a))
+def _norm_gate(g: _Dict[str, _Any]) -> _Opt[_Dict[str, _Any]]:
+    if not isinstance(g, dict):
+        return None
+    label = (g.get("label") or "").strip() or "gate"
+    lat   = _as_float(g.get("lat"))
+    lon   = _as_float(g.get("lon"))
+    if lat is None or lon is None:
+        return None
+    return { "label": label, "lat": lat, "lon": lon }
 
-def nearest_ct_by_hgv_time(point: Any, *, ors: ORSClient, max_candidates: int = 8) -> Dict[str, Any]:
-    from modules.addressing.resolver import resolve_point
-    p = resolve_point(point, ors=ors)
-    cts = load_cts()
-    cands = sorted(cts, key=lambda ct: _hav(p["lat"], p["lon"], ct["lat"], ct["lon"]))[:max_candidates]
-
-    origins      = [p]
-    destinations = [ { "lat": ct["lat"], "lon": ct["lon"], "label": ct["name"] } for ct in cands ]
-    mx = ors.matrix_road(origins, destinations, profile="driving-hgv")
-    best_j = min(range(len(cands)), key=lambda j: mx["durations_s"][0][j])
-    best_ct = cands[best_j]
-    return {
-          "ct": best_ct
-        , "duration_s": mx["durations_s"][0][best_j]
-        , "distance_m": mx["distances_m"][0][best_j]
-        , "origin": p
+def _norm_record(r: _Dict[str, _Any]) -> _Opt[_Dict[str, _Any]]:
+    if not isinstance(r, dict):
+        return None
+    for k in _REQUIRED_KEYS:
+        if k not in r:
+            return None
+    out = {
+          "name":  str(r["name"]).strip()
+        , "city":  str(r["city"]).strip()
+        , "state": str(r["state"]).strip()
+        , "lat":   _as_float(r["lat"])
+        , "lon":   _as_float(r["lon"])
+        , "aliases": []
+        , "gates": []
     }
+    if out["lat"] is None or out["lon"] is None:
+        return None
+
+    # aliases
+    aliases = r.get("aliases") or []
+    if isinstance(aliases, (list, tuple)):
+        seen = set()
+        for a in aliases:
+            s = str(a).strip()
+            if s and s.lower() not in seen:
+                out["aliases"].append(s)
+                seen.add(s.lower())
+
+    # gates
+    gates = r.get("gates") or []
+    if isinstance(gates, (list, tuple)):
+        gnorm = []
+        for g in gates:
+            g1 = _norm_gate(g)
+            if g1:
+                gnorm.append(g1)
+        out["gates"] = gnorm
+
+    return out
+
+def load_ports(
+      path: _Opt[str] = None
+    , *
+    , fallback: _Opt[_List[_Dict[str, _Any]]] = None
+) -> _List[_Dict[str, _Any]]:
+    """
+    Load gate-aware ports from JSON (preferred). If 'path' is None, uses 'fallback' if provided,
+    otherwise raises if nothing is available.
+    """
+    if path:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"ports JSON not found: {path}")
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    else:
+        if fallback is None:
+            raise ValueError("No JSON path provided and no fallback data.")
+        raw = fallback
+
+    out: _List[_Dict[str, _Any]] = []
+    for r in raw or []:
+        rr = _norm_record(r)
+        if rr:
+            out.append(rr)
+    if not out:
+        raise ValueError("No valid port records after normalization.")
+    return out
+
+# Backward compatibility: some code/notebooks call this name
+def load_cts(
+      path: _Opt[str] = None
+    , *
+    , fallback: _Opt[_List[_Dict[str, _Any]]] = None
+):
+    return load_ports(path, fallback=fallback)
