@@ -1,155 +1,78 @@
 # -*- coding: utf-8 -*-
-# Road cargo fuel, emissions, and cost estimators
-# Method: fuel-based (preferred by IPCC/ISO 14083/GLEC)
-# Notes:
-#   • CO₂ from diesel combustion dominates; CH₄/N₂O tailpipe are small but supported.
-#   • Defaults below are conservative placeholders — calibrate km/L by truck class + route.
-#   • Diesel CO₂ factor derived from IPCC defaults (see project docs/citations).
+"""
+Road emissions/cost estimator — wrapper around axle-based fuel model.
+Keeps the original API used by modules/app/evaluator.py:
+    estimate_road_trip(distance_km, cargo_t, diesel_price_brl_per_l, spec, empty_backhaul_share)
+and exposes TRUCK_SPECS.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any, Dict, Union
 
-# ─────────────────────────────── constants (override via args if needed)
-# CO₂ per liter diesel (tailpipe only). Derivable from IPCC 2006:
-#   74,100 kg CO₂/TJ (gas/diesel oil) × NCV × density ⇒ ≈ 2.68 kg CO₂/L.
-EF_DIESEL_CO2_KG_PER_L: float = 2.68
+from .truck_specs import TRUCK_SPECS
+from .fuel_model import estimate_leg_liters
 
-# IPCC default tailpipe factors for heavy-duty diesel (order-of-magnitude; per km)
-# (Values are small vs CO₂; include for completeness. Disable via include_ch4n2o=False.)
-EF_CH4_MG_PER_KM_HDV: float = 30.0   # mg CH₄ / km
-EF_N2O_MG_PER_KM_HDV: float = 30.0   # mg N₂O / km
+# Basic factors (planning values)
+DIESEL_DENSITY_KG_PER_L: float = 0.84
+EF_DIESEL_CO2_KG_PER_L : float = 2.68   # tailpipe CO2 per liter (planning)
 
-# 100-yr Global Warming Potentials (IPCC AR5 commonly used by inventories)
-GWP_CH4: float = 28.0
-GWP_N2O: float = 265.0
+def _resolve_spec(spec: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
+    if isinstance(spec, str):
+        if spec not in TRUCK_SPECS:
+            raise KeyError(f"Unknown truck preset '{spec}'.")
+        return dict(TRUCK_SPECS[spec])    # copy
+    if isinstance(spec, dict):
+        return dict(spec)
+    raise TypeError("spec must be a preset name (str) or a spec dict.")
 
-# ─────────────────────────────── truck spec
-@dataclass(frozen=True)
-class TruckSpec:
-    name: str
-    payload_t: float             # typical payload capacity (t)
-    km_per_l_loaded: float       # fuel economy when loaded (km/L)
-    km_per_l_empty: float        # fuel economy when empty (km/L)
-
-# Example presets — tune to your fleet/telematics later
-TRUCK_SPECS: Dict[str, TruckSpec] = {
-      "rigid_14t": TruckSpec(
-            name="Rigid 14t"
-        ,   payload_t=9.0
-        ,   km_per_l_loaded=3.5
-        ,   km_per_l_empty=4.5
-    )
-    , "semi_27t": TruckSpec(
-            name="Tractor–semitrailer 27t"
-        ,   payload_t=27.0
-        ,   km_per_l_loaded=2.7
-        ,   km_per_l_empty=3.4
-    )
-    , "bitrem_36t": TruckSpec(
-            name="Bi-train 36t"
-        ,   payload_t=36.0
-        ,   km_per_l_loaded=2.4
-        ,   km_per_l_empty=3.0
-    )
-}
-
-# ─────────────────────────────── core calc
 def estimate_road_trip(
       *
     , distance_km: float
     , cargo_t: float
     , diesel_price_brl_per_l: float
-    , spec: TruckSpec
-    , empty_backhaul_share: float = 0.20          # e.g., 20% of distance is empty reposition
-    , ef_co2_kg_per_l: float = EF_DIESEL_CO2_KG_PER_L
-    , ef_ch4_mg_per_km: float = EF_CH4_MG_PER_KM_HDV
-    , ef_n2o_mg_per_km: float = EF_N2O_MG_PER_KM_HDV
-    , gwp_ch4: float = GWP_CH4
-    , gwp_n2o: float = GWP_N2O
-    , include_ch4n2o: bool = True
+    , spec: Union[str, Dict[str, Any]]
+    , empty_backhaul_share: float = 0.0
 ) -> Dict[str, Any]:
     """
-    Returns totals and per-kg metrics for a single lane movement.
-
-    distance_km            – one-way distance carrying cargo
-    cargo_t                – delivered cargo mass (tonnes) on that movement
-    diesel_price_brl_per_l – average diesel price used in this estimate
-    spec                   – TruckSpec with km/L (loaded & empty)
-    empty_backhaul_share   – fraction of distance run empty (0..1)
-
-    All CH₄/N₂O are tailpipe only; CO₂ is tailpipe only (no well-to-tank by default).
+    Returns a dict with 'fuel', 'emissions', 'cost'.
+    Compatible with your existing evaluator.
     """
-    # Defensive guards
-    if distance_km <= 0.0:
-        raise ValueError("distance_km must be > 0")
-    if cargo_t <= 0.0:
-        raise ValueError("cargo_t must be > 0")
-    if spec.km_per_l_loaded <= 0.0 or spec.km_per_l_empty <= 0.0:
-        raise ValueError("km/L must be > 0")
+    _spec = _resolve_spec(spec)
 
-    # Fuel use (L)
-    liters_loaded = distance_km / spec.km_per_l_loaded
-    liters_empty  = (distance_km * float(empty_backhaul_share)) / spec.km_per_l_empty
-    liters_total  = liters_loaded + liters_empty
+    ( liters_total
+    , liters_loaded
+    , liters_empty
+    , trips
+    , kmL_loaded
+    , kmL_empty
+    ) = estimate_leg_liters(
+          distance_km=distance_km
+        , cargo_t=cargo_t
+        , spec=_spec
+        , empty_backhaul_share=float(empty_backhaul_share)
+    )
 
-    # CO₂ (kg) — fuel-based
-    co2_kg = liters_total * float(ef_co2_kg_per_l)
-
-    # CH₄ + N₂O (kg CO₂e) — distance-based tailpipe add-ons
-    # Apply to total driven km (loaded + empty)
-    total_km_run = distance_km * (1.0 + float(empty_backhaul_share))
-    ch4_co2e_kg = 0.0
-    n2o_co2e_kg = 0.0
-    if include_ch4n2o:
-        ch4_co2e_kg = (ef_ch4_mg_per_km / 1e6) * total_km_run * gwp_ch4
-        n2o_co2e_kg = (ef_n2o_mg_per_km / 1e6) * total_km_run * gwp_n2o
-
-    co2e_total_kg = co2_kg + ch4_co2e_kg + n2o_co2e_kg
-
-    # Cost (BRL)
-    fuel_cost_brl = liters_total * float(diesel_price_brl_per_l)
-
-    # Normalisations
-    cargo_kg = cargo_t * 1000.0
-    per_kg = {
-          "fuel_l_per_kg":       liters_total / cargo_kg
-        , "co2e_kg_per_kg":      co2e_total_kg / cargo_kg
-        , "co2_kg_per_kg":       co2_kg / cargo_kg
-        , "cost_brl_per_kg":     fuel_cost_brl / cargo_kg
-        , "gco2e_per_tkm": (co2e_total_kg / (cargo_t * distance_km)) * 1e3  # g CO₂e / t·km
-        , "kgco2e_per_tkm": (co2e_total_kg / (cargo_t * distance_km))
-    }
+    fuel_cost_brl = float(liters_total) * float(diesel_price_brl_per_l)
+    co2_kg        = float(liters_total) * EF_DIESEL_CO2_KG_PER_L
 
     return {
-          "inputs": {
-                "distance_km": distance_km
-            ,   "cargo_t": cargo_t
-            ,   "diesel_price_brl_per_l": diesel_price_brl_per_l
-            ,   "spec": spec.__dict__
-            ,   "empty_backhaul_share": float(empty_backhaul_share)
-            ,   "factors": {
-                      "ef_co2_kg_per_l": ef_co2_kg_per_l
-                    , "ef_ch4_mg_per_km": ef_ch4_mg_per_km
-                    , "ef_n2o_mg_per_km": ef_n2o_mg_per_km
-                    , "gwp_ch4": gwp_ch4
-                    , "gwp_n2o": gwp_n2o
-                }
-        }
-        , "fuel": {
-                "liters_loaded": liters_loaded
-            ,   "liters_empty": liters_empty
-            ,   "liters_total": liters_total
+          "fuel": {
+              "liters_total": liters_total
+            , "liters_loaded": liters_loaded
+            , "liters_empty": liters_empty
+            , "trips_total": trips
+            , "kmL_loaded": kmL_loaded
+            , "kmL_empty": kmL_empty
         }
         , "emissions": {
-                "co2_kg": co2_kg
-            ,   "ch4_co2e_kg": ch4_co2e_kg
-            ,   "n2o_co2e_kg": n2o_co2e_kg
-            ,   "co2e_total_kg": co2e_total_kg
+              "co2_kg": co2_kg
+            , "co2e_total_kg": co2_kg   # until you add CH4/N2O
         }
         , "cost": {
-                "fuel_cost_brl": fuel_cost_brl
+              "fuel_cost_brl": fuel_cost_brl
         }
-        , "per_kg": per_kg
+        , "spec_used": _spec
     }
+
+__all__ = ["TRUCK_SPECS", "estimate_road_trip", "DIESEL_DENSITY_KG_PER_L"]
