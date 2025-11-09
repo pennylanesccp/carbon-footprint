@@ -4,20 +4,25 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-# TOP OF FILE — replace the wrong import block
-# from modules.road.ors_common import ORSClient, ORSConfig
+# Correct import split (Config and Client come from different modules)
 from modules.road.ors_common import ORSConfig
 from modules.road.ors_client  import ORSClient
-from modules.addressing.resolver import resolve_point
-from modules.cabotage.ports_index import load_ports
-from modules.cabotage.ports_nearest import find_nearest_port
-from modules.cabotage.sea_matrix import SeaMatrix
-from modules.road.emissions import estimate_road_trip, TRUCK_SPECS
-from modules.cabotage import accounting as acc
+
+from modules.addressing.resolver      import resolve_point
+from modules.cabotage.ports_index     import load_ports
+from modules.cabotage.ports_nearest   import find_nearest_port
+from modules.cabotage.sea_matrix      import SeaMatrix
+from modules.road.emissions           import estimate_road_trip, TRUCK_SPECS
+from modules.cabotage                 import accounting as acc
+
+# NEW: diesel price loader (UF -> price)
+from modules.road.fuel_model          import load_diesel_prices
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Logging
@@ -33,7 +38,7 @@ _log = logging.getLogger("cabosupernet.app.evaluator")
 DIESEL_DENSITY_KG_PER_L: float = 0.84
 
 DEFAULT_SEA_K_KG_PER_TKM: float = 0.0027
-DEFAULT_K_PORT_KG_PER_T: float = 0.48
+DEFAULT_K_PORT_KG_PER_T: float  = 0.48
 
 DEFAULT_MGO_PRICE_BRL_PER_T: float = 3200.0
 
@@ -61,6 +66,8 @@ class DataPaths:
     ports_json: Path = Path("modules/cabotage/_data/ports_br.json")
     sea_matrix_json: Path = Path("modules/cabotage/_data/sea_matrix.json")
     hotel_json: Path = Path("modules/cabotage/_data/hotel.json")
+    # NEW: default location for the diesel prices CSV (UF, price)
+    diesel_prices_csv: Path = Path("modules/road/_data/latest_diesel_prices.csv")
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -183,6 +190,107 @@ def _port_and_hotel_fuel(
 
 
 # ────────────────────────────────────────────────────────────────────────────────
+# UF extraction + CSV average helpers
+# ────────────────────────────────────────────────────────────────────────────────
+
+_UF_SET = {
+    "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
+    "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"
+}
+
+_STATE_NAME_TO_UF = {
+      "acre":"AC" , "alagoas":"AL", "amapá":"AP", "amapa":"AP", "amazonas":"AM"
+    , "bahia":"BA", "ceará":"CE", "ceara":"CE", "distrito federal":"DF"
+    , "espírito santo":"ES", "espirito santo":"ES", "goiás":"GO", "goias":"GO"
+    , "maranhão":"MA", "maranhao":"MA", "mato grosso":"MT"
+    , "mato grosso do sul":"MS" , "minas gerais":"MG"
+    , "pará":"PA", "para":"PA", "paraíba":"PB", "paraiba":"PB"
+    , "paraná":"PR", "parana":"PR", "pernambuco":"PE"
+    , "piauí":"PI", "piaui":"PI", "rio de janeiro":"RJ"
+    , "rio grande do norte":"RN", "rio grande do sul":"RS"
+    , "rondônia":"RO", "rondonia":"RO", "roraima":"RR"
+    , "santa catarina":"SC", "são paulo":"SP", "sao paulo":"SP"
+    , "sergipe":"SE", "tocantins":"TO"
+}
+
+def _extract_uf(point: Dict[str, Any], fallback_text: str = "") -> Optional[str]:
+    """
+    Best-effort UF extraction from a resolved point.
+    Looks at direct fields, two-letter tokens, and state names.
+    """
+    # direct fields that may carry a UF/UF-like code
+    for k in ("uf","state_code","state","region_code","admin1_code"):
+        v = point.get(k)
+        if isinstance(v, str):
+            v2 = v.strip().upper()[:2]
+            if v2 in _UF_SET:
+                return v2
+
+    # combine label/city/state/etc. to search tokens
+    text = " ".join([
+          str(point.get("label", ""))
+        , str(point.get("city", ""))
+        , str(point.get("state", ""))
+        , str(fallback_text or "")
+    ])
+
+    # two-letter tokens
+    for tok in re.findall(r"\b[A-Za-z]{2}\b", text.upper()):
+        if tok in _UF_SET:
+            return tok
+
+    # full state names
+    low = text.lower()
+    for name, uf in _STATE_NAME_TO_UF.items():
+        if name in low:
+            return uf
+
+    return None
+
+
+def _avg_diesel_price_for_endpoints(
+      *
+    , origin_point: Dict[str, Any]
+    , destiny_point: Dict[str, Any]
+    , csv_path: Path
+    , fallback_price: float = 6.0
+) -> Tuple[float, Dict[str, Any]]:
+    """
+    Average diesel price for (UF_origin, UF_destiny) using CSV.
+    If only one UF is found, use that one. If none found or UF not in CSV, fallback.
+    Returns (price_brl_per_l, meta_dict).
+    """
+    price_idx = load_diesel_prices(str(csv_path) if csv_path else None)
+
+    uf_o = _extract_uf(origin_point)
+    uf_d = _extract_uf(destiny_point)
+
+    p_o = price_idx.get(uf_o) if uf_o else None
+    p_d = price_idx.get(uf_d) if uf_d else None
+
+    candidates = [p for p in (p_o, p_d) if isinstance(p, (int, float))]
+    if candidates:
+        avg = sum(candidates) / len(candidates)
+        return float(avg), dict(
+              uf_origin=uf_o
+            , uf_destiny=uf_d
+            , price_origin=p_o
+            , price_destiny=p_d
+            , source_csv=str(csv_path)
+            , fallback_used=False
+        )
+
+    return float(fallback_price), dict(
+          uf_origin=uf_o
+        , uf_destiny=uf_d
+        , price_origin=p_o
+        , price_destiny=p_d
+        , source_csv=str(csv_path)
+        , fallback_used=True
+    )
+
+
+# ────────────────────────────────────────────────────────────────────────────────
 # Public API
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -194,13 +302,14 @@ def _evaluate(
     , destiny: Any
     , cargo_t: float
     , truck_key: str = "semi_27t"
-    , diesel_price_brl_per_l: float = 6.0
+    , diesel_price_brl_per_l: float | None = None   # ← None ⇒ use CSV average
     , empty_backhaul_share: float = 0.0
     , K_sea_kg_per_tkm: float = DEFAULT_SEA_K_KG_PER_TKM
     , mgo_price_brl_per_t: float = DEFAULT_MGO_PRICE_BRL_PER_T
     , ors_profile: str = "driving-hgv"
     , fallback_to_car: bool = True
     , include_geo: bool = False
+    , diesel_prices_csv: Optional[Path] = None       # ← NEW, added at the end to avoid breaking positional calls
 ) -> Dict[str, Any]:
     """
     Compute ROAD vs CABOTAGE for a single destiny and return a structured dict.
@@ -215,13 +324,33 @@ def _evaluate(
     else:
         ors = deps.ors
 
-    ports = deps.ports if deps.ports is not None else load_ports(path=str(paths.ports_json))
-    sea_mx = deps.sea_mx if deps.sea_mx is not None else SeaMatrix.from_json_path(paths.sea_matrix_json)
+    ports        = deps.ports  if deps.ports  is not None else load_ports(path=str(paths.ports_json))
+    sea_mx       = deps.sea_mx if deps.sea_mx is not None else SeaMatrix.from_json_path(paths.sea_matrix_json)
     hotel_json_path = paths.hotel_json
 
     # Resolve endpoints
     o = resolve_point(origin,  ors=ors)
     d = resolve_point(destiny, ors=ors)
+
+    # Determine diesel price
+    if diesel_price_brl_per_l is None:
+        csv_path = Path(diesel_prices_csv) if diesel_prices_csv else paths.diesel_prices_csv
+        diesel_price_brl_per_l, diesel_meta = _avg_diesel_price_for_endpoints(
+              origin_point=o
+            , destiny_point=d
+            , csv_path=csv_path
+            , fallback_price=6.0
+        )
+    else:
+        diesel_meta = dict(
+              uf_origin=_extract_uf(o)
+            , uf_destiny=_extract_uf(d)
+            , price_origin=None
+            , price_destiny=None
+            , source_csv=None
+            , fallback_used=False
+            , override_cli=True
+        )
 
     # ROAD (direct)
     road_km, used_prof_road = _route_km_with_fallback(
@@ -319,6 +448,7 @@ def _evaluate(
             , cargo_t=float(cargo_t)
             , truck_key=str(truck_key)
             , diesel_brl_l=float(diesel_price_brl_per_l)
+            , diesel_source=diesel_meta                # ← transparency on CSV/UF/fallback
             , empty_backhaul_share=float(empty_backhaul_share)
             , ors_profile=str(ors_profile)
             , fallback_to_car=bool(fallback_to_car)

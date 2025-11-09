@@ -16,7 +16,6 @@ from typing import Dict, Any, Tuple
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Baseline km/L by axle count (containerized cargo) — planning values
-# Tune if you calibrate with telemetry later.
 # ────────────────────────────────────────────────────────────────────────────────
 _ANTT_KM_PER_L_BASELINE: Dict[int, float] = {
       2: 4.0
@@ -25,26 +24,47 @@ _ANTT_KM_PER_L_BASELINE: Dict[int, float] = {
     , 5: 2.3
     , 6: 2.0
     , 7: 2.0
-    # 8 not typical for container combos; 9+ grouped below
 }
 
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DIESEL_PRICES_PATH = os.path.join(_CURRENT_DIR, "_data", "latest_diesel_prices.csv")
 
-def load_diesel_prices(path: str = DEFAULT_DIESEL_PRICES_PATH) -> dict[str, float]:
+def _coalesce_path(explicit_path: str | None) -> str:
     """
-    Loads pre-processed diesel prices from the CSV.
-    Returns a dict, e.g., {"SP": 6.20, "RJ": 6.35, ...}
+    Resolve CSV path in this priority:
+      1) explicit_path argument (if provided)
+      2) env var DIESEL_PRICES_CSV or CARBON_DIESEL_PRICES
+      3) DEFAULT_DIESEL_PRICES_PATH (repo path)
     """
+    if explicit_path and os.path.exists(explicit_path):
+        return explicit_path
+    for env_key in ("DIESEL_PRICES_CSV", "CARBON_DIESEL_PRICES"):
+        p = os.getenv(env_key)
+        if p and os.path.exists(p):
+            return p
+    return DEFAULT_DIESEL_PRICES_PATH
+
+def load_diesel_prices(path: str | None = None) -> dict[str, float]:
+    """
+    Load pre-processed diesel prices from CSV with columns:
+        UF, price
+    Returns a dict, e.g. {"SP": 6.20, "RJ": 6.35, ...}.
+    """
+    csv_path = _coalesce_path(path)
     try:
-        df = pd.read_csv(path)
-        # Convert the two-column DataFrame to a dictionary
-        return pd.Series(df.price.values, index=df.UF).to_dict()
+        df = pd.read_csv(csv_path)
+        # normalize column names
+        cols = {c.lower().strip(): c for c in df.columns}
+        uf_col    = cols.get("uf") or cols.get("state") or "UF"
+        price_col = cols.get("price") or cols.get("diesel_price_brl_l") or "price"
+
+        series = pd.Series(df[price_col].astype(float).values, index=df[uf_col].astype(str).str.upper().str.strip())
+        return series.to_dict()
     except FileNotFoundError:
-        print(f"WARNING: Diesel price file not found at '{path}'. Using default price.")
+        print(f"WARNING: Diesel price file not found at '{csv_path}'. Falling back to empty index.")
         return {}
     except Exception as e:
-        print(f"ERROR: Could not load diesel prices: {e}")
+        print(f"ERROR: Could not load diesel prices from '{csv_path}': {e}")
         return {}
 
 def get_km_l_baseline(axles: int) -> float:
@@ -68,15 +88,14 @@ def adjust_km_per_liter(
         return km_l_baseline
     delta = (cargo_weight_t - ref_weight_t) / ref_weight_t
     km_l = km_l_baseline * (1.0 - elasticity * delta)
-    # keep km/L within reasonable physical bounds
-    return max(0.6, km_l)
+    return max(0.6, km_l)  # keep within reasonable bounds
 
 def estimate_leg_liters(
       *
     , distance_km: float
     , cargo_t: float
     , spec: Dict[str, Any]
-    , empty_backhaul_share: float = 0.0     # 0..1 of trips return empty
+    , empty_backhaul_share: float = 0.0
     , elasticity: float = 1.0
 ) -> Tuple[float, float, float, int, float, float]:
     """
@@ -96,7 +115,7 @@ def estimate_leg_liters(
     kmL_base   = get_km_l_baseline(axles=axles)
     kmL_loaded = adjust_km_per_liter(
           km_l_baseline=kmL_base
-        , cargo_weight_t=payload_t      # assume full load for planning
+        , cargo_weight_t=payload_t
         , ref_weight_t=ref_weight_t
         , elasticity=elasticity
     )
