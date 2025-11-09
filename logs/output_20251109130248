@@ -1,0 +1,5 @@
+[2025-11-09 13:02:48][INFO][modules.functions.logging] Logging configured
+[2025-11-09 13:02:48][DEBUG][modules.addressing.resolver] debug line
+[2025-11-09 13:02:48][INFO][modules.addressing.resolver] hello world
+[2025-11-09 13:02:48][WARNING][modules.addressing.resolver] heads up
+[2025-11-09 13:02:48][ERROR][modules.addressing.resolver] boom

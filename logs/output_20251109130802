@@ -1,0 +1,15 @@
+[2025-11-09 13:08:02][INFO][modules.functions.logging] Logging configured
+[2025-11-09 13:08:02][INFO][modules.addressing.resolver] GEOCODE text='avenida luciano gualberto, 380' country=BR size=1
+[2025-11-09 13:08:02][INFO][cabosupernet.road.ors_client] GEOCODE text="avenida luciano gualberto, 380" country=BR size=1
+[2025-11-09 13:08:05][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.555673, 'lon': -46.730133, 'label': 'Avenida Professor Luciano Gualberto Travessa 3 380, São Paulo, Brazil'}
+[2025-11-09 13:08:05][INFO][cabosupernet.road.ors_client] GEOCODE structured params={"country": "BR", "postalcode": "01310200", "size": 1}
+[2025-11-09 13:08:05][INFO][cabosupernet.road.ors_client] GEOCODE structured params={"country": "BR", "postalcode": "01310-200", "size": 1}
+[2025-11-09 13:08:05][INFO][cabosupernet.road.ors_client] GEOCODE text="01310-200" country=BR size=1
+[2025-11-09 13:08:06][INFO][modules.addressing.resolver] ViaCEP GET https://viacep.com.br/ws/01310200/json/
+[2025-11-09 13:08:07][INFO][modules.addressing.resolver] RESOLVE (CEP ViaCEP->text) query='Avenida Paulista, Bela Vista, São Paulo, SP'
+[2025-11-09 13:08:07][INFO][cabosupernet.road.ors_client] GEOCODE text="Avenida Paulista, Bela Vista, São Paulo, SP" country=BR size=1
+[2025-11-09 13:08:07][INFO][modules.addressing.resolver] RESOLVE (CEP via ViaCEP) -> {'lat': -23.563498, 'lon': -46.653985, 'label': 'Ciclovia da Avenida Paulista, São Paulo, Brazil'}
+[2025-11-09 13:08:07][INFO][modules.addressing.resolver] GEOCODE structured street=Av. Paulista housenumber=1000 locality=São Paulo region=SP postalcode=None country=BR size=1
+[2025-11-09 13:08:07][INFO][cabosupernet.road.ors_client] GEOCODE structured params={"address": "1000 Av. Paulista", "country": "BR", "locality": "São Paulo", "region": "SP", "size": 1}
+[2025-11-09 13:08:08][INFO][modules.addressing.resolver] RESOLVE (structured dict) -> {'lat': -23.564927, 'lon': -46.651957, 'label': 'Avenida Paulista 1000, São Paulo, Brazil'}
+[2025-11-09 13:08:08][INFO][modules.addressing.resolver] RESOLVE (lat,lon string) -> {'lat': -23.555673, 'lon': -46.730133, 'label': '-23.555673,-46.730133'}

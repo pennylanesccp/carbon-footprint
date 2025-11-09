@@ -1,27 +1,52 @@
 # modules/addressing/resolver.py
-# Address/CEP/coords resolver, with ViaCEP fallback and robust structured fallbacks.
-# Works with an ORS-like client injected via `ors` (duck-typed: must expose
-#   geocode_text(text, size, country) and geocode_structured(...)).
+# -*- coding: utf-8 -*-
+"""
+Address/CEP/coords resolver with robust fallbacks.
+
+Duck-typed expectations for the injected `ors` client:
+- ors.cfg.default_country  (str, default "BR")
+- ors.cfg.allow_viacep     (bool, default True)
+- ors.geocode_text(text: str, *, size: int, country: str) -> Any
+- ors.geocode_structured(street=None, housenumber=None, locality=None,
+                         region=None, postalcode=None, country=None, size=1) -> Any
+Optional:
+- ors._viacep_lookup(cep_digits: str) -> dict | None
+
+Return shape for public API:
+    {"lat": float, "lon": float, "label": str}
+"""
 
 from __future__ import annotations
 
-import re as _re
-import json as _json
-from typing import Any as _Any, Dict as _Dict, List as _List, Optional as _Optional
-import logging as _logging
-import requests as _req
+import json
+import re
+from typing import Any, Dict, List, Optional, Tuple
 
-_log = _logging.getLogger("cabosupernet.addressing.resolver")
+import requests
+
+from modules.functions.logging import get_logger
+
+_log = get_logger(__name__)
+
+# Default layer allowlist used when filtering ORS/Pelias hits
+_ALLOWED_LAYERS_DEFAULT: List[str] = [
+    "address", "street", "venue", "postalcode", "postcode",
+    "neighbourhood", "locality", "localadmin", "borough", "municipality"
+]
 
 
 # ────────────────────────────────────────────────────────────────────────────────
-# Generic helpers
+# Small generic helpers
 # ────────────────────────────────────────────────────────────────────────────────
-def _is_latlon_str(text: str) -> _Optional[tuple[float, float]]:
+
+def _is_latlon_str(text: str) -> Optional[Tuple[float, float]]:
+    """
+    Accepts 'lat,lon' in decimal degrees. Returns (lat,lon) or None.
+    """
     if not isinstance(text, str):
         return None
     s = text.strip()
-    m = _re.match(r"^\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*$", s)
+    m = re.match(r"^\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*$", s)
     if not m:
         return None
     lat = float(m.group(1))
@@ -31,27 +56,33 @@ def _is_latlon_str(text: str) -> _Optional[tuple[float, float]]:
     return (lat, lon)
 
 
-def _is_cep(text: str) -> _Optional[str]:
+def _is_cep(text: str) -> Optional[str]:
+    """
+    Accepts '01310-200' or '01310200'. Returns digits-only '01310200' or None.
+    """
     if not isinstance(text, str):
         return None
-    m = _re.match(r"^\s*(\d{5})-?(\d{3})\s*$", text)
+    m = re.match(r"^\s*(\d{5})-?(\d{3})\s*$", text)
     if not m:
         return None
-    return f"{m.group(1)}{m.group(2)}"  # digits only
+    return f"{m.group(1)}{m.group(2)}"
 
 
 def _reject_centroid(lat: float, lon: float) -> bool:
-    # Avoid Brazil centroid (common when Pelias returns country-level feature)
+    """
+    Rejects Brazil centroid-like results (frequent with country-only matches).
+    """
     return abs(lat - (-10.0)) < 0.5 and abs(lon - (-55.0)) < 0.5
 
 
-def _normalize_hit_dict(f: _Dict) -> _Optional[_Dict]:
+def _normalize_hit_dict(f: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
-    Accepts multiple shapes and normalizes to:
-      {lat: float, lon: float, label: str|None, layer: str|None}
-    Supported shapes:
-      • {lat, lon, label?, layer?}
-      • Pelias Feature-like: {geometry:{coordinates:[lon,lat]}, properties:{label/name/layer}}
+    Normalize various geocoder shapes to:
+        {"lat": float, "lon": float, "label": str|None, "layer": str|None}
+
+    Supported input shapes:
+    - {"lat":..., "lon":..., "label"?, "layer"?}
+    - Pelias-like Feature: {"geometry":{"coordinates":[lon,lat]}, "properties":{"label"/"name"/"layer"}}
     """
     lat = lon = None
     layer = (f.get("layer") or "").lower()
@@ -81,21 +112,20 @@ def _normalize_hit_dict(f: _Dict) -> _Optional[_Dict]:
     return {"lat": lat, "lon": lon, "label": label, "layer": layer}
 
 
-def _filter_hits(hits: _Any, allowed_layers: _Optional[_List[str]] = None) -> _List[_Dict]:
+def _filter_hits(hits: Any, allowed_layers: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """
-    Defensive, tolerant filter:
-      • Accepts list/dict/string/None
-      • If dict has 'features', uses that list
-      • Skips items that aren't dicts (tries json.loads for strings)
-      • Rejects country-level/centroid results
-      • Enforces layer allowlist if provided
-    """
-    allowed = allowed_layers or [
-        "address", "street", "venue", "postalcode", "postcode",
-        "neighbourhood", "locality", "localadmin", "borough", "municipality"
-    ]
+    Defensive filter for geocoder hits:
+    - accepts list/dict/string/None
+    - if dict has 'features', use that list
+    - skips non-dict items (tries json.loads for stray strings)
+    - rejects country-level / Brazil centroid-only
+    - enforces layer allowlist if provided
 
-    # Normalize the container
+    Returns a list of normalized dicts: {"lat","lon","label","layer"}
+    """
+    allowed = allowed_layers or _ALLOWED_LAYERS_DEFAULT
+
+    # Normalize container
     if hits is None:
         arr = []
     elif isinstance(hits, list):
@@ -105,12 +135,14 @@ def _filter_hits(hits: _Any, allowed_layers: _Optional[_List[str]] = None) -> _L
     else:
         arr = [hits]
 
-    out: _List[_Dict] = []
+    out: List[Dict[str, Any]] = []
+    rejected_country = rejected_centroid = rejected_layer = 0
+
     for item in arr:
-        # Decode string payloads if any stray through
+        # decode stray string payloads
         if isinstance(item, str):
             try:
-                item = _json.loads(item)
+                item = json.loads(item)
             except Exception:
                 continue
         if not isinstance(item, dict):
@@ -118,58 +150,82 @@ def _filter_hits(hits: _Any, allowed_layers: _Optional[_List[str]] = None) -> _L
 
         norm = _normalize_hit_dict(item)
         if not norm:
-            # maybe wrapped as Pelias Feature in 'features' (already handled), else skip
             continue
 
-        lat = norm["lat"]; lon = norm["lon"]
+        lat = norm["lat"]
+        lon = norm["lon"]
         layer = (norm.get("layer") or "").lower()
         label = norm.get("label")
 
         if layer == "country":
+            rejected_country += 1
             continue
         if _reject_centroid(lat, lon):
+            rejected_centroid += 1
             continue
         if allowed and layer and layer not in allowed:
+            rejected_layer += 1
             continue
 
         out.append({"lat": lat, "lon": lon, "label": label, "layer": layer})
+
+    _log.debug(
+        "FILTER hits: in=%s kept=%s rej_country=%s rej_centroid=%s rej_layer=%s",
+        (len(arr) if isinstance(arr, list) else 1), len(out), rejected_country, rejected_centroid, rejected_layer
+    )
     return out
 
 
-def _viacep_lookup(cep: str) -> _Optional[_Dict[str, str]]:
+# ────────────────────────────────────────────────────────────────────────────────
+# ViaCEP helper (used as fallback when CEP→ORS fails)
+# ────────────────────────────────────────────────────────────────────────────────
+
+def _viacep_lookup(cep: str) -> Optional[Dict[str, str]]:
+    """
+    Raw ViaCEP lookup for a CEP in digit form ('01310200').
+    Safe to be replaced by 'ors._viacep_lookup' if provided.
+    """
     url = f"https://viacep.com.br/ws/{cep}/json/"
-    _log.info(f"ViaCEP GET {url}")
+    _log.info("ViaCEP GET %s", url)
     try:
-        r = _req.get(url, timeout=(4.0, 10.0), headers={"User-Agent": "Cabosupernet-Resolver/1.0"})
+        r = requests.get(
+            url,
+            timeout=(4.0, 10.0),
+            headers={"User-Agent": "Cabosupernet-Resolver/1.0"},
+        )
         if not r.ok:
-            _log.warning(f"ViaCEP status={r.status_code} text={(r.text or '')[:120]}")
+            _log.warning("ViaCEP status=%s text=%s", r.status_code, (r.text or "")[:200])
             return None
         data = r.json()
         if data.get("erro"):
+            _log.info("ViaCEP response indicates error for CEP=%s", cep)
             return None
-        return {
-              "logradouro": data.get("logradouro") or ""
-            , "bairro":     data.get("bairro") or ""
-            , "localidade": data.get("localidade") or ""
-            , "uf":         data.get("uf") or ""
+        out = {
+            "logradouro": data.get("logradouro") or "",
+            "bairro":     data.get("bairro") or "",
+            "localidade": data.get("localidade") or "",
+            "uf":         data.get("uf") or "",
         }
+        _log.debug("ViaCEP OK CEP=%s → %s", cep, out)
+        return out
     except Exception as e:
-        _log.warning(f"ViaCEP exception {type(e).__name__}: {e}")
+        _log.warning("ViaCEP exception %s: %s", type(e).__name__, e)
         return None
 
 
 # ────────────────────────────────────────────────────────────────────────────────
-# CEP resolution with robust fallbacks (ORS structured → ORS text → ViaCEP)
+# CEP resolution (ORS structured → ORS text → ViaCEP)
 # ────────────────────────────────────────────────────────────────────────────────
-def _resolve_cep(value: str, *, ors) -> dict:
+
+def _resolve_cep(value: str, *, ors) -> Dict[str, Any]:
     """
     Resolve a Brazilian CEP (with or without hyphen) into lat/lon and label.
 
     Strategy:
       1) ORS structured search with numeric CEP (01310200)
       2) ORS structured search with hyphen     (01310-200)
-      3) ORS text search with hyphen           (“01310-200”)
-      4) ViaCEP → build “logradouro, bairro, localidade, UF” → ORS text
+      3) ORS text search with hyphen           ("01310-200")
+      4) ViaCEP → build "logradouro, bairro, localidade, UF" → ORS text
     """
     assert isinstance(value, str)
     cep_digits = _is_cep(value)
@@ -178,13 +234,15 @@ def _resolve_cep(value: str, *, ors) -> dict:
     cep_hyph = f"{cep_digits[:5]}-{cep_digits[5:]}"
     country = getattr(ors.cfg, "default_country", "BR")
 
+    _log.debug("CEP resolve start: digits=%s hyph=%s country=%s", cep_digits, cep_hyph, country)
+
     # 1) ORS structured (numeric)
     raw = ors.geocode_structured(postalcode=cep_digits, country=country, size=1)
     hits = _filter_hits(raw, allowed_layers=["postalcode", "postcode", "address", "street", "locality", "neighbourhood"])
     if hits:
         h = hits[0]
         out = {"lat": h["lat"], "lon": h["lon"], "label": h.get("label") or cep_hyph}
-        _log.info(f"RESOLVE (CEP via ORS-structured) -> {out}")
+        _log.info("RESOLVE (CEP via ORS-structured) -> %s", out)
         return out
 
     # 2) ORS structured (hyphenated)
@@ -193,7 +251,7 @@ def _resolve_cep(value: str, *, ors) -> dict:
     if hits:
         h = hits[0]
         out = {"lat": h["lat"], "lon": h["lon"], "label": h.get("label") or cep_hyph}
-        _log.info(f"RESOLVE (CEP via ORS-structured hyphen) -> {out}")
+        _log.info("RESOLVE (CEP via ORS-structured hyphen) -> %s", out)
         return out
 
     # 3) ORS text (hyphen) — restrict to postal layers only
@@ -202,32 +260,35 @@ def _resolve_cep(value: str, *, ors) -> dict:
     if hits:
         h = hits[0]
         out = {"lat": h["lat"], "lon": h["lon"], "label": h.get("label") or cep_hyph}
-        _log.info(f"RESOLVE (CEP via ORS-text) -> {out}")
+        _log.info("RESOLVE (CEP via ORS-text) -> %s", out)
         return out
 
     # 4) ViaCEP fallback (if allowed)
     if getattr(ors.cfg, "allow_viacep", True):
-        via = getattr(ors, "_viacep_lookup", _viacep_lookup)(cep_digits)
+        viacep_func = getattr(ors, "_viacep_lookup", _viacep_lookup)
+        via = viacep_func(cep_digits)
         if via and (via.get("localidade") or via.get("uf") or via.get("logradouro")):
             query = ", ".join([x for x in [via.get("logradouro",""), via.get("bairro",""), via.get("localidade",""), via.get("uf","")] if x])
-            _log.info(f"RESOLVE (CEP ViaCEP->text) query='{query}'")
+            _log.info("RESOLVE (CEP ViaCEP->text) query='%s'", query)
             raw = ors.geocode_text(query, size=1, country=country)
             hits = _filter_hits(raw)
             if hits:
                 h = hits[0]
                 out = {"lat": h["lat"], "lon": h["lon"], "label": h.get("label") or query}
-                _log.info(f"RESOLVE (CEP via ViaCEP) -> {out}")
+                _log.info("RESOLVE (CEP via ViaCEP) -> %s", out)
                 return out
 
+    _log.error("CEP geocoding failed: value=%s country=%s", value, country)
     raise ValueError(f"CEP geocoding yielded no acceptable results for: {value}")
 
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Public API
 # ────────────────────────────────────────────────────────────────────────────────
-def resolve_point(value, *, ors) -> dict:
+
+def resolve_point(value: Any, *, ors) -> Dict[str, Any]:
     """
-    Normalize a user-provided 'point' into:
+    Normalize a user-provided 'point' into a dict:
         { "lat": float, "lon": float, "label": str }
 
     Accepts:
@@ -240,27 +301,29 @@ def resolve_point(value, *, ors) -> dict:
           - free text (address/city/POI)
 
     Strategy (high-level):
-      • (tuple/list) → pass-through
-      • dict(lat/lon) → pass-through
-      • dict(structured) → ORS structured → ORS text fallbacks
-      • CEP → _resolve_cep(...) (ORS + ViaCEP fallback)
-      • free text → ORS text
-      • filtering → _filter_hits rejects country-centroid/etc.
+      • (tuple/list)           → pass-through
+      • dict(lat/lon)          → pass-through
+      • dict(structured)       → ORS structured → progressive ORS text fallbacks
+      • CEP                    → _resolve_cep(...) (ORS + ViaCEP fallback)
+      • free text              → ORS text
+      • filtering              → _filter_hits rejects country-centroid/etc.
     """
     country = getattr(ors.cfg, "default_country", "BR")
+    _log.debug("resolve_point start: type=%s country=%s", type(value).__name__, country)
 
     # (lat,lon) tuple/list
     if isinstance(value, (list, tuple)) and len(value) == 2:
         lat, lon = float(value[0]), float(value[1])
         out = {"lat": lat, "lon": lon, "label": f"{lat:.6f},{lon:.6f}"}
-        _log.info(f"RESOLVE (tuple/list) -> {out}")
+        _log.info("RESOLVE (tuple/list) -> %s", out)
         return out
 
     # dict with explicit lat/lon
     if isinstance(value, dict) and {"lat", "lon"}.issubset(value.keys()):
-        lat = float(value["lat"]); lon = float(value["lon"])
+        lat = float(value["lat"])
+        lon = float(value["lon"])
         out = {"lat": lat, "lon": lon, "label": value.get("label", f"{lat:.6f},{lon:.6f}")}
-        _log.info(f"RESOLVE (dict lat/lon) -> {out}")
+        _log.info("RESOLVE (dict lat/lon) -> %s", out)
         return out
 
     # dict with structured fields
@@ -272,30 +335,35 @@ def resolve_point(value, *, ors) -> dict:
         postalcode  = value.get("postalcode")
         ctry        = value.get("country") or country
 
-        # Only CEP inside dict? treat as CEP
+        # CEP-only dict? Treat as CEP
         if postalcode and not any([street, housenumber, locality, region]):
+            _log.debug("Structured dict contains only CEP, delegating to CEP resolver")
             return _resolve_cep(str(postalcode), ors=ors)
 
         if any([street, housenumber, locality, region, postalcode]):
             # 1) ORS structured
+            _log.info(
+                "GEOCODE structured street=%s housenumber=%s locality=%s region=%s postalcode=%s country=%s size=1",
+                street, housenumber, locality, region, postalcode, ctry
+            )
             raw = ors.geocode_structured(
-                  street      = street
-                , housenumber = housenumber
-                , locality    = locality
-                , region      = region
-                , postalcode  = postalcode
-                , country     = ctry
-                , size        = 1
+                street=street,
+                housenumber=housenumber,
+                locality=locality,
+                region=region,
+                postalcode=postalcode,
+                country=ctry,
+                size=1,
             )
             hits = _filter_hits(raw)
             if hits:
                 h = hits[0]
                 out = {"lat": float(h["lat"]), "lon": float(h["lon"]), "label": h.get("label") or "structured"}
-                _log.info(f"RESOLVE (structured dict) -> {out}")
+                _log.info("RESOLVE (structured dict) -> %s", out)
                 return out
 
             # 2) Progressive ORS text fallbacks
-            variants: _List[str] = []
+            variants: List[str] = []
 
             if housenumber and street and locality and region:
                 variants.append(f"{housenumber} {street}, {locality}, {region}, {ctry}")
@@ -313,25 +381,26 @@ def resolve_point(value, *, ors) -> dict:
                 variants.append(f"{locality}, {ctry}")
 
             if postalcode:
-                _digits = _is_cep(str(postalcode))
-                if _digits:
-                    _hyph = f"{_digits[:5]}-{_digits[5:]}"
+                digits = _is_cep(str(postalcode))
+                if digits:
+                    hyph = f"{digits[:5]}-{digits[5:]}"
                     if housenumber and street and locality and region:
-                        variants.insert(0, f"{housenumber} {street}, {locality}, {region}, {_hyph}, {ctry}")
-                    variants.append(_hyph)
+                        variants.insert(0, f"{housenumber} {street}, {locality}, {region}, {hyph}, {ctry}")
+                    variants.append(hyph)
 
             tried = set()
             for q in [v for v in variants if v and v not in tried]:
                 tried.add(q)
-                _log.info(f"GEOCODE fallback text='{q}' country={ctry} size=1")
+                _log.info("GEOCODE fallback text='%s' country=%s size=1", q, ctry)
                 raw2 = ors.geocode_text(q, size=1, country=ctry)
                 hits2 = _filter_hits(raw2)
                 if hits2:
                     h = hits2[0]
                     out = {"lat": float(h["lat"]), "lon": float(h["lon"]), "label": h.get("label") or q}
-                    _log.info(f"RESOLVE (structured→text fallback) -> {out}")
+                    _log.info("RESOLVE (structured→text fallback) -> %s", out)
                     return out
 
+            _log.error("Structured geocoding failed for value=%s", value)
             raise ValueError(f"Structured geocoding yielded no acceptable results for: {value}")
 
     # string inputs
@@ -342,25 +411,43 @@ def resolve_point(value, *, ors) -> dict:
         if maybe:
             lat, lon = maybe
             out = {"lat": lat, "lon": lon, "label": f"{lat:.6f},{lon:.6f}"}
-            _log.info(f"RESOLVE (lat,lon string) -> {out}")
+            _log.info("RESOLVE (lat,lon string) -> %s", out)
             return out
 
         cep_digits = _is_cep(s)
         if cep_digits:
+            _log.debug("String looks like CEP, delegating to CEP resolver")
             return _resolve_cep(s, ors=ors)
 
+        _log.info("GEOCODE text='%s' country=%s size=1", s, country)
         raw = ors.geocode_text(s, size=1, country=country)
         hits = _filter_hits(raw)
         if hits:
             h = hits[0]
             out = {"lat": float(h["lat"]), "lon": float(h["lon"]), "label": h.get("label") or s}
-            _log.info(f"RESOLVE (text) -> {out}")
+            _log.info("RESOLVE (text) -> %s", out)
             return out
 
+        _log.error("Text geocoding failed for value='%s'", s)
         raise ValueError(f"Geocoding yielded no acceptable results for: {value}")
 
     # unsupported type
+    _log.error("Unsupported point type: %s", type(value).__name__)
     raise TypeError(
         "Unsupported point type. Use string (address/CEP/city/'lat,lon'), "
         "dicts (lat/lon or structured), or (lat,lon) tuple/list."
     )
+
+"""
+────────────────────────────────────────────────────────────────────────────────
+Quick logging smoke test (PowerShell)
+python -c `
+"from modules.functions.logging import init_logging; from modules.addressing.resolver import resolve_point; from modules.road.ors_common import ORSConfig; from modules.road.ors_client import ORSClient; import json; `
+init_logging(level='INFO', force=True, write_output=True); `
+ors = ORSClient(cfg=ORSConfig()); `
+print('== TEXT =='); print(json.dumps(resolve_point('avenida luciano gualberto, 380', ors=ors), ensure_ascii=False, indent=2)); print(); `
+print('== CEP =='); print(json.dumps(resolve_point('01310-200', ors=ors), ensure_ascii=False, indent=2)); print(); `
+print('== STRUCT =='); print(json.dumps(resolve_point({'street':'Av. Paulista','housenumber':'1000','locality':'São Paulo','region':'SP'}, ors=ors), ensure_ascii=False, indent=2)); print(); `
+print('== LATLON =='); print(json.dumps(resolve_point('-23.555673,-46.730133', ors=ors), ensure_ascii=False, indent=2))" 
+────────────────────────────────────────────────────────────────────────────────
+"""

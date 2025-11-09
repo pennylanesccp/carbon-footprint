@@ -131,3 +131,10 @@ def set_level(level: Union[int, str], *, logger: Optional[logging.Logger] = None
 def get_current_log_path() -> Optional[str]:
     """Return the active log file path (if write_output=True), else None."""
     return getattr(logging.getLogger(), "_carbon_fp_logfile", None)
+
+"""
+────────────────────────────────────────────────────────────────────────────────
+Quick logging smoke test (PowerShell)
+python -c "from modules.functions.logging import init_logging, get_logger; init_logging(level='DEBUG', force=True, write_output=True); log=get_logger('modules.addressing.resolver'); log.debug('debug line'); log.info('hello world'); log.warning('heads up'); log.error('boom')"
+────────────────────────────────────────────────────────────────────────────────
+"""
