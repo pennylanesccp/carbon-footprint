@@ -12,32 +12,15 @@ Examples:
     Av_Luciano_Gualberto__50tons.csv
 
 Usage (PowerShell):
-    # venv already active; ORS_API_KEY set
+    # venv active; ORS_API_KEY set
     python scripts/build_heatmap_from_file.py `
       --origin "São Paulo, SP" `
       --amount-tons 26 `
-      --truck auto_by_weight `
-      --empty-backhaul 0.25 `
-      --ors-profile driving-hgv `
-      --fallback-to-car `
       --log-level INFO
-
-Notes:
-  • This script **does not** compute anything by itself; it shells out to
-    `scripts/single_evaluation.py` and parses the final JSON printed there.
-  • If any destination fails, a row with an `error` column is written so you
-    still get a full CSV in one pass.
+# (Defaults: --truck auto_by_weight, --fallback-to-car on)
 """
 
 from __future__ import annotations
-
-# --- path bootstrap (must be the first lines of the file) ---
-from pathlib import Path
-import sys
-ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /scripts)
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-# ------------------------------------------------------------
 
 import argparse
 import csv
@@ -95,7 +78,6 @@ def _extract_last_json_object(text: str) -> Dict[str, Any]:
     `single_evaluation.py` prints logs + one final JSON object.
     Grab the last balanced {...} block and parse it. Defensive by design.
     """
-    # Fast attempt: from last '{' to end
     j = text.rfind("{")
     if j != -1:
         candidate = text[j:]
@@ -104,7 +86,6 @@ def _extract_last_json_object(text: str) -> Dict[str, Any]:
         except json.JSONDecodeError:
             pass
 
-    # Robust scan: first fully balanced block
     start = None
     depth = 0
     for i, ch in enumerate(text):
@@ -133,10 +114,10 @@ def _run_single_evaluation(
     , origin: str
     , destiny: str
     , amount_tons: float
-    , truck: Optional[str] = None
+    , truck: Optional[str] = "auto_by_weight"          # DEFAULT → auto_by_weight
     , empty_backhaul: Optional[float] = None
     , ors_profile: Optional[str] = None
-    , fallback_to_car: bool = False
+    , fallback_to_car: bool = True                     # DEFAULT → enabled
     , diesel_prices_csv: Optional[Path] = None
     , script_path: Path = Path("scripts") / "single_evaluation.py"
 ) -> Dict[str, Any]:
@@ -164,7 +145,6 @@ def _run_single_evaluation(
         cmd += ["--fallback-to-car"]
     if diesel_prices_csv:
         cmd += ["--diesel-prices-csv", str(diesel_prices_csv)]
-    # don't pass --pretty; we parse compact or pretty just fine
 
     _LOG.debug("Exec: %s", " ".join(cmd))
     proc = subprocess.run(
@@ -179,13 +159,11 @@ def _run_single_evaluation(
     stderr = proc.stderr or ""
 
     if proc.returncode != 0:
-        # Log some context and surface a compact error
         _LOG.error("single_evaluation failed for '%s' (code=%s)", destiny, proc.returncode)
         _LOG.debug("STDOUT:\n%s", stdout)
         _LOG.debug("STDERR:\n%s", stderr)
         raise RuntimeError(f"single_evaluation failed for '{destiny}' (code={proc.returncode})")
 
-    # Parse final JSON (prefer stdout, fallback to both streams)
     try:
         return _extract_last_json_object(stdout)
     except Exception:
@@ -205,14 +183,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--outdir", type=Path, default=Path("outputs"),
                     help="Directory to write the CSV (default: outputs).")
 
-    # passthrough to single_evaluation.py
-    ap.add_argument("--truck", default=None, help="Truck key (e.g., auto_by_weight).")
+    # passthrough to single_evaluation.py (with defaults requested)
+    ap.add_argument("--truck", default="auto_by_weight",  # DEFAULT here
+                    help="Truck key (default: auto_by_weight).")
     ap.add_argument("--empty-backhaul", type=float, default=None,
                     help="Empty backhaul share (0..1).")
     ap.add_argument("--ors-profile", choices=["driving-hgv", "driving-car"], default=None,
                     help="Primary ORS routing profile.")
-    ap.add_argument("--fallback-to-car", action="store_true",
-                    help="Fallback to 'driving-car' if HGV routing fails.")
+    # default True with an opt-out flag
+    ap.add_argument("--no-fallback-to-car", dest="fallback_to_car", action="store_false",
+                    help="Disable fallback to 'driving-car'.")
+    ap.set_defaults(fallback_to_car=True)
+
     ap.add_argument("--diesel-prices-csv", type=Path, default=None,
                     help="Forward a custom diesel prices CSV to single_evaluation.py.")
 
