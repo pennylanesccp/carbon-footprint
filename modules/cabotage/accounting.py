@@ -312,35 +312,13 @@ def fuel_cost_by_leg(
 # Emissions – TtW with flexible factors (kept separate)
 # ────────────────────────────────────────────────────────────────────────────────
 
-def emissions_ttw(
-      fuel_kg: float
-    , ef_ttw_per_tonne_fuel: Dict[str, float]
-    , gwp100: Optional[Dict[str, float]] = None
-) -> Dict[str, float]:
-    """
-    Compute mass of each gas and total CO2e (TtW).
-    Args:
-        fuel_kg: fuel mass (kg)
-        ef_ttw_per_tonne_fuel: dict with keys like 'CO2', 'CH4', 'N2O' giving kg gas / tonne fuel
-                               (provide per chosen fuel type, e.g., MGO or HFO)
-        gwp100: optional dict {'CH4': 29.8, 'N2O': 273, ...} for CO2e
-    Returns:
-        {'CO2': kg, 'CH4': kg, 'N2O': kg, 'CO2e': kg}
-    """
-    fuel_t = fuel_kg / 1000.0
-    out: Dict[str, float] = {}
-    co2e = 0.0
-    for gas, ef_per_t in ef_ttw_per_tonne_fuel.items():
-        mass = ef_per_t * fuel_t
-        out[gas] = mass
-        if gas.upper() == "CO2":
-            co2e += mass
-    if gwp100:
-        for gas, mass in out.items():
-            if gas.upper() != "CO2" and gas in gwp100:
-                co2e += mass * gwp100[gas]
-    out["CO2e"] = co2e
-    return out
+def emissions_ttw(*, fuel_kg: float, ef_ttw_per_tonne_fuel: dict, gwp100: dict) -> dict:
+    t_fuel = float(fuel_kg) / 1000.0             # ← convert kg to tonnes
+    co2 = t_fuel * float(ef_ttw_per_tonne_fuel.get("CO2", 0.0))
+    ch4 = t_fuel * float(ef_ttw_per_tonne_fuel.get("CH4", 0.0))
+    n2o = t_fuel * t_fuel * 0.0                  # default zero; keep placeholder if you add factors later
+    co2e = co2 + ch4 * float(gwp100.get("CH4", 0.0)) + n2o * float(gwp100.get("N2O", 0.0))
+    return {"CO2": co2, "CH4": ch4, "N2O": n2o, "CO2e": co2e}
 
 
 def emissions_ttw_by_leg(

@@ -42,12 +42,13 @@ DEFAULT_K_PORT_KG_PER_T: float  = 0.48
 
 DEFAULT_MGO_PRICE_BRL_PER_T: float = 3200.0
 
-EF_TTW_MGO_KG_PER_T = dict(
-      CO2=3206.0
-    , CH4=29.8
-    , N2O=273.0
-)
-GWP100 = dict(CH4=29.8, N2O=273.0)
+# constants (either in evaluator.py or your accounting module)
+EF_TTW_DIESEL_KG_PER_T = {"CO2": 3206.0, "CH4": 0.0, "N2O": 0.0}
+EF_TTW_MGO_KG_PER_T    = {"CO2": 3206.0, "CH4": 0.0, "N2O": 0.0}
+
+# GWPs stay as dimensionless multipliers (do NOT put them in EF)
+GWP100 = {"CH4": 29.8, "N2O": 273.0}
+
 
 
 # ────────────────────────────────────────────────────────────────────────────────
