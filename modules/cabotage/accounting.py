@@ -1,17 +1,40 @@
-# accounting.py
-# Purpose: compute fuel consumption, fuel cost, and emissions for multi-stop cabotage,
-#          allocating fairly to shipments by distance × weight (tonne-km).
-# Style:   commas at the beginning of the line; 4 spaces; verbose comments.
-# Units:   distance_km [km], weight_t [tonnes], fuel [kg unless noted], prices [currency/tonne fuel]
+# modules/cabotage/accounting.py
+# -*- coding: utf-8 -*-
+"""
+Cabotage accounting
+===================
+
+Purpose
+-------
+Compute **fuel consumption**, **fuel cost**, and **TTW emissions** for multi-stop cabotage,
+allocating fairly to shipments by **tonne-km** (distance × weight). Also provides:
+- Voyage K selection (kg fuel / tonne-km) from a repository (k.json),
+- Per-leg allocation (for leg-varying prices or fuel types),
+- Port handling fuel allocation (load/discharge),
+- Hotel-at-berth allocation from a per-city index (hotel.json).
+
+Units
+-----
+- distance_km: km
+- weight_t   : tonnes (t)
+- fuel       : kg (unless stated otherwise)
+- prices     : currency / tonne fuel
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
-import json
+from typing import Dict, List, Optional, Tuple, Any
 from statistics import mean, median
+import json
+import os
+import re
 
-VERSION: str = "1.1.1"
+from modules.functions.logging import get_logger
+
+_log = get_logger(__name__)
+
+VERSION: str = "1.2.0"
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Data models
@@ -20,10 +43,14 @@ VERSION: str = "1.1.1"
 @dataclass
 class Leg:
     """
-    A sailing leg within a cabotage loop (port i → port i+1).
-    Fields:
-        id           : human-readable label for the leg (e.g., "Santos→Suape")
-        distance_km  : nautical route distance in kilometers
+    Sailing leg within a cabotage loop (port i → port i+1).
+
+    Attributes
+    ----------
+    id : str
+        Human-readable label for the leg (e.g., "Santos→Suape").
+    distance_km : float
+        Nautical route distance in kilometers (precomputed/curated).
     """
     id: str
     distance_km: float
@@ -32,15 +59,21 @@ class Leg:
 @dataclass
 class Shipment:
     """
-    A shipment that rides a subset of legs.
-    Fields:
-        id        : shipment identifier
-        weight_t  : shipment weight in metric tonnes
-        on_legs   : list of integer leg indices this shipment is onboard (0-based)
+    Shipment that rides a subset of legs.
+
+    Attributes
+    ----------
+    id : str
+        Shipment identifier.
+    weight_t : float
+        Shipment weight in metric tonnes.
+    on_legs : List[int]
+        List of integer leg indices (0-based) this shipment is onboard.
     """
     id: str
     weight_t: float
     on_legs: List[int]
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Validation helpers
@@ -71,6 +104,9 @@ def _validate_inputs(
             if not (0 <= li < n_legs):
                 raise IndexError(f"Shipment '{s.id}' refers to leg index {li} not in [0,{n_legs-1}].")
 
+    _log.debug("Input validation OK: legs=%d, shipments=%d.", len(legs), len(shipments))
+
+
 # ────────────────────────────────────────────────────────────────────────────────
 # Core tonne-km calculus
 # ────────────────────────────────────────────────────────────────────────────────
@@ -82,15 +118,20 @@ def compute_tonne_km(
     """
     Compute tonne-km totals for a multi-stop loop.
 
-    Returns:
-        total_tkm         : float                                – Σ over shipments (Σ over legs in on_legs of weight_t * distance_km)
-        tkm_by_shipment   : {shipment_id: tonne_km}
-        load_t_by_leg     : {leg_idx: onboard_tonnes on that leg}
-        tkm_by_leg        : {leg_idx: leg_tkm = load_t_by_leg[leg]*leg.distance_km}
+    Returns
+    -------
+    total_tkm : float
+        Σ shipments( Σ legs∈on_legs (weight_t × distance_km) )
+    tkm_by_shipment : Dict[str, float]
+    load_t_by_leg   : Dict[int, float]
+        Onboard tonnes per leg.
+    tkm_by_leg      : Dict[int, float]
+        Leg tonne-km = load_t_by_leg[leg] × leg.distance_km
 
-    Notes:
-        • If a shipment appears multiple times on the same leg, that weight is counted once (by construction).
-        • A leg with zero onboard tonnes yields leg_tkm=0.
+    Notes
+    -----
+    • If a shipment appears multiple times on the same leg, that weight is counted once (by construction).
+    • A leg with zero onboard tonnes yields leg_tkm=0.
     """
     _validate_inputs(legs=legs, shipments=shipments)
 
@@ -111,7 +152,17 @@ def compute_tonne_km(
     }
 
     total_tkm = sum(tkm_by_shipment.values())
+
+    _log.info(
+        "compute_tonne_km: total_tkm=%.6f, legs=%d, shipments=%d.",
+        total_tkm, len(legs), len(shipments)
+    )
+    _log.debug("compute_tonne_km: tkm_by_shipment=%r", tkm_by_shipment)
+    _log.debug("compute_tonne_km: load_t_by_leg=%r", load_t_by_leg)
+    _log.debug("compute_tonne_km: tkm_by_leg=%r", tkm_by_leg)
+
     return total_tkm, tkm_by_shipment, load_t_by_leg, tkm_by_leg
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # K repository (k.json) – load & select (mean/median/trimmed or by id)
@@ -127,13 +178,18 @@ def load_k_entries(
         "scope": "TTW",
         "entries": [{"id": "...", "K_kg_per_tkm": 0.0027, "source": "...", ...}]
       }
-    Raises:
-        ValueError if unit is missing or different from 'kg_fuel_per_tonne_km'
+
+    Raises
+    ------
+    ValueError
+        If unit is missing or different from 'kg_fuel_per_tonne_km'
     """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    if data.get("unit") != "kg_fuel_per_tonne_km":
+    unit = data.get("unit")
+    if unit != "kg_fuel_per_tonne_km":
         raise ValueError("k.json unit must be 'kg_fuel_per_tonne_km'.")
+    _log.info("load_k_entries: loaded %d entries from '%s' (unit=%s).", len(data.get("entries", [])), path, unit)
     return data
 
 
@@ -143,8 +199,11 @@ def summarize_Ks(
 ) -> dict:
     """
     Return summary stats across Ks.
-    Output:
-        {'mean': ..., 'median': ..., 'trimmed': ..., 'count': n}
+
+    Output
+    ------
+    {'mean': ..., 'median': ..., 'trimmed': ..., 'count': n}
+
     Trimmed: drop min & max when n >= 3 (robust to outliers).
     """
     ks = [
@@ -156,12 +215,15 @@ def summarize_Ks(
         raise ValueError("No K values available after filtering.")
     ks_sorted = sorted(ks)
     trimmed = mean(ks_sorted[1:-1]) if len(ks_sorted) >= 3 else mean(ks_sorted)
-    return {
+
+    out = {
           "mean": mean(ks)
         , "median": median(ks)
         , "trimmed": trimmed
         , "count": len(ks)
     }
+    _log.info("summarize_Ks: count=%d mean=%.6f median=%.6f trimmed=%.6f.", out["count"], out["mean"], out["median"], out["trimmed"])
+    return out
 
 
 def choose_K(
@@ -171,21 +233,29 @@ def choose_K(
 ) -> float:
     """
     Pick a single K to use for allocation.
-      - mode in {'mean','median','trimmed'} → aggregate over all entries
-      - mode == 'by_id' and by_id set      → pick a specific entry (e.g., lane-specific)
+
+    - mode in {'mean','median','trimmed'} → aggregate over all entries
+    - mode == 'by_id' and by_id set      → pick a specific entry (e.g., lane-specific)
     """
-    entries = data["entries"]
+    entries = data.get("entries") or []
     if mode == "by_id":
         if not by_id:
             raise ValueError("by_id must be provided when mode='by_id'.")
         for e in entries:
             if e.get("id") == by_id:
-                return float(e["K_kg_per_tkm"])
+                val = float(e["K_kg_per_tkm"])
+                _log.info("choose_K(by_id): id='%s' K=%.6f.", by_id, val)
+                return val
         raise KeyError(f"K id not found: {by_id}")
+
     if mode not in {"mean", "median", "trimmed"}:
         raise ValueError("mode must be one of {'mean','median','trimmed','by_id'}.")
+
     stats = summarize_Ks(entries=entries)
-    return float(stats[mode])
+    val = float(stats[mode])
+    _log.info("choose_K(%s): K=%.6f.", mode, val)
+    return val
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # K – intensity in kg fuel / (tonne-km)
@@ -199,13 +269,16 @@ def calibrate_K_from_observation(
     """
     Estimate a route-specific K from one observed voyage:
         K = observed_fuel_kg / total_tonne_km
+
     Caveat:
         Only meaningful if your shipment set spans *all* cargo actually onboard on each leg.
     """
     total_tkm, _, _, _ = compute_tonne_km(legs=legs, shipments=shipments)
     if total_tkm <= 0:
         raise ValueError("Total tonne-km is zero; cannot calibrate K.")
-    return observed_fuel_kg / total_tkm
+    k = observed_fuel_kg / total_tkm
+    _log.info("calibrate_K_from_observation: observed_fuel_kg=%.3f total_tkm=%.6f → K=%.9f.", observed_fuel_kg, total_tkm, k)
+    return k
 
 
 def predict_fuel_from_K(
@@ -215,8 +288,10 @@ def predict_fuel_from_K(
 ) -> Tuple[float, Dict[str, float]]:
     """
     Predict voyage total fuel (kg) and allocate to shipments by their tonne-km share.
-    Returns:
-        fuel_total_kg, fuel_by_shipment_kg
+
+    Returns
+    -------
+    fuel_total_kg, fuel_by_shipment_kg
     """
     total_tkm, tkm_by_shipment, _, _ = compute_tonne_km(legs=legs, shipments=shipments)
     fuel_total_kg = K_kg_per_tkm * total_tkm
@@ -227,7 +302,11 @@ def predict_fuel_from_K(
               sid: K_kg_per_tkm * tkm
             for sid, tkm in tkm_by_shipment.items()
         }
+
+    _log.info("predict_fuel_from_K: K=%.6f total_tkm=%.6f → fuel_total_kg=%.3f.", K_kg_per_tkm, total_tkm, fuel_total_kg)
+    _log.debug("predict_fuel_from_K: fuel_by_shipment=%r", fuel_by_shipment)
     return fuel_total_kg, fuel_by_shipment
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Per-leg allocation (lets you apply leg-specific prices or fuel types later)
@@ -241,14 +320,16 @@ def allocate_fuel_by_leg_and_shipment(
     """
     Compute fuel per leg and allocate to shipments.
 
-    Returns:
-        fuel_by_leg_kg       : {leg_idx: kg fuel}
-        fuel_by_shipment_kg  : {shipment_id: kg fuel}
-        fuel_total_kg        : float
+    Returns
+    -------
+    fuel_by_leg_kg       : {leg_idx: kg fuel}
+    fuel_by_shipment_kg  : {shipment_id: kg fuel}
+    fuel_total_kg        : float
 
-    Method:
-        • Leg fuel = K × (sum over shipments on that leg of weight_t × distance_leg)
-        • Within each leg, split fuel to shipments proportional to their weight on that leg.
+    Method
+    ------
+    • Leg fuel = K × (sum over shipments on that leg of weight_t × distance_leg)
+    • Within each leg, split fuel to shipments proportional to their weight on that leg.
     """
     total_tkm, _, load_t_by_leg, tkm_by_leg = compute_tonne_km(legs=legs, shipments=shipments)
 
@@ -271,8 +352,16 @@ def allocate_fuel_by_leg_and_shipment(
                 share = s.weight_t / load_t_by_leg[li]
                 fuel_by_shipment_kg[s.id] += f_leg * share
 
-    _ = total_tkm  # reserved for potential logging
+    _ = total_tkm  # retained for potential future logs
+    _log.info(
+        "allocate_fuel_by_leg_and_shipment: legs=%d shipments=%d fuel_total_kg=%.3f.",
+        len(legs), len(shipments), fuel_total_kg
+    )
+    _log.debug("allocate_fuel_by_leg_and_shipment: fuel_by_leg_kg=%r", fuel_by_leg_kg)
+    _log.debug("allocate_fuel_by_leg_and_shipment: fuel_by_shipment_kg=%r", fuel_by_shipment_kg)
+
     return fuel_by_leg_kg, fuel_by_shipment_kg, fuel_total_kg
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Cost model (kept separate)
@@ -282,10 +371,10 @@ def fuel_cost(
       fuel_tonnes: float
     , price_per_tonne: float
 ) -> float:
-    """
-    Simple multiplication for voyage-level cost.
-    """
-    return fuel_tonnes * price_per_tonne
+    """Simple multiplication for voyage-level cost."""
+    c = fuel_tonnes * price_per_tonne
+    _log.debug("fuel_cost: fuel_t=%.6f price=%.2f → cost=%.2f.", fuel_tonnes, price_per_tonne, c)
+    return c
 
 
 def fuel_cost_by_leg(
@@ -294,9 +383,11 @@ def fuel_cost_by_leg(
 ) -> Tuple[Dict[int, float], float]:
     """
     Per-leg fuel cost with leg-specific prices.
-    Returns:
-        cost_by_leg: {leg_idx: cost}
-        total_cost : float
+
+    Returns
+    -------
+    cost_by_leg: {leg_idx: cost}
+    total_cost : float
     """
     cost_by_leg: Dict[int, float] = {}
     total_cost = 0.0
@@ -306,19 +397,45 @@ def fuel_cost_by_leg(
         c = f_t * price
         cost_by_leg[li] = c
         total_cost += c
+
+    _log.info("fuel_cost_by_leg: legs=%d total_cost=%.2f.", len(fuel_by_leg_kg), total_cost)
+    _log.debug("fuel_cost_by_leg: cost_by_leg=%r", cost_by_leg)
     return cost_by_leg, total_cost
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Emissions – TtW with flexible factors (kept separate)
 # ────────────────────────────────────────────────────────────────────────────────
 
-def emissions_ttw(*, fuel_kg: float, ef_ttw_per_tonne_fuel: dict, gwp100: dict) -> dict:
-    t_fuel = float(fuel_kg) / 1000.0             # ← convert kg to tonnes
+def emissions_ttw(*, fuel_kg: float, ef_ttw_per_tonne_fuel: Dict[str, float], gwp100: Dict[str, float]) -> Dict[str, float]:
+    """
+    Tailpipe (TTW) emissions from fuel mass.
+
+    Parameters
+    ----------
+    fuel_kg : float
+    ef_ttw_per_tonne_fuel : Dict[str, float]
+        {'CO2': kg/t-fuel, 'CH4': kg/t-fuel, 'N2O': kg/t-fuel}
+    gwp100 : Dict[str, float]
+        {'CH4': ..., 'N2O': ...}
+
+    Returns
+    -------
+    {'CO2': ..., 'CH4': ..., 'N2O': 0.0, 'CO2e': ...}
+    """
+    t_fuel = float(fuel_kg) / 1000.0
     co2 = t_fuel * float(ef_ttw_per_tonne_fuel.get("CO2", 0.0))
     ch4 = t_fuel * float(ef_ttw_per_tonne_fuel.get("CH4", 0.0))
-    n2o = t_fuel * t_fuel * 0.0                  # default zero; keep placeholder if you add factors later
+    n2o = t_fuel * 0.0  # placeholder for future factors
     co2e = co2 + ch4 * float(gwp100.get("CH4", 0.0)) + n2o * float(gwp100.get("N2O", 0.0))
-    return {"CO2": co2, "CH4": ch4, "N2O": n2o, "CO2e": co2e}
+    out = {
+          "CO2": co2
+        , "CH4": ch4
+        , "N2O": n2o
+        , "CO2e": co2e
+    }
+    _log.debug("emissions_ttw: fuel_kg=%.3f → %r", fuel_kg, out)
+    return out
 
 
 def emissions_ttw_by_leg(
@@ -328,10 +445,13 @@ def emissions_ttw_by_leg(
 ) -> Tuple[Dict[int, Dict[str, float]], Dict[str, float]]:
     """
     Compute TtW emissions per leg with leg-specific emission factors (fuel type swaps etc.).
-    Returns:
-        emis_by_leg: {leg_idx: {'CO2': ..., 'CH4': ..., 'N2O': ..., 'CO2e': ...}}
-        totals     : aggregated {'CO2': ..., 'CH4': ..., 'N2O': ..., 'CO2e': ...}
+
+    Returns
+    -------
+    emis_by_leg: {leg_idx: {'CO2': ..., 'CH4': ..., 'N2O': ..., 'CO2e': ...}}
+    totals     : aggregated {'CO2': ..., 'CH4': ..., 'N2O': ..., 'CO2e': ...}
     """
+    gwp = gwp100 or {"CH4": 0.0, "N2O": 0.0}
     emis_by_leg: Dict[int, Dict[str, float]] = {}
     totals: Dict[str, float] = {"CO2": 0.0, "CH4": 0.0, "N2O": 0.0, "CO2e": 0.0}
 
@@ -340,13 +460,15 @@ def emissions_ttw_by_leg(
         res = emissions_ttw(
               fuel_kg=f_kg
             , ef_ttw_per_tonne_fuel=ef
-            , gwp100=gwp100
+            , gwp100=gwp
         )
         emis_by_leg[li] = res
         for k in totals:
             totals[k] += res.get(k, 0.0)
 
+    _log.info("emissions_ttw_by_leg: legs=%d CO2e_total=%.3f.", len(emis_by_leg), totals["CO2e"])
     return emis_by_leg, totals
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Convenience: allocate cost & emissions to shipments from fuel allocation
@@ -360,20 +482,24 @@ def allocate_costs_emissions(
 ) -> Dict[str, Dict[str, float]]:
     """
     Build a per-shipment report joining fuel, cost and TtW emissions.
-    Returns:
-        {
-          shipment_id: {
-              'fuel_kg': ...
-            , 'fuel_t': ...
-            , 'cost': ...
-            , 'CO2': ...
-            , 'CH4': ...
-            , 'N2O': ...
-            , 'CO2e': ...
-          }, ...
-        }
+
+    Returns
+    -------
+    {
+      shipment_id: {
+          'fuel_kg': ...
+        , 'fuel_t': ...
+        , 'cost': ...
+        , 'CO2': ...
+        , 'CH4': ...
+        , 'N2O': ...
+        , 'CO2e': ...
+      }, ...
+    }
     """
     results: Dict[str, Dict[str, float]] = {}
+    gwp = gwp100 or {"CH4": 0.0, "N2O": 0.0}
+
     for sid, f_kg in fuel_by_shipment_kg.items():
         f_t = f_kg / 1000.0
         cost_val = fuel_cost(
@@ -383,7 +509,7 @@ def allocate_costs_emissions(
         emis = emissions_ttw(
               fuel_kg=f_kg
             , ef_ttw_per_tonne_fuel=ef_ttw_per_tonne_fuel
-            , gwp100=gwp100
+            , gwp100=gwp
         )
         results[sid] = {
               "fuel_kg": f_kg
@@ -391,60 +517,9 @@ def allocate_costs_emissions(
             , "cost": cost_val
             , **emis
         }
+
+    _log.info("allocate_costs_emissions: shipments=%d.", len(results))
     return results
-
-# ────────────────────────────────────────────────────────────────────────────────
-# Example usage (can be run as a script)
-# ────────────────────────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    # Example legs and shipments
-    legs = [
-          Leg(id="Santos→Suape", distance_km=2000.0)
-        , Leg(id="Suape→Fortaleza", distance_km=800.0)
-    ]
-    shipments = [
-          Shipment(id="S1", weight_t=20.0, on_legs=[0, 1])   # stays on board both legs
-        , Shipment(id="S2", weight_t=10.0, on_legs=[0])      # discharges at Suape
-    ]
-
-    # Load K from k.json (use trimmed mean for robustness)
-    repo = load_k_entries(path="k.json")
-    K = choose_K(repo, mode="trimmed")   # positional 'repo' is OK
-    print(f"[accounting.py v{VERSION}] Using K = {K:.6f} kg fuel / t·km")
-
-    # Allocate fuel per leg, then to shipments (lets you price per leg later if needed)
-    fuel_by_leg_kg, fuel_by_ship_kg, fuel_total_kg = allocate_fuel_by_leg_and_shipment(
-          K_kg_per_tkm=K
-        , legs=legs
-        , shipments=shipments
-    )
-    print("Fuel by leg (kg):", fuel_by_leg_kg)
-    print("Fuel by shipment (kg):", fuel_by_ship_kg)
-    print("Fuel total (kg):", fuel_total_kg)
-
-    # Cost (single price for the whole voyage in this example)
-    price_per_tonne_brl = 3_200.0  # example; replace with Ship & Bunker series if desired
-
-    # Emission factors (TtW) – example values; replace with your chosen source values
-    ef_ttw_mgo = {
-          "CO2": 3206.0
-        , "CH4": 0.0
-        , "N2O": 0.0
-    }
-    gwp100_ar6 = {
-          "CH4": 29.8
-        , "N2O": 273.0
-    }
-
-    # Per-shipment final report (fuel, cost, TtW emissions)
-    report = allocate_costs_emissions(
-          fuel_by_shipment_kg=fuel_by_ship_kg
-        , price_per_tonne=price_per_tonne_brl
-        , ef_ttw_per_tonne_fuel=ef_ttw_mgo
-        , gwp100=gwp100_ar6
-    )
-    print("Per-shipment report:", report)
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -457,17 +532,26 @@ def port_fuel_from_handled_mass(
 ) -> float:
     """
     Fuel used in a port call for loading/unloading.
-    Args:
-        handled_mass_t   : total tonnes actually moved ship↔yard in this call
-        K_port_kg_per_t  : kg fuel per tonne handled (default ≈ 0.48 kg/t)
-    Returns:
-        fuel_kg          : kg fuel for this port call
+
+    Parameters
+    ----------
+    handled_mass_t : float
+        Total tonnes actually moved ship↔yard in this call.
+    K_port_kg_per_t : float, default 0.48
+        kg fuel per tonne handled.
+
+    Returns
+    -------
+    fuel_kg : float
+        kg fuel for this port call.
     """
     if handled_mass_t < 0:
         raise ValueError("handled_mass_t must be >= 0.")
     if K_port_kg_per_t < 0:
         raise ValueError("K_port_kg_per_t must be >= 0.")
-    return handled_mass_t * K_port_kg_per_t
+    fuel = handled_mass_t * K_port_kg_per_t
+    _log.debug("port_fuel_from_handled_mass: handled=%.3f t, K=%.3f → fuel=%.3f kg.", handled_mass_t, K_port_kg_per_t, fuel)
+    return fuel
 
 
 def allocate_port_fuel_to_shipments(
@@ -476,35 +560,40 @@ def allocate_port_fuel_to_shipments(
 ) -> Dict[str, float]:
     """
     Allocate port fuel directly to the shipments that were handled (loaded/discharged).
-    Args:
-        handled_mass_by_shipment_t : {shipment_id: tonnes moved at this port}
-        K_port_kg_per_t            : kg fuel per tonne handled
-    Returns:
-        fuel_by_shipment_kg        : {shipment_id: kg fuel attributed at this port}
+
+    Parameters
+    ----------
+    handled_mass_by_shipment_t : Dict[str, float]
+        {shipment_id: tonnes moved at this port}
+    K_port_kg_per_t : float
+        kg fuel per tonne handled.
+
+    Returns
+    -------
+    fuel_by_shipment_kg : Dict[str, float]
     """
     out: Dict[str, float] = {}
     for sid, m_t in handled_mass_by_shipment_t.items():
         if m_t < 0:
             raise ValueError(f"Negative handled mass for shipment {sid}: {m_t}")
         out[sid] = m_t * K_port_kg_per_t
+    _log.debug("allocate_port_fuel_to_shipments: %r", out)
     return out
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Hotel @ berth (kg fuel per tonne handled) – from modules/cabotage/_data/hotel.json
 # ────────────────────────────────────────────────────────────────────────────────
 
-import json
-import os
-import re
-from typing import Tuple
-
 def load_hotel_entries(
     *
-    , path: str = os.path.join("modules", "cabotage", "_data", "hotel.json")
+    , path: str = os.path.join("modules", "cabotage", "._data".replace("._", "_"), "hotel.json")
 ) -> dict:
     """
     Load hotel.json payload produced by calcs/hotel.py.
-    Expected shape:
+
+    Expected shape
+    --------------
       {
         "unit": "kg_fuel_per_tonne",
         "scope": "hotel_at_berth",
@@ -513,25 +602,29 @@ def load_hotel_entries(
           ...
         ]
       }
-    Returns the parsed dict.
+
+    Returns
+    -------
+    dict
+        The parsed payload.
     """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
+
     unit = data.get("unit")
     scope = data.get("scope")
     if unit != "kg_fuel_per_tonne" or scope != "hotel_at_berth":
         raise ValueError("hotel.json must have unit='kg_fuel_per_tonne' and scope='hotel_at_berth'.")
     if not isinstance(data.get("entries"), list):
         raise ValueError("hotel.json missing 'entries' list.")
+
+    _log.info("load_hotel_entries: loaded %d entries from '%s'.", len(data.get("entries", [])), path)
     return data
 
 
 def _norm_city(s: str) -> str:
-    """
-    Very light normalization for city labels coming from Leg.id like 'Santos→Suape'.
-    """
+    """Very light normalization for city labels (spaces collapse; accents kept)."""
     s = (s or "").strip()
-    # normalize spaces and dashes; keep accents as-is (we expect exact city names from ANTAQ)
     s = re.sub(r"\s+", " ", s)
     return s
 
@@ -539,33 +632,35 @@ def _norm_city(s: str) -> str:
 def build_hotel_factor_index(
     *
     , hotel_data: dict
-) -> dict:
+) -> Dict[str, float]:
     """
-    Build a fast {city -> kg_fuel_per_t} index from hotel.json.
-    Ignores entries where kg_fuel_per_t is null.
+    Build a fast {city -> kg_fuel_per_t} index from hotel.json. Ignores entries where value is null.
     """
-    idx = {}
+    idx: Dict[str, float] = {}
     for e in hotel_data.get("entries", []):
         city = _norm_city(e.get("city", ""))
-        val  = e.get("kg_fuel_per_t")
+        val = e.get("kg_fuel_per_t")
         if city and isinstance(val, (int, float)):
             idx[city] = float(val)
+
     if not idx:
         raise ValueError("No usable city factors found in hotel.json entries.")
+
+    _log.info("build_hotel_factor_index: cities=%d.", len(idx))
     return idx
 
 
 def _split_ports_for_hotel(leg_id: str) -> Tuple[str, str]:
     """
     Split a leg label like 'Santos→Suape' or 'Santos->Suape' into ('Santos','Suape').
-    More lenient with separators but keeps city labels intact to match hotel.json.
+    More lenient with separators but keeps labels intact to match hotel.json.
     """
     if "→" in leg_id:
         a, b = leg_id.split("→", 1)
     elif "->" in leg_id:
         a, b = leg_id.split("->", 1)
     else:
-        # best-effort: try common hyphens/arrows consolidated into '->'
+        # best-effort: unify various dashes/arrows into '->'
         tmp = leg_id.replace("—", "->").replace("–", "->").replace("-", "->")
         parts = [p.strip() for p in tmp.split("->") if p.strip()]
         if len(parts) != 2:
@@ -581,27 +676,29 @@ def allocate_hotel_fuel_from_json(
     , hotel_json_path: str = os.path.join("modules", "cabotage", "_data", "hotel.json")
     , default_kg_per_t: Optional[float] = None   # if a port city is missing, either use this fallback or skip
     , on_missing: str = "skip"                   # 'skip' | 'use_default' | 'raise'
-) -> Dict[str, object]:
+) -> Dict[str, Any]:
     """
     Allocate *hotel-at-berth* fuel to **handled cargo only**, using per-city kg_fuel_per_t
     factors from hotel.json. For each shipment:
       • load at the origin city of its first leg
       • discharge at the destination city of its last leg
-    Each handling event adds:  weight_t * kg_fuel_per_t(city)
+    Each handling event adds:  weight_t × kg_fuel_per_t(city)
 
-    Returns a dict with:
-      {
-        'fuel_by_port_by_ship_kg': {city: {shipment_id: kg, ...}, ...},
-        'fuel_by_port_total_kg':   {city: kg_total, ...},
-        'fuel_by_shipment_total_kg': {shipment_id: kg, ...},
-        'fuel_total_kg': kg_sum,
-        'missing_cities': [city, ...]  # cities referenced by legs but not found in hotel.json
-      }
+    Returns
+    -------
+    {
+      'fuel_by_port_by_ship_kg':     {city: {shipment_id: kg, ...}, ...},
+      'fuel_by_port_total_kg':       {city: kg_total, ...},
+      'fuel_by_shipment_total_kg':   {shipment_id: kg, ...},
+      'fuel_total_kg':               kg_sum,
+      'missing_cities':              [city, ...]
+    }
 
-    Notes:
-      • This follows your chosen convention (hotel fuel allocated to handled tonnes),
-        *not* to all onboard cargo during berth time.
-      • City labels must match what you used in hotel.json entries (after light normalization).
+    Notes
+    -----
+    • This follows the convention "hotel fuel allocated to handled tonnes",
+      *not* to all onboard cargo during berth time.
+    • City labels must match hotel.json entries (after light normalization).
     """
     # Build leg origin/destination mapping
     od_by_leg: Dict[int, Tuple[str, str]] = {}
@@ -631,14 +728,14 @@ def allocate_hotel_fuel_from_json(
             missing_cities.append(city)
         return None
 
-    # For each shipment, add fuel at load port and at discharge port
+    # For each shipment, add fuel at load port and discharge port
     for s in shipments:
         if not s.on_legs:
             continue
         first_leg = min(s.on_legs)
         last_leg  = max(s.on_legs)
 
-        load_city, _   = od_by_leg[first_leg]
+        load_city, _ = od_by_leg[first_leg]
         _, discharge_city = od_by_leg[last_leg]
 
         # load event
@@ -661,6 +758,12 @@ def allocate_hotel_fuel_from_json(
 
     fuel_total_kg = sum(fuel_by_port_total_kg.values())
 
+    _log.info(
+        "allocate_hotel_fuel_from_json: cities=%d shipments=%d fuel_total_kg=%.3f (missing=%d).",
+        len(fuel_by_port_total_kg), len(shipments), fuel_total_kg, len(missing_cities)
+    )
+    _log.debug("allocate_hotel_fuel_from_json: missing_cities=%r", missing_cities)
+
     return {
           "fuel_by_port_by_ship_kg": fuel_by_port_by_ship_kg
         , "fuel_by_port_total_kg":   fuel_by_port_total_kg
@@ -668,3 +771,35 @@ def allocate_hotel_fuel_from_json(
         , "fuel_total_kg":           fuel_total_kg
         , "missing_cities":          missing_cities
     }
+
+
+"""
+Quick logging smoke test (PowerShell)
+python -c `
+"from modules.functions.logging import init_logging; `
+from modules.cabotage.accounting import (Leg, Shipment, compute_tonne_km, summarize_Ks, choose_K, `
+    calibrate_K_from_observation, predict_fuel_from_K, allocate_fuel_by_leg_and_shipment, `
+    fuel_cost_by_leg, emissions_ttw_by_leg, allocate_costs_emissions); `
+init_logging(level='INFO', force=True, write_output=False); `
+legs = [ `
+    Leg(id='Santos→Suape', distance_km=2000.0) `
+  , Leg(id='Suape→Fortaleza', distance_km=800.0) `
+]; `
+ships = [ `
+    Shipment(id='S1', weight_t=20.0, on_legs=[0,1]) `
+  , Shipment(id='S2', weight_t=10.0, on_legs=[0]) `
+]; `
+total_tkm, tkm_by_ship, load_by_leg, tkm_by_leg = compute_tonne_km(legs, ships); `
+print('tkm_total=', round(total_tkm,3)); `
+repo = {'unit':'kg_fuel_per_tonne_km','entries':[{'id':'x','K_kg_per_tkm':0.0028}, {'id':'y','K_kg_per_tkm':0.0026}]}; `
+print('Ks:', summarize_Ks(repo['entries'])); `
+K = choose_K(repo, mode='trimmed'); `
+fuel_by_leg, fuel_by_ship, fuel_total = allocate_fuel_by_leg_and_shipment(K, legs, ships); `
+print('fuel_total=', round(fuel_total,3)); `
+cost_by_leg, cost_total = fuel_cost_by_leg(fuel_by_leg, {0:3200.0, 1:3400.0}); `
+print('cost_total=', round(cost_total,2)); `
+emis_by_leg, totals = emissions_ttw_by_leg(fuel_by_leg, {0:{'CO2':3206.0}, 1:{'CO2':3206.0}}, {'CH4':29.8,'N2O':273.0}); `
+print('CO2e_total=', round(totals['CO2e'],3)); `
+report = allocate_costs_emissions(fuel_by_ship, price_per_tonne=3300.0, ef_ttw_per_tonne_fuel={'CO2':3206.0}, gwp100={'CH4':29.8,'N2O':273.0}); `
+print('S1_cost=', round(report['S1']['cost'],2)); "
+"""
