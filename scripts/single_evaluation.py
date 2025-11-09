@@ -106,8 +106,10 @@ def main(argv=None) -> int:
     )
 
     if args.pretty:
+        logging.getLogger().setLevel(logging.WARNING)
         print(json.dumps(res, ensure_ascii=False, indent=2))
     else:
+        logging.getLogger().setLevel(logging.WARNING)
         print(json.dumps(res, ensure_ascii=False, separators=(",", ":")))
     return 0
 
