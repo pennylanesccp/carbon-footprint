@@ -1,124 +1,257 @@
 # modules/cabotage/sea_matrix.py
+# -*- coding: utf-8 -*-
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Dict, Tuple, Optional
+
+"""
+Sea distance matrix (with haversine fallback)
+=============================================
+
+Purpose
+-------
+Provide deterministic **port-to-port** sea distances (km) from a prebuilt matrix,
+with a safe fallback to **haversine distance × coastline_factor** when a pair is
+not explicitly listed.
+
+Public API (kept stable)
+------------------------
+- class SeaMatrix
+  • constructors:
+      - SeaMatrix.from_json_dict(payload: Dict) -> SeaMatrix
+      - SeaMatrix.from_json_path(path: Path | str) -> SeaMatrix
+  • queries:
+      - size() -> int
+      - labels() -> Tuple[str, ...]
+      - get(a_label: str, b_label: str) -> Optional[float]
+      - km_with_source(p_from: Dict, p_to: Dict) -> Tuple[float, str]   # source ∈ {'matrix','haversine'}
+      - km(p_from: Dict, p_to: Dict) -> float
+
+Conventions
+-----------
+- Labels are normalized (casefold + trim + single spaces) internally for robust lookup.
+- The internal matrix is kept **symmetric**: if A→B exists, B→A is ensured at init.
+- Inputs to km/km_with_source expect dicts with keys: 'name', 'lat', 'lon'.
+
+Logging
+-------
+Uses the project-standard logger. Construction and lookups are logged at INFO/DEBUG.
+"""
+
 import json
 import math
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict, Tuple, Optional
+
+from modules.functions.logging import get_logger
 
 __all__ = ["SeaMatrix"]
 
+_log = get_logger(__name__)
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Helpers
+# ────────────────────────────────────────────────────────────────────────────────
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    R = 6371.0088
-    a1 = math.radians(lat1); b1 = math.radians(lon1)
-    a2 = math.radians(lat2); b2 = math.radians(lon2)
-    da = a2 - a1; db = b2 - b1
-    s  = (math.sin(da/2)**2
-          + math.cos(a1) * math.cos(a2) * math.sin(db/2)**2)
-    c  = 2 * math.atan2(math.sqrt(s), math.sqrt(1 - s))
-    return R * c
+    """Great-circle distance on WGS84 sphere approximation (km)."""
+    R = 6371.0088  # mean Earth radius (km)
+    a1 = math.radians(float(lat1))
+    b1 = math.radians(float(lon1))
+    a2 = math.radians(float(lat2))
+    b2 = math.radians(float(lon2))
+    da = a2 - a1
+    db = b2 - b1
+    s = (math.sin(da / 2) ** 2) + math.cos(a1) * math.cos(a2) * (math.sin(db / 2) ** 2)
+    c = 2 * math.atan2(math.sqrt(s), math.sqrt(1 - s))
+    return float(R * c)
+
 
 def _norm(label: str) -> str:
-    # simple normalization (casefold + strip + single spaces)
+    """Simple normalization (casefold, trim, collapse spaces)."""
     return " ".join(str(label).casefold().split())
 
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Core class
+# ────────────────────────────────────────────────────────────────────────────────
 @dataclass
 class SeaMatrix:
     """
-    Minimal sea-distance matrix:
-      • matrix[label_from][label_to] -> km (float)
-      • coastline_factor: multiplier for haversine fallback
+    Minimal sea-distance matrix.
+
+    Attributes
+    ----------
+    matrix : Dict[str, Dict[str, float]]
+        Mapping 'label_from' → {'label_to': km}
+    coastline_factor : float
+        Multiplier applied to haversine fallback to roughly account for coastline routing.
     """
     matrix: Dict[str, Dict[str, float]]
     coastline_factor: float = 1.0
 
+    # Internal: normalized → canonical label map
+    _canon: Dict[str, str] = None  # type: ignore
+
     def __post_init__(self):
-        # Build normalization map to keep canonical labels
-        self._canon: Dict[str, str] = {}
+        # 1) Ensure values are floats and keys are strings
+        cleaned: Dict[str, Dict[str, float]] = {}
+        for r, cols in (self.matrix or {}).items():
+            r_str = str(r)
+            cleaned[r_str] = {}
+            for c, km in (cols or {}).items():
+                cleaned[r_str][str(c)] = float(km)
+
+        self.matrix = cleaned
+        self.coastline_factor = float(self.coastline_factor)
+
+        # 2) Build normalization map (first occurrence becomes canonical)
+        self._canon = {}
         for r in self.matrix.keys():
             self._canon.setdefault(_norm(r), r)
             for c in self.matrix[r].keys():
                 self._canon.setdefault(_norm(c), c)
-        # Ensure symmetry (A→B implies B→A)
+
+        # 3) Enforce symmetry (A→B implies B→A)
         for r, cols in list(self.matrix.items()):
             for c, km in list(cols.items()):
                 self.matrix.setdefault(c, {})
-                if c not in self.matrix or r not in self.matrix[c]:
+                if r not in self.matrix[c]:
                     self.matrix[c][r] = float(km)
+
+        # 4) Log summary
+        n_labels = len(self._canon)
+        n_pairs = sum(len(v) for v in self.matrix.values())
+        _log.info(
+            f"SeaMatrix: initialized with {n_labels} labels, {n_pairs} directed edges "
+            f"(symmetric), coastline_factor={self.coastline_factor:.3f}"
+        )
 
     # ---------- constructors ----------
     @classmethod
-    def from_json_dict(
-        cls
-        , payload: Dict
-    ) -> "SeaMatrix":
+    def from_json_dict(cls, payload: Dict) -> "SeaMatrix":
+        """
+        Build from a JSON-like dict:
+            { "matrix": { "A": {"B": 123.4}, ... }, "coastline_factor": 1.12 }
+        """
+        if not isinstance(payload, dict):
+            raise TypeError("SeaMatrix.from_json_dict: payload must be a dict.")
         m = payload.get("matrix") or {}
         cf = float(payload.get("coastline_factor", 1.0))
-        # cast to float
-        m_float = {
-            r: {c: float(v) for c, v in cols.items()}
-            for r, cols in m.items()
+
+        # Cast to the expected types
+        m_float: Dict[str, Dict[str, float]] = {
+            str(r): {str(c): float(v) for c, v in (cols or {}).items()}
+            for r, cols in (m or {}).items()
         }
+        _log.debug(
+            f"SeaMatrix.from_json_dict: coastline_factor={cf}, "
+            f"nodes={len(m_float)}"
+        )
         return cls(matrix=m_float, coastline_factor=cf)
 
     @classmethod
-    def from_json_path(
-        cls
-        , path: Path | str
-    ) -> "SeaMatrix":
+    def from_json_path(cls, path: Path | str) -> "SeaMatrix":
+        """
+        Build from a JSON file on disk.
+        """
         p = Path(path)
         with p.open("r", encoding="utf-8") as f:
             payload = json.load(f)
+        _log.info(f"SeaMatrix.from_json_path: loaded JSON from '{p}'.")
         return cls.from_json_dict(payload)
 
     # ---------- queries ----------
     def size(self) -> int:
+        """Number of distinct canonical labels."""
         return len(self._canon)
 
     def labels(self) -> Tuple[str, ...]:
+        """Sorted tuple of canonical labels."""
         return tuple(sorted(self._canon.values()))
 
     def _resolve_label(self, label: str) -> Optional[str]:
+        """Return canonical label for a possibly messy label; None if unknown."""
+        if label is None:
+            return None
         return self._canon.get(_norm(label))
 
-    def get(
-        self
-        , a_label: str
-        , b_label: str
-    ) -> Optional[float]:
+    def get(self, a_label: str, b_label: str) -> Optional[float]:
+        """
+        Direct matrix lookup (no fallback).
+
+        Returns
+        -------
+        Optional[float]
+            km if known; 0.0 if same label; None if either label is unknown
+            or pair not present in matrix.
+        """
         a = self._resolve_label(a_label)
         b = self._resolve_label(b_label)
         if not a or not b:
+            _log.debug(f"SeaMatrix.get: unknown label(s) a='{a_label}', b='{b_label}'.")
             return None
         if a == b:
             return 0.0
-        return self.matrix.get(a, {}).get(b)
+        val = self.matrix.get(a, {}).get(b)
+        _log.debug(
+            f"SeaMatrix.get: a='{a}' b='{b}' → {val if val is not None else 'None'}"
+        )
+        return None if val is None else float(val)
 
-    def km_with_source(
-        self
-        , p_from: Dict
-        , p_to: Dict
-    ) -> Tuple[float, str]:
-        """Return (km, source) where source ∈ {'matrix','haversine'}."""
+    def km_with_source(self, p_from: Dict, p_to: Dict) -> Tuple[float, str]:
+        """
+        Compute distance with source information.
+
+        Parameters
+        ----------
+        p_from, p_to : Dict
+            Expect keys: 'name', 'lat', 'lon'
+
+        Returns
+        -------
+        (km, source)
+            source ∈ {'matrix','haversine'}
+        """
         a_label = p_from["name"]
         b_label = p_to["name"]
         km = self.get(a_label, b_label)
         if km is not None:
+            _log.info(f"SeaMatrix.km_with_source: using MATRIX for '{a_label}' → '{b_label}' → {km:.3f} km")
             return float(km), "matrix"
 
-        # fallback: haversine * coastline factor
-        km_h = _haversine_km(
-              float(p_from["lat"])
-            , float(p_from["lon"])
-            , float(p_to["lat"])
-            , float(p_to["lon"])
-        )
-        return km_h * float(self.coastline_factor), "haversine"
+        # Fallback: haversine × coastline_factor
+        lat1 = float(p_from["lat"])
+        lon1 = float(p_from["lon"])
+        lat2 = float(p_to["lat"])
+        lon2 = float(p_to["lon"])
 
-    def km(
-        self
-        , p_from: Dict
-        , p_to: Dict
-    ) -> float:
+        km_h = _haversine_km(lat1, lon1, lat2, lon2)
+        km_c = km_h * float(self.coastline_factor)
+        _log.info(
+            "SeaMatrix.km_with_source: HAVERSINE fallback for '%s' → '%s' "
+            "(haversine=%.3f km, coastline_factor=%.3f → %.3f km)",
+            a_label, b_label, km_h, self.coastline_factor, km_c
+        )
+        return float(km_c), "haversine"
+
+    def km(self, p_from: Dict, p_to: Dict) -> float:
+        """Distance only (km)."""
         km, _ = self.km_with_source(p_from, p_to)
-        return km
+        return float(km)
+
+
+"""
+Quick logging smoke test (PowerShell)
+python -c `
+"from modules.functions.logging import init_logging; `
+from modules.cabotage.sea_matrix import SeaMatrix; `
+init_logging(level='INFO', force=True, write_output=False); `
+payload = {'matrix': {'Santos (SP)': {'Rio de Janeiro (RJ)': 430.0}}, 'coastline_factor': 1.15}; `
+sm = SeaMatrix.from_json_dict(payload); `
+print('size=', sm.size()); `
+a = {'name':'Santos (SP)', 'lat':-23.952, 'lon':-46.328}; `
+b = {'name':'Rio de Janeiro (RJ)', 'lat':-22.903, 'lon':-43.172}; `
+print('labels=', sm.labels()); `
+print('matrix_km=', sm.km(a, b)); `
+print('fallback_km=', sm.km({'name':'Itajaí','lat':-26.904,'lon':-48.659}, {'name':'Santos','lat':-23.952,'lon':-46.328})); "
+"""
