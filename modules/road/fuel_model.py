@@ -15,16 +15,54 @@ import pandas as pd
 from typing import Dict, Any, Tuple
 
 # ────────────────────────────────────────────────────────────────────────────────
-# Baseline km/L by axle count (containerized cargo) — planning values
+# ANTT baselines (km/L) by number of axles  — official table you provided
 # ────────────────────────────────────────────────────────────────────────────────
-_ANTT_KM_PER_L_BASELINE: Dict[int, float] = {
+_ANTT_KM_PER_L_BASELINE = {
       2: 4.0
     , 3: 3.0
     , 4: 2.7
     , 5: 2.3
     , 6: 2.0
     , 7: 2.0
+    # 9+ handled below (heavy CVCs like rodotrem)
 }
+
+def get_km_l_baseline(axles: int) -> float:
+    """
+    Planning baseline km/L from ANTT table. For 9+ axles, use a conservative floor.
+    """
+    if axles >= 9:
+        return 1.7  # conservative for rodotrem/CVC ≥9
+    if axles in _ANTT_KM_PER_L_BASELINE:
+        return _ANTT_KM_PER_L_BASELINE[axles]
+    raise KeyError(f"No baseline km/L configured for {axles} axles.")
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Heuristic: infer number of axles from payload (tonnes)
+# Anchored on PBTC/combination norms & common fleet practice in BR.
+# Sources: CONTRAN 882/2021 (pesos/dimensões) + recent capacity tables (Bitrem 57t PBTC, etc.).
+# This is *payload* (carga útil), not PBTC, so we use practical thresholds.
+# ────────────────────────────────────────────────────────────────────────────────
+_AXLE_BY_PAYLOAD_THRESHOLDS = [
+      (2, 10.0)  # toco / leves
+    , (3, 20.0)  # truck 3 eixos
+    , (5, 28.0)  # carreta 5 eixos
+    , (6, 33.0)  # carreta LS 6 eixos
+    , (7, 38.0)  # bitrem 7 eixos
+    , (9, 48.0)  # rodotrem 9 eixos (AET), acima disso → 9
+]
+
+def infer_axles_for_payload(payload_t: float) -> int:
+    """
+    Return a recommended axle-count for a given payload_t (tonnes).
+    The mapping is intentionally conservative and can be tuned later.
+    """
+    for ax, max_payload in _AXLE_BY_PAYLOAD_THRESHOLDS:
+        if float(payload_t) <= float(max_payload):
+            return ax
+    return 9
+
 
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DIESEL_PRICES_PATH = os.path.join(_CURRENT_DIR, "_data", "latest_diesel_prices.csv")
@@ -66,13 +104,6 @@ def load_diesel_prices(path: str | None = None) -> dict[str, float]:
     except Exception as e:
         print(f"ERROR: Could not load diesel prices from '{csv_path}': {e}")
         return {}
-
-def get_km_l_baseline(axles: int) -> float:
-    if axles >= 9:
-        return 1.7
-    if axles in _ANTT_KM_PER_L_BASELINE:
-        return _ANTT_KM_PER_L_BASELINE[axles]
-    raise KeyError(f"No baseline km/L configured for {axles} axles.")
 
 def adjust_km_per_liter(
       km_l_baseline: float

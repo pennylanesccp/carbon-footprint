@@ -44,8 +44,8 @@ DEFAULT_MGO_PRICE_BRL_PER_T: float = 3200.0
 
 EF_TTW_MGO_KG_PER_T = dict(
       CO2=3206.0
-    , CH4=0.0
-    , N2O=0.0
+    , CH4=29.8
+    , N2O=273.0
 )
 GWP100 = dict(CH4=29.8, N2O=273.0)
 
@@ -124,8 +124,12 @@ def _road_totals_for_distance(
     , diesel_price_brl_per_l: float
     , truck_key: str
     , empty_backhaul_share: float
+    , axles_override: Optional[int] = None
 ) -> Tuple[float, float, float]:
-    spec = TRUCK_SPECS[truck_key]
+    spec = TRUCK_SPECS[truck_key].copy()
+    if axles_override is not None:
+        spec["axles"] = int(axles_override)
+
     est = estimate_road_trip(
           distance_km=distance_km
         , cargo_t=cargo_t
@@ -314,6 +318,13 @@ def _evaluate(
     """
     Compute ROAD vs CABOTAGE for a single destiny and return a structured dict.
     """
+    # Decide axle strategy (manual vs. auto-by-weight)
+    # If user passes truck_key == "auto_by_weight", infer from cargo_t
+    if truck_key in ("auto", "auto_by_weight"):
+        from modules.road.fuel_model import infer_axles_for_payload
+        axles_eff = infer_axles_for_payload(cargo_t)
+    else:
+        axles_eff = None  # use the preset's axles
 
     deps  = deps  or Dependencies()
     paths = paths or DataPaths()
@@ -473,6 +484,10 @@ def _evaluate(
                   road_direct=used_prof_road
                 , o_to_po=used_prof_km1
                 , pd_to_d=used_prof_km3
+            )
+            , vehicle=dict(
+                  truck_key=str(truck_key)
+                , axles_used=int(axles_eff) if axles_eff is not None else int(TRUCK_SPECS[truck_key]["axles"])
             )
         )
         , road_only=dict(

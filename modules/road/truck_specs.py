@@ -41,6 +41,13 @@ TRUCK_SPECS: Dict[str, Dict[str, Any]] = {
         , "ref_weight_t": 28.0
         , "empty_efficiency_gain": 0.22
     }
+    , "auto_by_weight": {
+          "label": "Auto (infer axles from payload)"
+        , "axles": 5            # placeholder; overridden at runtime
+        , "payload_t": 27.0     # placeholder
+        , "ref_weight_t": 27.0  # placeholder
+        , "empty_efficiency_gain": 0.18
+    }
 }
 
 __all__ = ["TRUCK_SPECS"]
