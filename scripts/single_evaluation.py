@@ -14,18 +14,18 @@ if str(ROOT) not in sys.path:
 
 import argparse
 import json
-import logging
-from pathlib import Path
 
+from modules.functions.logging import init_logging
 from modules.app.evaluator import (
-      _evaluate
+      evaluate
     , Dependencies
     , DataPaths
     , DEFAULT_SEA_K_KG_PER_TKM
     , DEFAULT_MGO_PRICE_BRL_PER_T
 )
-from modules.road.emissions import TRUCK_SPECS
-from modules.road.fuel_model import DEFAULT_DIESEL_PRICES_PATH
+from modules.road.truck_specs import TRUCK_SPECS
+from modules.road.diesel_prices import DEFAULT_DIESEL_PRICES_CSV
+
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -35,11 +35,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--destiny", required=True, help="Destiny (address/city/CEP/'lat,lon').")
     p.add_argument("--amount-tons", type=float, required=True, help="Cargo mass in tonnes.")
 
+    # Accept presets AND the special auto selector
+    truck_choices = sorted(set(TRUCK_SPECS.keys()) | {"auto", "auto_by_weight"})
     p.add_argument(
           "--truck"
         , default="semi_27t"
-        , choices=sorted(TRUCK_SPECS.keys())
-        , help="Truck preset for road legs. Default: semi_27t"
+        , choices=truck_choices
+        , help="Truck preset for road legs (e.g., semi_27t) or 'auto_by_weight'. Default: semi_27t"
     )
     p.add_argument(
           "--ors-profile"
@@ -80,7 +82,8 @@ def _build_parser() -> argparse.ArgumentParser:
           "--diesel-prices-csv"
         , type=Path
         , default=dp.diesel_prices_csv
-        , help=f"CSV with columns UF,price. Default: {dp.diesel_prices_csv} (falls back to {DEFAULT_DIESEL_PRICES_PATH})."
+        , help=f"CSV with columns UF,price_brl_l. Default: {dp.diesel_prices_csv} "
+               f"(falls back to {DEFAULT_DIESEL_PRICES_CSV})."
     )
 
     p.add_argument("--with-geo", action="store_true", help="Include origin/destiny lat/lon in output.")
@@ -88,24 +91,27 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     return p
 
+
 def main(argv=None) -> int:
     args = _build_parser().parse_args(argv)
-    logging.basicConfig(level=getattr(logging, args.log_level), format="%(levelname)s %(message)s")
+
+    # Standard project logger (no file write by default)
+    init_logging(level=args.log_level, force=True, write_output=False)
 
     paths = DataPaths(
           ports_json=args.ports_json
         , sea_matrix_json=args.sea_matrix
         , hotel_json=args.hotel_json
-        , diesel_prices_csv=args.diesel_prices_csv     # ← NEW
+        , diesel_prices_csv=args.diesel_prices_csv
     )
 
-    res = _evaluate(
+    res = evaluate(
           origin=args.origin
         , destiny=args.destiny
         , cargo_t=args.amount_tons
         , truck_key=args.truck
-        , diesel_price_brl_per_l=args.diesel_price          # ← None ⇒ compute from CSV
-        , diesel_prices_csv=args.diesel_prices_csv          # ← override or default
+        , diesel_price_brl_per_l=args.diesel_price          # None ⇒ compute from CSV
+        , diesel_prices_csv=args.diesel_prices_csv
         , empty_backhaul_share=args.empty_backhaul
         , K_sea_kg_per_tkm=args.sea_K
         , mgo_price_brl_per_t=args.mgo_price
@@ -117,12 +123,11 @@ def main(argv=None) -> int:
     )
 
     if args.pretty:
-        logging.getLogger().setLevel(logging.WARNING)
         print(json.dumps(res, ensure_ascii=False, indent=2))
     else:
-        logging.getLogger().setLevel(logging.WARNING)
         print(json.dumps(res, ensure_ascii=False, separators=(",", ":")))
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

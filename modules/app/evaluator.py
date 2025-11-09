@@ -261,7 +261,11 @@ def evaluate(
     # Diesel price
     if diesel_price_brl_per_l is None:
         csv_path = Path(diesel_prices_csv) if diesel_prices_csv else paths.diesel_prices_csv
-        diesel_price_brl_per_l, diesel_meta = _avg_diesel_price_for_endpoints(o, d, csv_path)
+        diesel_price_brl_per_l, diesel_meta = _avg_diesel_price_for_endpoints(
+            origin_point=o
+            , destiny_point=d
+            , csv_path=csv_path
+        )
         _log.info("Diesel price (avg UF_o/UF_d): %.4f BRL/L (fallback_used=%s).",
                   diesel_price_brl_per_l, diesel_meta.get("fallback_used"))
     else:
