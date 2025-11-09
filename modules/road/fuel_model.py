@@ -9,7 +9,9 @@ Axle-based road fuel model
 
 from __future__ import annotations
 
+import os
 import math
+import pandas as pd
 from typing import Dict, Any, Tuple
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -25,6 +27,25 @@ _ANTT_KM_PER_L_BASELINE: Dict[int, float] = {
     , 7: 2.0
     # 8 not typical for container combos; 9+ grouped below
 }
+
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DIESEL_PRICES_PATH = os.path.join(_CURRENT_DIR, "_data", "latest_diesel_prices.csv")
+
+def load_diesel_prices(path: str = DEFAULT_DIESEL_PRICES_PATH) -> dict[str, float]:
+    """
+    Loads pre-processed diesel prices from the CSV.
+    Returns a dict, e.g., {"SP": 6.20, "RJ": 6.35, ...}
+    """
+    try:
+        df = pd.read_csv(path)
+        # Convert the two-column DataFrame to a dictionary
+        return pd.Series(df.price.values, index=df.UF).to_dict()
+    except FileNotFoundError:
+        print(f"WARNING: Diesel price file not found at '{path}'. Using default price.")
+        return {}
+    except Exception as e:
+        print(f"ERROR: Could not load diesel prices: {e}")
+        return {}
 
 def get_km_l_baseline(axles: int) -> float:
     if axles >= 9:
