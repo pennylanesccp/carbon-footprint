@@ -72,18 +72,18 @@ class ORSClient(GeocodingMixin, RoutingMixin):
         self.base_url = self.cfg.base_url
 
         # Legacy tuple support: (connect_s, read_slow_s)
-        _legacy_ct, _legacy_rt_slow = (5.0, 45.0)
+        _legacy_ct, _legacy_rt_slow = (8.0, 45.0)
         if timeout is not None:
             _legacy_ct, _legacy_rt_slow = timeout
 
         # Pick timeouts with graceful fallback if cfg lacks newer attrs
         self.connect_timeout_s      = getattr(self.cfg, "connect_timeout_s", _legacy_ct)
-        self.read_timeout_fast_s    = getattr(self.cfg, "read_timeout_fast_s", 8.0)
+        self.read_timeout_fast_s    = getattr(self.cfg, "read_timeout_fast_s", 2.0)
         self.read_timeout_slow_s    = getattr(self.cfg, "read_timeout_slow_s", _legacy_rt_slow)
         self.escalate_on_timeout    = getattr(self.cfg, "escalate_on_timeout", True)
 
         # Retry knobs (keep modest to avoid long stalls)
-        self.max_retries_total      = getattr(self.cfg, "max_retries", 1)
+        self.max_retries_total      = getattr(self.cfg, "max_retries", 2)
         self.retry_backoff_s        = getattr(self.cfg, "backoff_s", 0.2)
 
         # Cache knobs
