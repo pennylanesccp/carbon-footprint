@@ -1,0 +1,914 @@
+[2025-11-10 11:25:35][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] Starting heatmap build | origin=Av. Luciano Gualberto | amount=50.000 t
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] Log file → logs\output_20251110112535.log
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] Destinations loaded: 5570 (from data\city_dests.txt)
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] Output CSV → outputs\Av_Luciano_Gualberto__50tons.csv
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] ORS timeouts/retries: ORS_ESCALATE_ON_TIMEOUT=1
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] → [1/5570] Acrelândia, AC
+[2025-11-10 11:25:35][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:25:36][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:25:36][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:25:36][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:25:36][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:25:36][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:25:36][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] GEOCODE text='Acrelândia, AC' country=BR size=1
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] GEOCODE text="Acrelândia, AC" country=BR size=1
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -9.82778, 'lon': -66.88333, 'label': 'Acrelandia, R., Brazil'}
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Acrelandia, R., Brazil'.
+[2025-11-10 11:25:36][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:25:36][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d=AC → price_o=6.09, price_d=7.63, avg=6.8600, fallback_used=False
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.8600 BRL/L (fallback_used=False).
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.82778, 'lon': -66.88333, 'label': 'Acrelandia, R., Brazil'}
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-66.88333, -9.82778]]
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3462220.0m dur=181312s
+[2025-11-10 11:25:36][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:25:36][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3462.2200, liters_empty=0.0000, liters_total=3462.2200
+[2025-11-10 11:25:36][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3462.2200, fuel_cost_brl=23750.83, co2e_total_kg=9278.750, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] road_leg: km=3462.220 liters=3462.220 fuel_kg=2908.265 co2e=9278.750 cost=23750.83
+[2025-11-10 11:25:36][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:25:36][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1061.403 km via centroid.
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1061.403 km).
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:25:36][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:25:36][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:25:36][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=621.46, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=621.46
+[2025-11-10 11:25:36][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:25:36][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:25:36][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:25:36][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.82778, 'lon': -66.88333, 'label': 'Acrelandia, R., Brazil'}
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-66.88333, -9.82778]]
+[2025-11-10 11:25:36][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1284107.1m dur=105806s
+[2025-11-10 11:25:36][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:25:36][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1284.1071, liters_empty=0.0000, liters_total=1284.1071
+[2025-11-10 11:25:36][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1284.1071, fuel_cost_brl=8808.97, co2e_total_kg=3441.407, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] road_leg: km=1284.107 liters=1284.107 fuel_kg=1078.650 co2e=3441.407 cost=8808.97
+[2025-11-10 11:25:36][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=9278.750 kg, CABOTAGE CO2e=5658.650 kg (Δ=-3620.100 kg).
+[2025-11-10 11:25:36][INFO][scripts.build_heatmap_from_file] CSV+ Acrelândia, AC,-12349.632553664593,-3620.0995958402164
+[2025-11-10 11:25:36][INFO][scripts.build_heatmap_from_file] ✓ done in 1.58s — Acrelândia, AC
+[2025-11-10 11:25:36][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:25:36][INFO][scripts.build_heatmap_from_file] → [2/5570] Assis Brasil, AC
+[2025-11-10 11:25:36][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:25:38][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:25:38][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:25:38][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:25:38][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:25:38][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:25:38][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] GEOCODE text='Assis Brasil, AC' country=BR size=1
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] GEOCODE text="Assis Brasil, AC" country=BR size=1
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -10.935672, 'lon': -69.560485, 'label': 'Assis Brasil, R., Brazil'}
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Assis Brasil, R., Brazil'.
+[2025-11-10 11:25:38][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:25:38][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.935672, 'lon': -69.560485, 'label': 'Assis Brasil, R., Brazil'}
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-69.560485, -10.935672]]
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3887031.6m dur=203803s
+[2025-11-10 11:25:38][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:25:38][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3887.0316, liters_empty=0.0000, liters_total=3887.0316
+[2025-11-10 11:25:38][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3887.0316, fuel_cost_brl=23672.02, co2e_total_kg=10417.245, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] road_leg: km=3887.032 liters=3887.032 fuel_kg=3265.107 co2e=10417.245 cost=23672.02
+[2025-11-10 11:25:38][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:25:38][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1362.961 km via centroid.
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1362.961 km).
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:25:38][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:25:38][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:25:38][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:25:38][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:25:38][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:25:38][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:25:38][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.935672, 'lon': -69.560485, 'label': 'Assis Brasil, R., Brazil'}
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-69.560485, -10.935672]]
+[2025-11-10 11:25:38][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1708918.7m dur=128296s
+[2025-11-10 11:25:38][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:25:38][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1708.9187, liters_empty=0.0000, liters_total=1708.9187
+[2025-11-10 11:25:38][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1708.9187, fuel_cost_brl=10407.31, co2e_total_kg=4579.902, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] road_leg: km=1708.919 liters=1708.919 fuel_kg=1435.492 co2e=4579.902 cost=10407.31
+[2025-11-10 11:25:38][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=10417.245 kg, CABOTAGE CO2e=6797.145 kg (Δ=-3620.100 kg).
+[2025-11-10 11:25:38][INFO][scripts.build_heatmap_from_file] CSV+ Assis Brasil, AC,-10742.2413836646,-3620.099595840218
+[2025-11-10 11:25:38][INFO][scripts.build_heatmap_from_file] ✓ done in 1.49s — Assis Brasil, AC
+[2025-11-10 11:25:38][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:25:38][INFO][scripts.build_heatmap_from_file] → [3/5570] Brasiléia, AC
+[2025-11-10 11:25:38][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:25:39][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:25:39][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:25:39][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:25:39][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:25:39][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:25:39][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:25:39][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:25:39][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:25:39][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:25:39][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:25:39][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:39][INFO][modules.addressing.resolver] GEOCODE text='Brasiléia, AC' country=BR size=1
+[2025-11-10 11:25:39][INFO][modules.road.ors_mixins] GEOCODE text="Brasiléia, AC" country=BR size=1
+[2025-11-10 11:25:39][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -10.98347, 'lon': -68.773106, 'label': 'Brasiléia, R., Brazil'}
+[2025-11-10 11:25:39][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Brasiléia, R., Brazil'.
+[2025-11-10 11:25:39][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:25:39][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:25:39][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:25:39][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:39][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.98347, 'lon': -68.773106, 'label': 'Brasiléia, R., Brazil'}
+[2025-11-10 11:25:39][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-68.773106, -10.98347]]
+[2025-11-10 11:25:48][WARNING][urllib3.connectionpool] Retrying (Retry(total=2, connect=0, read=0, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='api.openrouteservice.org', port=443): Read timed out. (read timeout=8.0)")': /v2/directions/driving-hgv
+[2025-11-10 11:25:58][ERROR][modules.road.ors_client] HTTP POST /v2/directions/driving-hgv — request exception ConnectionError after 18105 ms (attempt 1)
+[2025-11-10 11:25:58][WARNING][modules.app.evaluator] Primary 'driving-hgv' failed (HTTPSConnectionPool(host='api.openrouteservice.org', port=443): Max retries exceeded with url: /v2/directions/driving-hgv (Caused by ReadTimeoutError("HTTPSConnectionPool(host='api.openrouteservice.org', port=443): Read timed out. (read timeout=8.0)"))).
+[2025-11-10 11:25:58][WARNING][modules.app.evaluator] Falling back to 'driving-car'.
+[2025-11-10 11:25:58][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:25:58][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.98347, 'lon': -68.773106, 'label': 'Brasiléia, R., Brazil'}
+[2025-11-10 11:25:58][INFO][modules.road.ors_mixins] ROUTE try1 driving-car coords=[[-46.730357, -23.558808], [-68.773106, -10.98347]]
+[2025-11-10 11:25:59][WARNING][modules.road.ors_client] HTTP POST /v2/directions/driving-car — 404 (1377 ms, attempt 1) no-route: {"error": {"code": 2010, "message": "Could not find routable point within a radius of 350.0 meters of specified coordinate 1: -68.7731060 -10.9834700."}, "info": {"engine": {"build_date": "2025-10-31T12:33:09Z", "graph_date": "2025-11-09T11:14:34Z", "graph_version": "3", "osm_date": "2025-11-03T01:00:00Z", "version": "9.5.0"}, "timestamp": 1762784759252}}
+[2025-11-10 11:25:59][WARNING][scripts.build_heatmap_from_file] single_evaluation failed for 'Brasiléia, AC' (code=1)
+[2025-11-10 11:25:59][WARNING][scripts.build_heatmap_from_file] Filtered (not written) 'Brasiléia, AC' after 21.10s due to error: single_evaluation failed for 'Brasiléia, AC' (code=1)
+[2025-11-10 11:25:59][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:25:59][INFO][scripts.build_heatmap_from_file] → [4/5570] Bujari, AC
+[2025-11-10 11:25:59][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:00][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:00][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:00][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:00][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:00][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:00][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] GEOCODE text='Bujari, AC' country=BR size=1
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] GEOCODE text="Bujari, AC" country=BR size=1
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -9.827082, 'lon': -67.948456, 'label': 'Bujari, R., Brazil'}
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Bujari, R., Brazil'.
+[2025-11-10 11:26:00][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:00][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.827082, 'lon': -67.948456, 'label': 'Bujari, R., Brazil'}
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-67.948456, -9.827082]]
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3605533.4m dur=189416s
+[2025-11-10 11:26:00][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:00][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3605.5334, liters_empty=0.0000, liters_total=3605.5334
+[2025-11-10 11:26:00][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3605.5334, fuel_cost_brl=21957.70, co2e_total_kg=9662.830, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] road_leg: km=3605.533 liters=3605.533 fuel_kg=3028.648 co2e=9662.830 cost=21957.70
+[2025-11-10 11:26:00][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:00][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1148.415 km via centroid.
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1148.415 km).
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:00][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:00][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:00][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:00][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:00][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:00][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:00][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.827082, 'lon': -67.948456, 'label': 'Bujari, R., Brazil'}
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-67.948456, -9.827082]]
+[2025-11-10 11:26:00][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1427420.6m dur=113910s
+[2025-11-10 11:26:00][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:00][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1427.4206, liters_empty=0.0000, liters_total=1427.4206
+[2025-11-10 11:26:00][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1427.4206, fuel_cost_brl=8692.99, co2e_total_kg=3825.487, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] road_leg: km=1427.421 liters=1427.421 fuel_kg=1199.033 co2e=3825.487 cost=8692.99
+[2025-11-10 11:26:00][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=9662.830 kg, CABOTAGE CO2e=6042.730 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:01][INFO][scripts.build_heatmap_from_file] CSV+ Bujari, AC,-10742.240774664595,-3620.0993278402175
+[2025-11-10 11:26:01][INFO][scripts.build_heatmap_from_file] ✓ done in 1.52s — Bujari, AC
+[2025-11-10 11:26:01][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:01][INFO][scripts.build_heatmap_from_file] → [5/5570] Capixaba, AC
+[2025-11-10 11:26:01][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:02][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:02][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:02][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:02][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:02][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:02][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] GEOCODE text='Capixaba, AC' country=BR size=1
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] GEOCODE text="Capixaba, AC" country=BR size=1
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -10.569186, 'lon': -67.674444, 'label': 'Capixaba, R., Brazil'}
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Capixaba, R., Brazil'.
+[2025-11-10 11:26:02][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:02][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.569186, 'lon': -67.674444, 'label': 'Capixaba, R., Brazil'}
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-67.674444, -10.569186]]
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3625384.9m dur=189875s
+[2025-11-10 11:26:02][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:02][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3625.3849, liters_empty=0.0000, liters_total=3625.3849
+[2025-11-10 11:26:02][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3625.3849, fuel_cost_brl=22078.59, co2e_total_kg=9716.032, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] road_leg: km=3625.385 liters=3625.385 fuel_kg=3045.323 co2e=9716.032 cost=22078.59
+[2025-11-10 11:26:02][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:02][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1180.952 km via centroid.
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1180.952 km).
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:02][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:02][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:02][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:02][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:02][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:02][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:02][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.569186, 'lon': -67.674444, 'label': 'Capixaba, R., Brazil'}
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-67.674444, -10.569186]]
+[2025-11-10 11:26:02][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1447272.1m dur=114369s
+[2025-11-10 11:26:02][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:02][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1447.2721, liters_empty=0.0000, liters_total=1447.2721
+[2025-11-10 11:26:02][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1447.2721, fuel_cost_brl=8813.89, co2e_total_kg=3878.689, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] road_leg: km=1447.272 liters=1447.272 fuel_kg=1215.709 co2e=3878.689 cost=8813.89
+[2025-11-10 11:26:02][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=9716.032 kg, CABOTAGE CO2e=6095.932 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:02][INFO][scripts.build_heatmap_from_file] CSV+ Capixaba, AC,-10742.240774664597,-3620.0993278402184
+[2025-11-10 11:26:02][INFO][scripts.build_heatmap_from_file] ✓ done in 1.56s — Capixaba, AC
+[2025-11-10 11:26:02][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:02][INFO][scripts.build_heatmap_from_file] → [6/5570] Cruzeiro do Sul, AC
+[2025-11-10 11:26:02][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:04][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:04][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:04][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:04][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:04][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:04][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] GEOCODE text='Cruzeiro do Sul, AC' country=BR size=1
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] GEOCODE text="Cruzeiro do Sul, AC" country=BR size=1
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -7.611057, 'lon': -72.682291, 'label': 'Cruzeiro do Sul, R., Brazil'}
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Cruzeiro do Sul, R., Brazil'.
+[2025-11-10 11:26:04][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:04][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -7.611057, 'lon': -72.682291, 'label': 'Cruzeiro do Sul, R., Brazil'}
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-72.682291, -7.611057]]
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=4219268.5m dur=226591s
+[2025-11-10 11:26:04][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:04][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=4219.2685, liters_empty=0.0000, liters_total=4219.2685
+[2025-11-10 11:26:04][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=4219.2685, fuel_cost_brl=25695.35, co2e_total_kg=11307.640, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] road_leg: km=4219.269 liters=4219.269 fuel_kg=3544.186 co2e=11307.640 cost=25695.35
+[2025-11-10 11:26:04][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:04][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1487.602 km via centroid.
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1487.602 km).
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:04][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:04][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:04][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:04][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:04][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:04][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:04][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -7.611057, 'lon': -72.682291, 'label': 'Cruzeiro do Sul, R., Brazil'}
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-72.682291, -7.611057]]
+[2025-11-10 11:26:04][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=2041155.7m dur=151084s
+[2025-11-10 11:26:04][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:04][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=2041.1557, liters_empty=0.0000, liters_total=2041.1557
+[2025-11-10 11:26:04][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=2041.1557, fuel_cost_brl=12430.64, co2e_total_kg=5470.297, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] road_leg: km=2041.156 liters=2041.156 fuel_kg=1714.571 co2e=5470.297 cost=12430.64
+[2025-11-10 11:26:04][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=11307.640 kg, CABOTAGE CO2e=7687.540 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:04][INFO][scripts.build_heatmap_from_file] CSV+ Cruzeiro do Sul, AC,-10742.240774664595,-3620.0993278402184
+[2025-11-10 11:26:04][INFO][scripts.build_heatmap_from_file] ✓ done in 1.56s — Cruzeiro do Sul, AC
+[2025-11-10 11:26:04][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:04][INFO][scripts.build_heatmap_from_file] → [7/5570] Epitaciolândia, AC
+[2025-11-10 11:26:04][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:05][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:05][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:05][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:05][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:05][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:05][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] GEOCODE text='Epitaciolândia, AC' country=BR size=1
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] GEOCODE text="Epitaciolândia, AC" country=BR size=1
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -11.024659, 'lon': -68.718695, 'label': 'Epitaciolândia, R., Brazil'}
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Epitaciolândia, R., Brazil'.
+[2025-11-10 11:26:05][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:05][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -11.024659, 'lon': -68.718695, 'label': 'Epitaciolândia, R., Brazil'}
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-68.718695, -11.024659]]
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3771185.0m dur=197612s
+[2025-11-10 11:26:05][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:05][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3771.1850, liters_empty=0.0000, liters_total=3771.1850
+[2025-11-10 11:26:05][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3771.1850, fuel_cost_brl=22966.52, co2e_total_kg=10106.776, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] road_leg: km=3771.185 liters=3771.185 fuel_kg=3167.795 co2e=10106.776 cost=22966.52
+[2025-11-10 11:26:05][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:05][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1299.134 km via centroid.
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1299.134 km).
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:05][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:05][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:05][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:05][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:05][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:05][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:05][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -11.024659, 'lon': -68.718695, 'label': 'Epitaciolândia, R., Brazil'}
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-68.718695, -11.024659]]
+[2025-11-10 11:26:05][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1593072.1m dur=122106s
+[2025-11-10 11:26:05][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:05][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1593.0721, liters_empty=0.0000, liters_total=1593.0721
+[2025-11-10 11:26:05][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1593.0721, fuel_cost_brl=9701.81, co2e_total_kg=4269.433, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] road_leg: km=1593.072 liters=1593.072 fuel_kg=1338.181 co2e=4269.433 cost=9701.81
+[2025-11-10 11:26:05][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=10106.776 kg, CABOTAGE CO2e=6486.676 kg (Δ=-3620.100 kg).
+[2025-11-10 11:26:05][INFO][scripts.build_heatmap_from_file] CSV+ Epitaciolândia, AC,-10742.241383664594,-3620.099595840218
+[2025-11-10 11:26:05][INFO][scripts.build_heatmap_from_file] ✓ done in 1.40s — Epitaciolândia, AC
+[2025-11-10 11:26:05][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:05][INFO][scripts.build_heatmap_from_file] → [8/5570] Feijó, AC
+[2025-11-10 11:26:05][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:06][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:06][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:06][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:06][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:06][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:06][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] GEOCODE text='Feijó, AC' country=BR size=1
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] GEOCODE text="Feijó, AC" country=BR size=1
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -8.17497, 'lon': -70.347807, 'label': 'Feijó, R., Brazil'}
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Feijó, R., Brazil'.
+[2025-11-10 11:26:06][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:06][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.17497, 'lon': -70.347807, 'label': 'Feijó, R., Brazil'}
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-70.347807, -8.17497]]
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3944129.0m dur=209957s
+[2025-11-10 11:26:06][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:06][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3944.1290, liters_empty=0.0000, liters_total=3944.1290
+[2025-11-10 11:26:06][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3944.1290, fuel_cost_brl=24019.75, co2e_total_kg=10570.266, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] road_leg: km=3944.129 liters=3944.129 fuel_kg=3313.068 co2e=10570.266 cost=24019.75
+[2025-11-10 11:26:06][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:06][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1272.599 km via centroid.
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1272.599 km).
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:06][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:06][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:06][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:06][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:06][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:06][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:06][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.17497, 'lon': -70.347807, 'label': 'Feijó, R., Brazil'}
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-70.347807, -8.17497]]
+[2025-11-10 11:26:06][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1766016.1m dur=134450s
+[2025-11-10 11:26:06][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:06][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1766.0161, liters_empty=0.0000, liters_total=1766.0161
+[2025-11-10 11:26:06][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1766.0161, fuel_cost_brl=10755.04, co2e_total_kg=4732.923, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] road_leg: km=1766.016 liters=1766.016 fuel_kg=1483.454 co2e=4732.923 cost=10755.04
+[2025-11-10 11:26:06][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=10570.266 kg, CABOTAGE CO2e=6950.166 kg (Δ=-3620.100 kg).
+[2025-11-10 11:26:06][INFO][scripts.build_heatmap_from_file] CSV+ Feijó, AC,-10742.241383664594,-3620.099595840218
+[2025-11-10 11:26:06][INFO][scripts.build_heatmap_from_file] ✓ done in 1.39s — Feijó, AC
+[2025-11-10 11:26:06][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:06][INFO][scripts.build_heatmap_from_file] → [9/5570] Jordão, AC
+[2025-11-10 11:26:06][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:08][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:08][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:08][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:08][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:08][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:08][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] GEOCODE text='Jordão, AC' country=BR size=1
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] GEOCODE text="Jordão, AC" country=BR size=1
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -22.721797, 'lon': -45.565887, 'label': 'Campos do Jordao, SP, Brazil'}
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Campos do Jordao, SP, Brazil'.
+[2025-11-10 11:26:08][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:08][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d=SP → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=False
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=False).
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -22.721797, 'lon': -45.565887, 'label': 'Campos do Jordao, SP, Brazil'}
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-45.565887, -22.721797]]
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=196486.7m dur=12039s
+[2025-11-10 11:26:08][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:08][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=196.4867, liters_empty=0.0000, liters_total=196.4867
+[2025-11-10 11:26:08][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=196.4867, fuel_cost_brl=1196.60, co2e_total_kg=526.584, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] road_leg: km=196.487 liters=196.487 fuel_kg=165.049 co2e=526.584 cost=1196.60
+[2025-11-10 11:26:08][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:08][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='São Sebastião' (UF=SP) distance=121.984 km via gate 'Gate'.
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='São Sebastião' (121.984 km).
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:08][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:08][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:08][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:08][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'São Sebastião' → 112.906 km
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] Sea leg: km=112.906 fuel=15.242 kg CO2e=48.867 cost=48.78.
+[2025-11-10 11:26:08][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:08][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=38.716 kg → total=130.460 kg
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.808154673463267, 'lon': -45.39974141587111, 'label': 'São Sebastião gate'}
+[2025-11-10 11:26:08][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -22.721797, 'lon': -45.565887, 'label': 'Campos do Jordao, SP, Brazil'}
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-45.39974141587111, -23.808154673463267], [-45.565887, -22.721797]]
+[2025-11-10 11:26:08][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=183922.5m dur=12125s
+[2025-11-10 11:26:08][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:08][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=183.9225, liters_empty=0.0000, liters_total=183.9225
+[2025-11-10 11:26:08][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=183.9225, fuel_cost_brl=1120.09, co2e_total_kg=492.912, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] road_leg: km=183.923 liters=183.923 fuel_kg=154.495 co2e=492.912 cost=1120.09
+[2025-11-10 11:26:08][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=526.584 kg, CABOTAGE CO2e=1202.820 kg (Δ=676.235 kg).
+[2025-11-10 11:26:08][INFO][scripts.build_heatmap_from_file] CSV+ Jordão, AC,941.4356311279773,676.2353871369671
+[2025-11-10 11:26:08][INFO][scripts.build_heatmap_from_file] ✓ done in 1.48s — Jordão, AC
+[2025-11-10 11:26:08][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:08][INFO][scripts.build_heatmap_from_file] → [10/5570] Manoel Urbano, AC
+[2025-11-10 11:26:08][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:09][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:09][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:09][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:09][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:09][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:09][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] GEOCODE text='Manoel Urbano, AC' country=BR size=1
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] GEOCODE text="Manoel Urbano, AC" country=BR size=1
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -8.834357, 'lon': -69.260985, 'label': 'Manoel Urbano, R., Brazil'}
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Manoel Urbano, R., Brazil'.
+[2025-11-10 11:26:09][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:09][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.834357, 'lon': -69.260985, 'label': 'Manoel Urbano, R., Brazil'}
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-69.260985, -8.834357]]
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3808542.3m dur=201703s
+[2025-11-10 11:26:09][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:09][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3808.5423, liters_empty=0.0000, liters_total=3808.5423
+[2025-11-10 11:26:09][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3808.5423, fuel_cost_brl=23194.02, co2e_total_kg=10206.893, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] road_leg: km=3808.542 liters=3808.542 fuel_kg=3199.176 co2e=10206.893 cost=23194.02
+[2025-11-10 11:26:09][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:09][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1201.975 km via centroid.
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1201.975 km).
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:09][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:09][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:09][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:09][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:09][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:09][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:09][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.834357, 'lon': -69.260985, 'label': 'Manoel Urbano, R., Brazil'}
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-69.260985, -8.834357]]
+[2025-11-10 11:26:09][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1630429.5m dur=126197s
+[2025-11-10 11:26:09][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:09][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1630.4295, liters_empty=0.0000, liters_total=1630.4295
+[2025-11-10 11:26:09][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1630.4295, fuel_cost_brl=9929.32, co2e_total_kg=4369.551, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] road_leg: km=1630.429 liters=1630.429 fuel_kg=1369.561 co2e=4369.551 cost=9929.32
+[2025-11-10 11:26:09][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=10206.893 kg, CABOTAGE CO2e=6586.794 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:09][INFO][scripts.build_heatmap_from_file] CSV+ Manoel Urbano, AC,-10742.240774664591,-3620.0993278402175
+[2025-11-10 11:26:09][INFO][scripts.build_heatmap_from_file] ✓ done in 1.33s — Manoel Urbano, AC
+[2025-11-10 11:26:09][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:09][INFO][scripts.build_heatmap_from_file] → [11/5570] Marechal Thaumaturgo, AC
+[2025-11-10 11:26:09][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:11][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:11][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:11][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:11][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:11][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:11][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:11][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:11][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:11][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:11][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:11][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:11][INFO][modules.addressing.resolver] GEOCODE text='Marechal Thaumaturgo, AC' country=BR size=1
+[2025-11-10 11:26:11][INFO][modules.road.ors_mixins] GEOCODE text="Marechal Thaumaturgo, AC" country=BR size=1
+[2025-11-10 11:26:11][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -8.946884, 'lon': -72.789938, 'label': 'Marechal Thaumaturgo, R., Brazil'}
+[2025-11-10 11:26:11][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Marechal Thaumaturgo, R., Brazil'.
+[2025-11-10 11:26:11][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:11][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:11][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:11][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:11][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.946884, 'lon': -72.789938, 'label': 'Marechal Thaumaturgo, R., Brazil'}
+[2025-11-10 11:26:11][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-72.789938, -8.946884]]
+[2025-11-10 11:26:15][WARNING][modules.road.ors_client] HTTP POST /v2/directions/driving-hgv — 404 (4894 ms, attempt 1) no-route: {"error": {"code": 2010, "message": "Could not find routable point within a radius of 350.0 meters of specified coordinate 1: -72.7899380 -8.9468840."}, "info": {"engine": {"build_date": "2025-10-31T12:33:09Z", "graph_date": "2025-11-04T13:59:57Z", "graph_version": "3", "osm_date": "2025-10-27T00:59:56Z", "version": "9.5.0"}, "timestamp": 1762784775825}}
+[2025-11-10 11:26:15][WARNING][modules.app.evaluator] Primary 'driving-hgv' failed (No route for /v2/directions/driving-hgv: {"error": {"code": 2010, "message": "Could not find routable point within a radius of 350.0 meters of specified coordinate 1: -72.7899380 -8.9468840."}, "info": {"engine": {"build_date": "2025-10-31T12:33:09Z", "graph_date": "2025-11-04T13:59:57Z", "graph_version": "3", "osm_date": "2025-10-27T00:59:56Z", "version": "9.5.0"}, "timestamp": 1762784775825}}).
+[2025-11-10 11:26:15][WARNING][modules.app.evaluator] Falling back to 'driving-car'.
+[2025-11-10 11:26:15][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:15][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.946884, 'lon': -72.789938, 'label': 'Marechal Thaumaturgo, R., Brazil'}
+[2025-11-10 11:26:15][INFO][modules.road.ors_mixins] ROUTE try1 driving-car coords=[[-46.730357, -23.558808], [-72.789938, -8.946884]]
+[2025-11-10 11:26:16][WARNING][modules.road.ors_client] HTTP POST /v2/directions/driving-car — 404 (676 ms, attempt 1) no-route: {"error": {"code": 2010, "message": "Could not find routable point within a radius of 350.0 meters of specified coordinate 1: -72.7899380 -8.9468840."}, "info": {"engine": {"build_date": "2025-10-31T12:33:09Z", "graph_date": "2025-11-09T11:14:34Z", "graph_version": "3", "osm_date": "2025-11-03T01:00:00Z", "version": "9.5.0"}, "timestamp": 1762784776507}}
+[2025-11-10 11:26:16][WARNING][scripts.build_heatmap_from_file] single_evaluation failed for 'Marechal Thaumaturgo, AC' (code=1)
+[2025-11-10 11:26:16][WARNING][scripts.build_heatmap_from_file] Filtered (not written) 'Marechal Thaumaturgo, AC' after 6.98s due to error: single_evaluation failed for 'Marechal Thaumaturgo, AC' (code=1)
+[2025-11-10 11:26:16][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:16][INFO][scripts.build_heatmap_from_file] → [12/5570] Mâncio Lima, AC
+[2025-11-10 11:26:16][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:18][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:18][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:18][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:18][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:18][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:18][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] GEOCODE text='Mâncio Lima, AC' country=BR size=1
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] GEOCODE text="Mâncio Lima, AC" country=BR size=1
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -7.612346, 'lon': -72.911204, 'label': 'Mâncio Lima, R., Brazil'}
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Mâncio Lima, R., Brazil'.
+[2025-11-10 11:26:18][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:18][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -7.612346, 'lon': -72.911204, 'label': 'Mâncio Lima, R., Brazil'}
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-72.911204, -7.612346]]
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=4242647.2m dur=228234s
+[2025-11-10 11:26:18][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:18][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=4242.6472, liters_empty=0.0000, liters_total=4242.6472
+[2025-11-10 11:26:18][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=4242.6472, fuel_cost_brl=25837.72, co2e_total_kg=11370.294, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] road_leg: km=4242.647 liters=4242.647 fuel_kg=3563.824 co2e=11370.294 cost=25837.72
+[2025-11-10 11:26:18][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:18][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1511.559 km via centroid.
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1511.559 km).
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:18][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:18][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:18][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:18][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:18][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:18][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:18][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -7.612346, 'lon': -72.911204, 'label': 'Mâncio Lima, R., Brazil'}
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-72.911204, -7.612346]]
+[2025-11-10 11:26:18][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=2064534.4m dur=152728s
+[2025-11-10 11:26:18][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:18][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=2064.5344, liters_empty=0.0000, liters_total=2064.5344
+[2025-11-10 11:26:18][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=2064.5344, fuel_cost_brl=12573.01, co2e_total_kg=5532.952, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] road_leg: km=2064.534 liters=2064.534 fuel_kg=1734.209 co2e=5532.952 cost=12573.01
+[2025-11-10 11:26:18][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=11370.294 kg, CABOTAGE CO2e=7750.195 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:18][INFO][scripts.build_heatmap_from_file] CSV+ Mâncio Lima, AC,-10742.240774664597,-3620.0993278402193
+[2025-11-10 11:26:18][INFO][scripts.build_heatmap_from_file] ✓ done in 1.45s — Mâncio Lima, AC
+[2025-11-10 11:26:18][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:18][INFO][scripts.build_heatmap_from_file] → [13/5570] Plácido de Castro, AC
+[2025-11-10 11:26:18][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:19][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:19][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:19][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:19][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:19][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:19][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] GEOCODE text='Plácido de Castro, AC' country=BR size=1
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] GEOCODE text="Plácido de Castro, AC" country=BR size=1
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -10.307027, 'lon': -67.197808, 'label': 'Plácido de Castro, R., Brazil'}
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Plácido de Castro, R., Brazil'.
+[2025-11-10 11:26:19][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:19][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.307027, 'lon': -67.197808, 'label': 'Plácido de Castro, R., Brazil'}
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-67.197808, -10.307027]]
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3534798.0m dur=185955s
+[2025-11-10 11:26:19][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:19][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3534.7980, liters_empty=0.0000, liters_total=3534.7980
+[2025-11-10 11:26:19][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3534.7980, fuel_cost_brl=21526.92, co2e_total_kg=9473.259, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] road_leg: km=3534.798 liters=3534.798 fuel_kg=2969.230 co2e=9473.259 cost=21526.92
+[2025-11-10 11:26:19][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:19][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1123.245 km via centroid.
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1123.245 km).
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:19][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:19][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:19][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:19][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:19][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:19][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:19][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -10.307027, 'lon': -67.197808, 'label': 'Plácido de Castro, R., Brazil'}
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-67.197808, -10.307027]]
+[2025-11-10 11:26:19][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1356685.2m dur=110448s
+[2025-11-10 11:26:19][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:19][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1356.6852, liters_empty=0.0000, liters_total=1356.6852
+[2025-11-10 11:26:19][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1356.6852, fuel_cost_brl=8262.21, co2e_total_kg=3635.916, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] road_leg: km=1356.685 liters=1356.685 fuel_kg=1139.616 co2e=3635.916 cost=8262.21
+[2025-11-10 11:26:19][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=9473.259 kg, CABOTAGE CO2e=5853.159 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:19][INFO][scripts.build_heatmap_from_file] CSV+ Plácido de Castro, AC,-10742.240774664597,-3620.0993278402184
+[2025-11-10 11:26:19][INFO][scripts.build_heatmap_from_file] ✓ done in 1.48s — Plácido de Castro, AC
+[2025-11-10 11:26:19][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:19][INFO][scripts.build_heatmap_from_file] → [14/5570] Porto Acre, AC
+[2025-11-10 11:26:19][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:21][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:21][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:21][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:21][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:21][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:21][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] GEOCODE text='Porto Acre, AC' country=BR size=1
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] GEOCODE text="Porto Acre, AC" country=BR size=1
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -9.596969, 'lon': -67.541076, 'label': 'Porto Acre, R., Brazil'}
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Porto Acre, R., Brazil'.
+[2025-11-10 11:26:21][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:21][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d=AC → price_o=6.09, price_d=7.63, avg=6.8600, fallback_used=False
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.8600 BRL/L (fallback_used=False).
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.596969, 'lon': -67.541076, 'label': 'Porto Acre, R., Brazil'}
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-67.541076, -9.596969]]
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3642066.1m dur=191896s
+[2025-11-10 11:26:21][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:21][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3642.0661, liters_empty=0.0000, liters_total=3642.0661
+[2025-11-10 11:26:21][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3642.0661, fuel_cost_brl=24984.57, co2e_total_kg=9760.737, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] road_leg: km=3642.066 liters=3642.066 fuel_kg=3059.336 co2e=9760.737 cost=24984.57
+[2025-11-10 11:26:21][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:21][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1097.758 km via centroid.
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1097.758 km).
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:21][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:21][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:21][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=621.46, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=621.46
+[2025-11-10 11:26:21][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:21][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:21][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:21][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.596969, 'lon': -67.541076, 'label': 'Porto Acre, R., Brazil'}
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-67.541076, -9.596969]]
+[2025-11-10 11:26:21][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1463953.3m dur=116390s
+[2025-11-10 11:26:21][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:21][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1463.9533, liters_empty=0.0000, liters_total=1463.9533
+[2025-11-10 11:26:21][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1463.9533, fuel_cost_brl=10042.72, co2e_total_kg=3923.395, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] road_leg: km=1463.953 liters=1463.953 fuel_kg=1229.721 co2e=3923.395 cost=10042.72
+[2025-11-10 11:26:21][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=9760.737 kg, CABOTAGE CO2e=6140.638 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:21][INFO][scripts.build_heatmap_from_file] CSV+ Porto Acre, AC,-12349.631867664595,-3620.0993278402175
+[2025-11-10 11:26:21][INFO][scripts.build_heatmap_from_file] ✓ done in 1.49s — Porto Acre, AC
+[2025-11-10 11:26:21][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:21][INFO][scripts.build_heatmap_from_file] → [15/5570] Porto Walter, AC
+[2025-11-10 11:26:21][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:22][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:22][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:22][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:22][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:22][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:22][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:22][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:22][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:22][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:22][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:22][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:22][INFO][modules.addressing.resolver] GEOCODE text='Porto Walter, AC' country=BR size=1
+[2025-11-10 11:26:22][INFO][modules.road.ors_mixins] GEOCODE text="Porto Walter, AC" country=BR size=1
+[2025-11-10 11:26:22][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -8.266139, 'lon': -72.747047, 'label': 'Porto Walter, R., Brazil'}
+[2025-11-10 11:26:22][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Porto Walter, R., Brazil'.
+[2025-11-10 11:26:22][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:22][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:22][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:22][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:22][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.266139, 'lon': -72.747047, 'label': 'Porto Walter, R., Brazil'}
+[2025-11-10 11:26:22][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-72.747047, -8.266139]]
+[2025-11-10 11:26:23][WARNING][modules.road.ors_client] HTTP POST /v2/directions/driving-hgv — 404 (1298 ms, attempt 1) no-route: {"error": {"code": 2009, "message": "Route could not be found - Unable to find a route between points 1 (-46.7303570 -23.5588080) and 2 (-72.7470470 -8.2661390)."}, "info": {"engine": {"build_date": "2025-10-31T12:33:09Z", "graph_date": "2025-11-04T13:59:57Z", "graph_version": "3", "osm_date": "2025-10-27T00:59:56Z", "version": "9.5.0"}, "timestamp": 1762784783711}}
+[2025-11-10 11:26:23][WARNING][modules.app.evaluator] Primary 'driving-hgv' failed (No route for /v2/directions/driving-hgv: {"error": {"code": 2009, "message": "Route could not be found - Unable to find a route between points 1 (-46.7303570 -23.5588080) and 2 (-72.7470470 -8.2661390)."}, "info": {"engine": {"build_date": "2025-10-31T12:33:09Z", "graph_date": "2025-11-04T13:59:57Z", "graph_version": "3", "osm_date": "2025-10-27T00:59:56Z", "version": "9.5.0"}, "timestamp": 1762784783711}}).
+[2025-11-10 11:26:23][WARNING][modules.app.evaluator] Falling back to 'driving-car'.
+[2025-11-10 11:26:23][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:23][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -8.266139, 'lon': -72.747047, 'label': 'Porto Walter, R., Brazil'}
+[2025-11-10 11:26:23][INFO][modules.road.ors_mixins] ROUTE try1 driving-car coords=[[-46.730357, -23.558808], [-72.747047, -8.266139]]
+[2025-11-10 11:26:24][WARNING][modules.road.ors_client] HTTP POST /v2/directions/driving-car — 404 (294 ms, attempt 1) no-route: {"error": {"code": 2009, "message": "Route could not be found - Unable to find a route between points 1 (-46.7303570 -23.5588080) and 2 (-72.7470470 -8.2661390)."}, "info": {"engine": {"build_date": "2025-10-31T12:33:09Z", "graph_date": "2025-11-09T11:14:34Z", "graph_version": "3", "osm_date": "2025-11-03T01:00:00Z", "version": "9.5.0"}, "timestamp": 1762784783996}}
+[2025-11-10 11:26:24][WARNING][scripts.build_heatmap_from_file] single_evaluation failed for 'Porto Walter, AC' (code=1)
+[2025-11-10 11:26:24][WARNING][scripts.build_heatmap_from_file] Filtered (not written) 'Porto Walter, AC' after 3.07s due to error: single_evaluation failed for 'Porto Walter, AC' (code=1)
+[2025-11-10 11:26:24][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:24][INFO][scripts.build_heatmap_from_file] → [16/5570] Rio Branco, AC
+[2025-11-10 11:26:24][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:25][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:25][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:25][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:25][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:25][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:25][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] GEOCODE text='Rio Branco, AC' country=BR size=1
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] GEOCODE text="Rio Branco, AC" country=BR size=1
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -9.989637, 'lon': -67.822462, 'label': 'Rio Branco, R., Brazil'}
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Rio Branco, R., Brazil'.
+[2025-11-10 11:26:25][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:25][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.989637, 'lon': -67.822462, 'label': 'Rio Branco, R., Brazil'}
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-67.822462, -9.989637]]
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=3584628.4m dur=188017s
+[2025-11-10 11:26:25][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:25][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=3584.6284, liters_empty=0.0000, liters_total=3584.6284
+[2025-11-10 11:26:25][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=3584.6284, fuel_cost_brl=21830.39, co2e_total_kg=9606.804, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] road_leg: km=3584.628 liters=3584.628 fuel_kg=3011.088 co2e=9606.804 cost=21830.39
+[2025-11-10 11:26:25][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:25][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1149.569 km via centroid.
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1149.569 km).
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:25][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:25][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:25][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:25][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:25][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:25][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:25][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.989637, 'lon': -67.822462, 'label': 'Rio Branco, R., Brazil'}
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-67.822462, -9.989637]]
+[2025-11-10 11:26:25][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=1406515.6m dur=112511s
+[2025-11-10 11:26:25][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:25][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=1406.5156, liters_empty=0.0000, liters_total=1406.5156
+[2025-11-10 11:26:25][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=1406.5156, fuel_cost_brl=8565.68, co2e_total_kg=3769.462, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] road_leg: km=1406.516 liters=1406.516 fuel_kg=1181.473 co2e=3769.462 cost=8565.68
+[2025-11-10 11:26:25][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=9606.804 kg, CABOTAGE CO2e=5986.705 kg (Δ=-3620.099 kg).
+[2025-11-10 11:26:25][INFO][scripts.build_heatmap_from_file] CSV+ Rio Branco, AC,-10742.240774664593,-3620.0993278402184
+[2025-11-10 11:26:25][INFO][scripts.build_heatmap_from_file] ✓ done in 1.37s — Rio Branco, AC
+[2025-11-10 11:26:25][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:25][INFO][scripts.build_heatmap_from_file] → [17/5570] Rodrigues Alves, AC
+[2025-11-10 11:26:25][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:27][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:27][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:27][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:27][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:27][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:27][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] GEOCODE text='Rodrigues Alves, AC' country=BR size=1
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] GEOCODE text="Rodrigues Alves, AC" country=BR size=1
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -7.735876, 'lon': -72.652632, 'label': 'Rodrigues Alves, R., Brazil'}
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Rodrigues Alves, R., Brazil'.
+[2025-11-10 11:26:27][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:27][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -7.735876, 'lon': -72.652632, 'label': 'Rodrigues Alves, R., Brazil'}
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-72.652632, -7.735876]]
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=4206733.4m dur=225836s
+[2025-11-10 11:26:27][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:27][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=4206.7334, liters_empty=0.0000, liters_total=4206.7334
+[2025-11-10 11:26:27][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=4206.7334, fuel_cost_brl=25619.01, co2e_total_kg=11274.046, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] road_leg: km=4206.733 liters=4206.733 fuel_kg=3533.656 co2e=11274.046 cost=25619.01
+[2025-11-10 11:26:27][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Santos' (UF=SP) distance=60.236 km via gate 'Ponta da Praia'.
+[2025-11-10 11:26:27][INFO][modules.cabotage.ports_nearest] find_nearest_port: nearest='Manaus' (UF=AM) distance=1489.040 km via centroid.
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] Nearest ports: origin='Santos' (60.236 km), destiny='Manaus' (1489.040 km).
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.9608, 'lon': -46.3336, 'label': 'Santos gate'}
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-46.3336, -23.9608]]
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=90591.9m dur=6251s
+[2025-11-10 11:26:27][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:27][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=90.5919, liters_empty=0.0000, liters_total=90.5919
+[2025-11-10 11:26:27][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=90.5919, fuel_cost_brl=551.70, co2e_total_kg=242.786, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] road_leg: km=90.592 liters=90.592 fuel_kg=76.097 co2e=242.786 cost=551.70
+[2025-11-10 11:26:27][INFO][modules.cabotage.sea_matrix] SeaMatrix.km_with_source: using MATRIX for 'Santos' → 'Manaus' → 3232.712 km
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] Sea leg: km=3232.712 fuel=436.416 kg CO2e=1399.150 cost=1396.53.
+[2025-11-10 11:26:27][INFO][modules.cabotage.accounting] load_hotel_entries: loaded 57 entries from 'modules\cabotage\_data\hotel.json'.
+[2025-11-10 11:26:27][INFO][modules.cabotage.accounting] build_hotel_factor_index: cities=57.
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] ops+hotel: port=48.000 kg hotel_o=43.744 kg hotel_d=87.703 kg → total=179.447 kg
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -3.1567, 'lon': -60.0079, 'label': 'Manaus'}
+[2025-11-10 11:26:27][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -7.735876, 'lon': -72.652632, 'label': 'Rodrigues Alves, R., Brazil'}
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-60.0079, -3.1567], [-72.652632, -7.735876]]
+[2025-11-10 11:26:27][INFO][modules.road.ors_mixins] ROUTE ok driving-hgv dist=2028620.5m dur=150329s
+[2025-11-10 11:26:27][INFO][modules.road.emissions] estimate_road_trip: axles resolved to 6 via payload=27.0 t (truck_key='auto_by_weight').
+[2025-11-10 11:26:27][INFO][modules.road.fuel_model] estimate_leg_liters.result: trips=2, kmL_base=2.0000, kmL_loaded=2.0000, kmL_empty=2.3600, liters_loaded=2028.6205, liters_empty=0.0000, liters_total=2028.6205
+[2025-11-10 11:26:27][INFO][modules.road.emissions] estimate_road_trip.result: liters_total=2028.6205, fuel_cost_brl=12354.30, co2e_total_kg=5436.703, trips=2, kmL_loaded=2.0000, kmL_empty=2.3600
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] road_leg: km=2028.620 liters=2028.620 fuel_kg=1704.041 co2e=5436.703 cost=12354.30
+[2025-11-10 11:26:27][INFO][modules.app.evaluator] Evaluation done: ROAD CO2e=11274.046 kg, CABOTAGE CO2e=7653.946 kg (Δ=-3620.100 kg).
+[2025-11-10 11:26:27][INFO][scripts.build_heatmap_from_file] CSV+ Rodrigues Alves, AC,-10742.241383664597,-3620.099595840218
+[2025-11-10 11:26:27][INFO][scripts.build_heatmap_from_file] ✓ done in 1.57s — Rodrigues Alves, AC
+[2025-11-10 11:26:27][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:27][INFO][scripts.build_heatmap_from_file] → [18/5570] Santa Rosa do Purus, AC
+[2025-11-10 11:26:27][INFO][scripts.build_heatmap_from_file] ======================================================================
+[2025-11-10 11:26:28][INFO][modules.functions.logging] Logging configured
+[2025-11-10 11:26:28][INFO][modules.app.evaluator] Axles resolved via payload=50.000 t → 9 (truck_key='auto_by_weight').
+[2025-11-10 11:26:28][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-10 11:26:28][INFO][modules.app.evaluator] ORSClient: created.
+[2025-11-10 11:26:28][INFO][modules.cabotage.ports_index] load_ports: loaded 28 raw records from 'modules\cabotage\_data\ports_br.json'.
+[2025-11-10 11:26:28][INFO][modules.cabotage.ports_index] load_ports: normalized 28 records (invalid skipped=0, with_gates=19).
+[2025-11-10 11:26:28][INFO][modules.cabotage.sea_matrix] SeaMatrix.from_json_path: loaded JSON from 'modules\cabotage\_data\sea_matrix.json'.
+[2025-11-10 11:26:28][INFO][modules.cabotage.sea_matrix] SeaMatrix: initialized with 28 labels, 784 directed edges (symmetric), coastline_factor=1.180
+[2025-11-10 11:26:28][INFO][modules.addressing.resolver] GEOCODE text='Av. Luciano Gualberto' country=BR size=1
+[2025-11-10 11:26:28][INFO][modules.road.ors_mixins] GEOCODE text="Av. Luciano Gualberto" country=BR size=1
+[2025-11-10 11:26:28][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:28][INFO][modules.addressing.resolver] GEOCODE text='Santa Rosa do Purus, AC' country=BR size=1
+[2025-11-10 11:26:28][INFO][modules.road.ors_mixins] GEOCODE text="Santa Rosa do Purus, AC" country=BR size=1
+[2025-11-10 11:26:28][INFO][modules.addressing.resolver] RESOLVE (text) -> {'lat': -9.439098, 'lon': -70.488556, 'label': 'Santa Rosa do Purus, R., Brazil'}
+[2025-11-10 11:26:28][INFO][modules.app.evaluator] Resolved origin='Avenida Professor Luciano Gualberto, São Paulo, Brazil' destiny='Santa Rosa do Purus, R., Brazil'.
+[2025-11-10 11:26:28][INFO][modules.road.diesel_prices] load_latest_diesel_price: loaded 27 rows from 'modules\road\_data\latest_diesel_prices.csv'.
+[2025-11-10 11:26:28][INFO][modules.road.diesel_prices] avg_price_for_ufs: uf_o=SP, uf_d= → price_o=6.09, price_d=6.09, avg=6.0900, fallback_used=True
+[2025-11-10 11:26:28][INFO][modules.app.evaluator] Diesel price (avg UF_o/UF_d): 6.0900 BRL/L (fallback_used=True).
+[2025-11-10 11:26:28][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -23.558808, 'lon': -46.730357, 'label': 'Avenida Professor Luciano Gualberto, São Paulo, Brazil'}
+[2025-11-10 11:26:28][INFO][modules.addressing.resolver] RESOLVE (dict lat/lon) -> {'lat': -9.439098, 'lon': -70.488556, 'label': 'Santa Rosa do Purus, R., Brazil'}
+[2025-11-10 11:26:28][INFO][modules.road.ors_mixins] ROUTE try1 driving-hgv coords=[[-46.730357, -23.558808], [-70.488556, -9.439098]]

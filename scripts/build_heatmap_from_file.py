@@ -30,11 +30,12 @@ Usage (PowerShell):
 Notes
 • Rows with failures are SKIPPED (not written to CSV); failures are only logged.
 • CSV columns: destiny, delta_fuel_cost_brl, delta_co2e_kg  (no error / no delta_fuel_kg)
-• When --write-output is set, the log file is written inside --outdir.
+• When --write-output is set, the log file is written to the DEFAULT logs folder
+  defined by `modules.functions.logging` (not inside --outdir).
 • Timeout knobs are forwarded to the child via env so `ORSConfig`/`ORSClient` can pick them up:
     ORS_CONNECT_TIMEOUT_S, ORS_READ_TIMEOUT_FAST_S, ORS_READ_TIMEOUT_SLOW_S,
     ORS_MAX_RETRIES, ORS_BACKOFF_S, ORS_ESCALATE_ON_TIMEOUT.
-• “Showy” banners highlight each destination block for easier tailing.
+• Eye-catching banners highlight each destination block for easier tailing.
 • Optional --resume skips destinations already present in the output CSV.
 """
 
@@ -64,7 +65,7 @@ import subprocess
 import threading
 import time
 import unicodedata
-from typing import Any, Dict, List, Optional, Tuple, Set
+from typing import Any, Dict, List, Optional, Set
 
 # standardized repo logging
 from modules.functions.logging import init_logging, get_logger, get_current_log_path
@@ -328,7 +329,7 @@ def main(argv: Optional[List[str]] = None) -> int:
           "--outdir"
         , type=Path
         , default=Path("outputs")
-        , help="Directory to write the CSV and (optionally) the .log file."
+        , help="Directory to write the CSV file(s)."
     )
 
     # pass-through to child (defaults as requested)
@@ -355,12 +356,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         , help="Forward a custom diesel prices CSV to single_evaluation.py."
     )
 
-    # repo logging knobs
+    # repo logging knobs (now using DEFAULT logs folder when write_output=True)
     ap.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     ap.add_argument(
           "--write-output"
         , action="store_true"
-        , help="Also write logs to a file placed INSIDE --outdir."
+        , help="Also write logs to file (default logs folder from your logging module)."
     )
 
     # echo each CSV row to the logger as soon as it's written
@@ -377,7 +378,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         , help="If output CSV already exists, skip destinations already present."
     )
 
-    # ── New: ORS timeout / retry knobs (forwarded via env to the child) ────────
+    # ── ORS timeout / retry knobs (forwarded via env to the child) ─────────────
     ap.add_argument("--connect-timeout-s", type=float, default=None, help="ORS connect timeout (s).")
     ap.add_argument("--read-timeout-fast-s", type=float, default=None, help="ORS fast read timeout (s).")
     ap.add_argument("--read-timeout-slow-s", type=float, default=None, help="ORS slow read timeout (s).")
@@ -393,12 +394,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     args = ap.parse_args(argv)
 
-    # initialize repo logger (send file logs to OUTDIR if requested)
+    # initialize repo logger — IMPORTANT: no logs_dir here → use default logs folder
     init_logging(
           level=args.log_level
         , force=True
         , write_output=args.write_output
-        , logs_dir=str(args.outdir)   # ← log file goes inside outputs/
     )
     _LOG.info("Starting heatmap build | origin=%s | amount=%.3f t", args.origin, args.amount_tons)
     if args.write_output:
@@ -408,7 +408,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     dests = _read_dest_file(args.dest_file)
     _LOG.info("Destinations loaded: %d (from %s)", len(dests), args.dest_file)
 
-    # output file name
+    # output file name (CSV only)
     origin_tag = _strip_accents_and_sanitize(args.origin)
     amount_tag = _amount_tag(args.amount_tons)
     out_path = args.outdir / f"{origin_tag}__{amount_tag}.csv"
@@ -457,7 +457,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     _LOG.info("↷ [%d/%d] %s — skipped (resume)", i, total, dest)
                     continue
 
-                # Showy banner
+                # Eye-catching banner
                 _LOG.info(_BANNER)
                 _LOG.info("→ [%d/%d] %s", i, total, dest)
                 _LOG.info(_BANNER)

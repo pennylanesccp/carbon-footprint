@@ -99,7 +99,7 @@ def init_logging(
         if write_output:
             os.makedirs(logs_dir, exist_ok=True)
             ts = datetime.now().strftime("%Y%m%d%H%M%S")
-            log_file_path = os.path.join(logs_dir, f"output_{ts}")
+            log_file_path = os.path.join(logs_dir, f"output_{ts}.log")
             fh = logging.FileHandler(log_file_path, encoding="utf-8")
             fh.setFormatter(fmt)
             setattr(fh, signature_attr, True)
