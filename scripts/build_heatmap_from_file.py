@@ -20,10 +20,11 @@ Usage (PowerShell):
       --log-level INFO `
       --write-output `
       --echo-csv
-# Notes
-# • Rows with failures are SKIPPED (not written to CSV); failures are only logged.
-# • CSV columns: destiny, delta_fuel_cost_brl, delta_co2e_kg  (no error / no delta_fuel_kg)
-# • When --write-output is set, the log file is written inside --outdir.
+
+Notes
+• Rows with failures are SKIPPED (not written to CSV); failures are only logged.
+• CSV columns: destiny, delta_fuel_cost_brl, delta_co2e_kg  (no error / no delta_fuel_kg)
+• When --write-output is set, the log file is written inside --outdir.
 """
 
 from __future__ import annotations
@@ -49,12 +50,13 @@ import json
 import os
 import re
 import subprocess
+import threading
 import unicodedata
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 # standardized repo logging
 from modules.functions.logging import init_logging, get_logger, get_current_log_path
-_LOG = get_logger(__name__)
+_LOG = get_logger("scripts.build_heatmap_from_file")  # explicit name for nicer prefixes
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -120,8 +122,25 @@ def _extract_last_json_object(text: str) -> Dict[str, Any]:
     raise ValueError("Could not parse final JSON from single_evaluation output")
 
 # ────────────────────────────────────────────────────────────────────────────────
-# Child process runner (captured; no tee → no duplicate logs on parent console)
+# Child process runner — stream ONLY log lines to console/file; keep JSON private
 # ────────────────────────────────────────────────────────────────────────────────
+def _is_log_line(s: str) -> bool:
+    """
+    Our log lines start with '[' (e.g., "[2025-11-10 09:42:50][INFO][modules…] …").
+    The final JSON starts with '{'. Use that to decide what to show.
+    """
+    return s.lstrip().startswith("[")
+
+def _append_to_file(path: Optional[str], text: str) -> None:
+    if not path:
+        return
+    try:
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(text)
+    except Exception:
+        # don't crash the run if writing the log file fails
+        pass
+
 def _run_single_evaluation(
       *
     , origin: str
@@ -132,9 +151,17 @@ def _run_single_evaluation(
     , ors_profile: Optional[str] = None
     , fallback_to_car: bool = True                 # default ON
     , diesel_prices_csv: Optional[Path] = None
+    , log_level: str = "INFO"                      # forward to child
     , script_path: Path = Path("scripts") / "single_evaluation.py"
 ) -> Dict[str, Any]:
-    """Invoke scripts/single_evaluation.py and return its final JSON dict."""
+    """
+    Invoke scripts/single_evaluation.py and return its final JSON dict.
+
+    While running:
+    - stream ONLY lines that look like logs (prefix '[') to our stdout
+      and to our log file (if enabled);
+    - suppress the final JSON from the console, but capture it to return.
+    """
     if not script_path.exists():
         raise FileNotFoundError(f"single_evaluation.py not found at: {script_path}")
 
@@ -157,29 +184,60 @@ def _run_single_evaluation(
 
     _LOG.debug("Exec: %s", " ".join(cmd))
 
-    # Force UTF-8 in the child so Unicode logs (→, Δ, accents) won't crash on Windows
+    # Child env: force UTF-8 and pass our log-level so child shows all levels requested
     env = os.environ.copy()
     env.setdefault("PYTHONUTF8", "1")
     env.setdefault("PYTHONIOENCODING", "utf-8")
+    env["CARBON_LOG_LEVEL"] = log_level  # picked up by init_logging() in the child
 
-    proc = subprocess.run(
+    proc = subprocess.Popen(
         cmd,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
         encoding="utf-8",
         errors="replace",
+        bufsize=1,     # line-buffered
         env=env,
     )
 
-    stdout = proc.stdout or ""
-    stderr = proc.stderr or ""
+    # Capture buffers (for JSON) and stream logs to console/file
+    out_lines: List[str] = []
+    err_lines: List[str] = []
+    log_file_path = get_current_log_path()
 
-    if proc.returncode != 0:
-        _LOG.warning("single_evaluation failed for '%s' (code=%s)", destiny, proc.returncode)
-        _LOG.debug("STDOUT:\n%s", stdout)
-        _LOG.debug("STDERR:\n%s", stderr)
-        raise RuntimeError(f"single_evaluation failed for '{destiny}' (code={proc.returncode})")
+    def _pump(pipe, collector: List[str]):
+        try:
+            for line in iter(pipe.readline, ""):
+                if not line:
+                    break
+                collector.append(line)
+                if _is_log_line(line):
+                    # forward child log exactly as-is (no re-logging → no double prefixes)
+                    _sys.stdout.write(line)
+                    _append_to_file(log_file_path, line)
+        finally:
+            try:
+                pipe.close()
+            except Exception:
+                pass
 
+    t_out = threading.Thread(target=_pump, args=(proc.stdout, out_lines), daemon=True)
+    t_err = threading.Thread(target=_pump, args=(proc.stderr, err_lines), daemon=True)
+    t_out.start(); t_err.start()
+
+    code = proc.wait()
+    t_out.join(); t_err.join()
+
+    stdout = "".join(out_lines)
+    stderr = "".join(err_lines)
+
+    if code != 0:
+        # Log a single concise line here; child’s detailed logs already streamed.
+        _LOG.warning("single_evaluation failed for '%s' (code=%s)", destiny, code)
+        raise RuntimeError(f"single_evaluation failed for '{destiny}' (code={code})")
+
+    # Parse the final JSON (prefer stdout; fallback to combined)
     try:
         return _extract_last_json_object(stdout)
     except Exception:
@@ -295,6 +353,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         ors_profile=args.ors_profile,
                         fallback_to_car=args.fallback_to_car,
                         diesel_prices_csv=args.diesel_prices_csv,
+                        log_level=args.log_level,
                     )
                     d = dict(result.get("deltas_cabotage_minus_road", {}))
                     row = {
