@@ -8,39 +8,38 @@ Build heatmap CSV by looping `scripts/single_evaluation.py` over each destiny in
 Filename pattern:
     [OriginSanitized]__[AmountInTons]tons.csv
 Examples:
-    Sao_Paulo__26tons.csv
+    Sao_Paulo_SP__26tons.csv
     Av_Luciano_Gualberto__50tons.csv
-
-Usage (PowerShell):
-    # venv active; ORS_API_KEY set
-    python scripts/build_heatmap_from_file.py `
-      --origin "São Paulo, SP" `
-      --amount-tons 26 `
-      --log-level INFO
-# (Defaults: --truck auto_by_weight, --fallback-to-car on)
 """
 
 from __future__ import annotations
 
-# --- path bootstrap (must be the first lines of the file) ---
+# ── repo path bootstrap (keep first) ────────────────────────────────────────────
 from pathlib import Path
 import sys
 ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /scripts)
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-# ------------------------------------------------------------
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Ensure THIS process prints Unicode cleanly on Windows terminals
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 import argparse
 import csv
 import json
+import os
 import re
 import subprocess
-import sys
 import unicodedata
-from pathlib import Path
+from threading import Thread
 from typing import Any, Dict, List, Optional
 
-# ── repo logging (standardized) ────────────────────────────────────────────────
+# standardized repo logging
 from modules.functions.logging import init_logging, get_logger
 _LOG = get_logger(__name__)
 
@@ -49,8 +48,7 @@ _LOG = get_logger(__name__)
 # ────────────────────────────────────────────────────────────────────────────────
 def _strip_accents_and_sanitize(s: str) -> str:
     """
-    Remove accents and unsafe chars; collapse whitespace to underscores.
-    Keep only letters, digits, space and underscore.
+    Remove accents; keep letters/digits/space/_; collapse spaces to underscores.
     """
     n = unicodedata.normalize("NFKD", s)
     n = "".join(ch for ch in n if not unicodedata.combining(ch))
@@ -58,17 +56,20 @@ def _strip_accents_and_sanitize(s: str) -> str:
     n = re.sub(r"\s+", "_", n.strip())
     return n
 
+
 def _amount_tag(tons: float) -> str:
-    """26.0 → '26tons'; 26.5 → '26_5tons'."""
+    """
+    Format amount for filename (int → '26tons', else e.g. '26_5tons').
+    """
     if abs(tons - round(tons)) < 1e-9:
         return f"{int(round(tons))}tons"
     s = f"{tons:.2f}".rstrip("0").rstrip(".").replace(".", "_")
     return f"{s}tons"
 
+
 def _read_dest_file(path: Path) -> List[str]:
     """
-    Read a text file with one destiny per line; ignore blank lines and comments.
-    Raises if no usable entries found.
+    Read destinations, ignoring blanks and lines starting with '#'.
     """
     txt = path.read_text(encoding="utf-8")
     out: List[str] = []
@@ -81,11 +82,13 @@ def _read_dest_file(path: Path) -> List[str]:
         raise ValueError(f"No usable destinations found in {path}")
     return out
 
+
 def _extract_last_json_object(text: str) -> Dict[str, Any]:
     """
-    `single_evaluation.py` prints logs + one final JSON object.
-    Grab the last balanced {...} block and parse it. Defensive by design.
+    single_evaluation.py logs a lot and then prints one final JSON object.
+    Grab the last balanced {...} block from the provided text and parse it.
     """
+    # Fast path: try from the last '{' to the end.
     j = text.rfind("{")
     if j != -1:
         candidate = text[j:]
@@ -94,8 +97,10 @@ def _extract_last_json_object(text: str) -> Dict[str, Any]:
         except json.JSONDecodeError:
             pass
 
+    # Robust path: scan for the last balanced object.
     start = None
     depth = 0
+    last_good: Optional[Dict[str, Any]] = None
     for i, ch in enumerate(text):
         if ch == "{":
             if start is None:
@@ -107,71 +112,120 @@ def _extract_last_json_object(text: str) -> Dict[str, Any]:
                 if depth == 0 and start is not None:
                     block = text[start : i + 1]
                     try:
-                        return json.loads(block)
+                        last_good = json.loads(block)
                     except json.JSONDecodeError:
+                        pass
+                    finally:
                         start = None
-                        continue
-
+    if last_good is not None:
+        return last_good
     raise ValueError("Could not parse final JSON from single_evaluation output")
 
 # ────────────────────────────────────────────────────────────────────────────────
-# Single evaluation (subprocess)
+# Child process runner with live log “tee”
 # ────────────────────────────────────────────────────────────────────────────────
+def _tee_stream(stream, collector: List[str], log_fn):
+    """
+    Read a child stream line-by-line, forward to our logger, and collect text.
+    """
+    try:
+        for line in iter(stream.readline, ""):
+            if not line:
+                break
+            collector.append(line)
+            log_fn(line.rstrip("\r\n"))
+    finally:
+        try:
+            stream.close()
+        except Exception:
+            pass
+
+
 def _run_single_evaluation(
       *
     , origin: str
     , destiny: str
     , amount_tons: float
-    , truck: Optional[str] = "auto_by_weight"          # DEFAULT → auto_by_weight
+    , truck: Optional[str] = "auto_by_weight"      # default
     , empty_backhaul: Optional[float] = None
     , ors_profile: Optional[str] = None
-    , fallback_to_car: bool = True                     # DEFAULT → enabled
+    , fallback_to_car: bool = True                 # default ON
     , diesel_prices_csv: Optional[Path] = None
     , script_path: Path = Path("scripts") / "single_evaluation.py"
 ) -> Dict[str, Any]:
     """
-    Execute scripts/single_evaluation.py and return its final JSON dict.
-    Propagates relevant CLI options; relies on same Python interpreter.
+    Invoke scripts/single_evaluation.py and return its final JSON dict.
     """
     if not script_path.exists():
         raise FileNotFoundError(f"single_evaluation.py not found at: {script_path}")
 
     cmd = [
-        sys.executable,
-        str(script_path),
-        "--origin", origin,
-        "--destiny", destiny,
-        "--amount-tons", str(amount_tons),
+        sys.executable, str(script_path)
+        , "--origin", origin
+        , "--destiny", destiny
+        , "--amount-tons", str(amount_tons)
     ]
     if truck:
-        cmd += ["--truck", truck]
+        cmd += [ "--truck", truck ]
     if empty_backhaul is not None:
-        cmd += ["--empty-backhaul", str(empty_backhaul)]
+        cmd += [ "--empty-backhaul", str(empty_backhaul) ]
     if ors_profile:
-        cmd += ["--ors-profile", ors_profile]
+        cmd += [ "--ors-profile", ors_profile ]
     if fallback_to_car:
-        cmd += ["--fallback-to-car"]
+        cmd += [ "--fallback-to-car" ]
     if diesel_prices_csv:
-        cmd += ["--diesel-prices-csv", str(diesel_prices_csv)]
+        cmd += [ "--diesel-prices-csv", str(diesel_prices_csv) ]
 
     _LOG.debug("Exec: %s", " ".join(cmd))
-    proc = subprocess.run(
+
+    # Force UTF-8 in the child so Unicode logs (→, Δ, accents) won't crash on Windows
+    env = os.environ.copy()
+    env.setdefault("PYTHONUTF8", "1")
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+
+    # Stream child logs LIVE into our logger, while capturing for JSON parse
+    proc = subprocess.Popen(
           cmd
-        , capture_output=True
+        , stdout=subprocess.PIPE
+        , stderr=subprocess.PIPE
         , text=True
         , encoding="utf-8"
         , errors="replace"
+        , bufsize=1  # line-buffered
+        , env=env
     )
 
-    stdout = proc.stdout or ""
-    stderr = proc.stderr or ""
+    out_lines: List[str] = []
+    err_lines: List[str] = []
 
-    if proc.returncode != 0:
-        _LOG.error("single_evaluation failed for '%s' (code=%s)", destiny, proc.returncode)
-        _LOG.debug("STDOUT:\n%s", stdout)
-        _LOG.debug("STDERR:\n%s", stderr)
-        raise RuntimeError(f"single_evaluation failed for '{destiny}' (code={proc.returncode})")
+    # capture stdout silently (no echo), still collect for JSON parsing
+    t_out = Thread(
+        target=_tee_stream
+        , args=(proc.stdout, out_lines, lambda s: None)  # <- no echo
+        , daemon=True
+    )
 
+    # keep stderr echoed (useful to see problems as they happen)
+    t_err = Thread(
+        target=_tee_stream
+        , args=(proc.stderr, err_lines, lambda s: _LOG.warning("%s", s))
+        , daemon=True
+    )
+    t_out.start()
+    t_err.start()
+
+    code = proc.wait()
+    t_out.join()
+    t_err.join()
+
+    stdout = "".join(out_lines)
+    stderr = "".join(err_lines)
+
+    if code != 0:
+        _LOG.error("single_evaluation failed for '%s' (code=%s)", destiny, code)
+        raise RuntimeError(f"single_evaluation failed for '{destiny}' (code={code})")
+
+    # Parse the final JSON (prefer stdout; fallback to combined)
     try:
         return _extract_last_json_object(stdout)
     except Exception:
@@ -186,50 +240,72 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     ap.add_argument("--origin", required=True, help="Origin (address/city/CEP/'lat,lon').")
     ap.add_argument("--amount-tons", type=float, required=True, help="Cargo mass in tonnes.")
-    ap.add_argument("--dest-file", type=Path, default=Path("data") / "city_dests.txt",
-                    help="Path to a text file with one destination per line (default: data/city_dests.txt).")
-    ap.add_argument("--outdir", type=Path, default=Path("outputs"),
-                    help="Directory to write the CSV (default: outputs).")
+    ap.add_argument(
+          "--dest-file"
+        , type=Path
+        , default=Path("data") / "city_dests.txt"
+        , help="Text file with one destination per line (default: data/city_dests.txt)."
+    )
+    ap.add_argument(
+          "--outdir"
+        , type=Path
+        , default=Path("outputs")
+        , help="Directory to write the CSV (default: outputs)."
+    )
 
-    # passthrough to single_evaluation.py (with defaults requested)
-    ap.add_argument("--truck", default="auto_by_weight",  # DEFAULT here
-                    help="Truck key (default: auto_by_weight).")
-    ap.add_argument("--empty-backhaul", type=float, default=None,
-                    help="Empty backhaul share (0..1).")
-    ap.add_argument("--ors-profile", choices=["driving-hgv", "driving-car"], default=None,
-                    help="Primary ORS routing profile.")
-    # default True with an opt-out flag
-    ap.add_argument("--no-fallback-to-car", dest="fallback_to_car", action="store_false",
-                    help="Disable fallback to 'driving-car'.")
+    # pass-through to child (defaults as requested)
+    ap.add_argument("--truck", default="auto_by_weight", help="Truck key (default: auto_by_weight).")
+    ap.add_argument("--empty-backhaul", type=float, default=None, help="Empty backhaul share (0..1).")
+    ap.add_argument(
+          "--ors-profile"
+        , choices=["driving-hgv", "driving-car"]
+        , default=None
+        , help="Primary ORS profile."
+    )
+    ap.add_argument(
+          "--no-fallback-to-car"
+        , dest="fallback_to_car"
+        , action="store_false"
+        , help="Disable fallback to 'driving-car'."
+    )
     ap.set_defaults(fallback_to_car=True)
 
-    ap.add_argument("--diesel-prices-csv", type=Path, default=None,
-                    help="Forward a custom diesel prices CSV to single_evaluation.py.")
+    ap.add_argument(
+          "--diesel-prices-csv"
+        , type=Path
+        , default=None
+        , help="Forward a custom diesel prices CSV to single_evaluation.py."
+    )
 
-    # logging knobs (repo standard)
+    # repo logging knobs
     ap.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
-    ap.add_argument("--write-output", action="store_true",
-                    help="If set, enable file output via repo logger (logs/output_YYYYMMDD...).")
+    ap.add_argument(
+          "--write-output"
+        , action="store_true"
+        , help="Enable file sink via repo logger (logs/output_YYYYMMDD...)."
+    )
 
     args = ap.parse_args(argv)
 
-    # initialize repo logger (consistent format & optional file sink)
     init_logging(level=args.log_level, force=True, write_output=args.write_output)
     _LOG.info("Starting heatmap build | origin=%s | amount=%.3f t", args.origin, args.amount_tons)
 
-    # load destination list
-    dests = _read_dest_file(args.dest_file)
+    try:
+        dests = _read_dest_file(args.dest_file)
+    except Exception as e:
+        _LOG.error("Failed to read destinations: %s", e)
+        return 2
+
     _LOG.info("Destinations loaded: %d (from %s)", len(dests), args.dest_file)
 
-    # output file name
     origin_tag = _strip_accents_and_sanitize(args.origin)
     amount_tag = _amount_tag(args.amount_tons)
     out_path = args.outdir / f"{origin_tag}__{amount_tag}.csv"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     _LOG.info("Output CSV → %s", out_path)
 
-    # loop & collect rows
     rows: List[Dict[str, Any]] = []
+
     for i, dest in enumerate(dests, start=1):
         _LOG.info("→ [%d/%d] %s", i, len(dests), dest)
         try:
@@ -244,14 +320,12 @@ def main(argv: Optional[List[str]] = None) -> int:
                 , diesel_prices_csv=args.diesel_prices_csv
             )
             d = dict(result.get("deltas_cabotage_minus_road", {}))
-            row = {
+            rows.append({
                   "destiny": dest
                 , "delta_fuel_kg": float(d.get("fuel_kg", 0.0))
                 , "delta_fuel_cost_brl": float(d.get("cost_brl", 0.0))
                 , "delta_co2e_kg": float(d.get("co2e_kg", 0.0))
-            }
-            rows.append(row)
-            _LOG.debug("Row appended: %s", row)
+            })
         except Exception as e:
             msg = str(e).splitlines()[0][:500]
             _LOG.warning("Failed for '%s': %s", dest, msg)
@@ -263,15 +337,19 @@ def main(argv: Optional[List[str]] = None) -> int:
                 , "error": msg
             })
 
-    # columns (include error if present)
-    base_cols = ["destiny", "delta_fuel_kg", "delta_fuel_cost_brl", "delta_co2e_kg"]
+    base_cols = [
+          "destiny"
+        , "delta_fuel_kg"
+        , "delta_fuel_cost_brl"
+        , "delta_co2e_kg"
+    ]
     cols = base_cols + (["error"] if any("error" in r for r in rows) else [])
 
-    # write CSV
+    # Write CSV (Excel-friendly defaults)
     with out_path.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=cols)
-        w.writeheader()
-        w.writerows(rows)
+        writer = csv.DictWriter(f, fieldnames=cols)
+        writer.writeheader()
+        writer.writerows(rows)
 
     _LOG.info("Done → %s (rows=%d)", out_path, len(rows))
     return 0
