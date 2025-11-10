@@ -92,7 +92,8 @@ def _route_km_with_fallback(
         return _route_km(ors, src, dst, primary_profile), primary_profile
     except Exception as e_primary:
         if fallback_to_car and primary_profile != "driving-car":
-            _log.warning("Primary '%s' failed (%s). Falling back to 'driving-car'.", primary_profile, e_primary)
+            _log.warning("Primary '%s' failed (%s).", primary_profile, e_primary)
+            _log.warning("Falling back to 'driving-car'.")
             return _route_km(ors, src, dst, "driving-car"), "driving-car"
         _log.error("ORS routing failed for profile '%s': %s", primary_profile, e_primary)
         raise
