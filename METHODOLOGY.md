@@ -1,89 +1,138 @@
-# `METHODOLOGY.md`
+# METHODOLOGY.md
 
-This document details the methodology, core assumptions, and engineering simplifications used in the carbon footprint calculator. The model is an **activity-based** system that breaks a journey into its constituent legs (road, sea, port) and applies specific factors to each.
-
-## 1. Road Model (`modules/road/`)
-
-The road model is based on the axle-based fuel economy standards from ANTT (Agência Nacional de Transportes Terrestres).
-
-### 1.1. Fuel Consumption (`fuel_model.py`)
-
-* **Baseline Efficiency:** Fuel efficiency (`km/L`) is determined by the truck's axle count, based on the `_ANTT_KM_PER_L_BASELINE` dictionary (e.g., 5 axles = 2.3 km/L). This is a planning value, not a specific vehicle's telemetry.
-* **Weight Adjustment:** The baseline efficiency is adjusted using a linear elasticity model (`adjust_km_per_liter`). It is assumed that a truck's fuel economy decreases linearly as its cargo weight increases relative to a `ref_weight_t`.
-* **Backhaul Simplification:** The model does not simulate a full return journey. Instead, it assumes a `empty_backhaul_share` (e.g., 1.0 = 100%) and calculates the fuel for the empty return trip using a higher `kmL_empty` (based on an `empty_efficiency_gain` factor).
-* **Trips:** The number of truck trips is simplified to `ceil(cargo_t / payload_t)`. It assumes cargo can be perfectly split and does not model volume constraints, only weight.
-
-### 1.2. Fuel Pricing (`calcs/diesel_price_updater.py`)
-
-* **Data Source:** Diesel prices are dynamic and sourced from the official ANP (Agência Nacional do Petróleo) weekly price survey (`semanal-estados-desde-2013.xlsx`).
-* **Data Pipeline:** The `calcs/diesel_price_updater.py` script is a "data pipeline" script, run manually/offline, to pre-process the large ANP Excel file into a simple `latest_diesel_prices.csv`.
-* **Price Selection:** The "app pipeline" (`evaluator.py`) loads this small CSV.
-* **Geographic Simplification:** It is assumed that the diesel price for *all* road legs in a single evaluation (e.g., O->Po and Pd->D) is the price from the **origin state (UF)** (e.g., "SP").
-
-### 1.3. Emissions (`emissions.py`)
-
-* **Static Factors:** The model uses static, industry-standard conversion factors:
-  * **Diesel Density:** `DIESEL_DENSITY_KG_PER_L` is fixed at **0.84 kg/L**.
-  * **CO₂ Factor:** `EF_DIESEL_CO2_KG_PER_L` (Tank-to-Wake) is fixed at **2.68 kg CO₂ per liter** of diesel.
-* **CO₂e Simplification:** The model currently assumes `CO₂e ≈ CO₂`. CH₄ and N₂O emissions, while included in the `Emissions` dataclass, are not calculated in the `estimate_road_trip` function.
+This document details the methodology, core assumptions, and engineering simplifications used in the carbon footprint calculator. The model is an **activity-based** system that breaks a journey into constituent legs (road, sea, port) and applies specific factors to each.
 
 ---
 
-## 2. Maritime Model (`modules/cabotage/`)
+## 1) Road model (`modules/road/`)
 
-This is the core of the thesis, breaking the maritime journey into two distinct components: "At Sea" and "At Port".
+### 1.1 Vehicle presets & trips (`emissions.py`)
 
-### 2.1. At-Sea Legs (`κ_sea`)
+- The tool uses **truck presets** (e.g., `semi_27t`) exposed via `TRUCK_SPECS`, containing at least:
+  - `axles` (for baseline efficiency),
+  - `payload_t` (planning payload per trip),
+  - `ref_weight_t` (reference loaded weight tied to the baseline),
+  - `empty_efficiency_gain` (km/L improvement when empty).
+- **Trips** are simplified to `ceil(cargo_t / payload_t)`. Only mass is considered (no volume constraints). All per-trip liters/emissions/cost are scaled by this integer number of trips.
 
-This factor represents the fuel burned by the ship's **main engines** for propulsion.
+### 1.2 Fuel model (baseline & backhaul; implemented in `emissions.py`)
 
-* **Model:** The at-sea fuel consumption is a linear model:
-    `Fuel_kg = κ * distance_km * cargo_t`
-* **Intensity Factor (`κ_sea`):** The factor `κ` (Kappa) is **not** for a specific vessel. It is a **proxy value** taken from `_data/k.json`, which represents a **trimmed mean from a literature review** of Brazilian cabotage studies.
-* **Model Boundary:** This `κ` factor *only* accounts for fuel used for propulsion (main engines) and explicitly *excludes* fuel for auxiliary engines at port ("hotel load").
+- **Baseline efficiency (km/L) by axles — ANTT (planning values used in code)**
 
-### 2.2. Port Operations (The "Bus Stop" Problem)
+  | Axles | Baseline km/L |
+  |------:|---------------:|
+  | 2     | 4.0            |
+  | 3     | 3.0            |
+  | 4     | 2.7            |
+  | 5     | 2.3            |
+  | 6     | 2.0            |
+  | 7     | 2.0            |
+  | ≥9    | 1.7            |
 
-This is the fuel burned while the ship is stopped. We model this as two separate components: ship-side (time-based) and land-side (work-based).
+  The preset’s `axles` selects the baseline.
 
-#### A. Ship-Side "Hotel Load" (`τ_hotel`)
+- **Loaded vs. empty**  
+  The baseline km/L is treated as **loaded**. Empty returns are modeled by applying the preset’s `empty_efficiency_gain` to km/L.
 
-This represents the fuel burned by the ship's **auxiliary engines** (generators) to power lights, computers, crew facilities, and refrigerated containers while at the dock.
+- **Backhaul share**  
+  Instead of modeling an explicit return itinerary, the function accepts `empty_backhaul_share ∈ [0,1]` and blends loaded/empty consumption accordingly for the given distance.
 
-* **Model:** This is a **time-dependent** cost: `Fuel_kg = R_hotel × T_berth`
-* **Consumption Rate (`R_hotel`):** This is a constant engineering benchmark set at **135 kg of fuel per hour**.
-  * **Proxy Model:** This rate is itself a model, derived from international benchmarks:
-    * `~600 kW` (average auxiliary power demand for a container ship at berth)
-    * `~225 g/kWh` (Specific Fuel Oil Consumption for auxiliary engines)
-* **Time at Berth (`T_berth`):** This is the key variable. It is **calculated empirically** for each port using the `calcs/hotel.py` script, which parses the `_data/2025Atracacao.txt` file from ANTAQ.
-  * The script calculates the average duration between `Data Atracação` and `Data Desatracação` for all "Cabotagem" vessels at that port.
-  * The final per-port *total fuel* values (not the rate) are stored in `_data/hotel.json`.
-* **Allocation:** This is treated as a **fixed cost** for the port stop. In `accounting.py`, this total fuel cost is allocated *pro-rata* (by weight) to **all shipments on board the vessel** at that time, regardless of whether they are being loaded or discharged.
+### 1.3 Road emissions & cost (`emissions.py`)
 
-#### B. Land-Side Cargo Handling (`μ_cargo`)
-
-This represents the fuel burned by the **port's own equipment** (cranes, tractors) to move containers.
-
-* **Model:** This is a **work-dependent** (variable) cost: `Fuel_kg = μ_cargo × tonnes_handled`
-* **Handling Factor (`μ_cargo`):** This is a constant benchmark set at **0.48 kg of fuel per tonne** of cargo handled.
-* **Proxy Model:** This factor is *also* a model, based on international benchmarks for *diesel-powered* equipment:
-  * `~0.18 kg/t` (for the Quay Crane lift)
-  * `~0.085 kg/t` (for the RTG/Gantry Crane lift)
-  * `~0.21 kg/t` (for the Terminal Tractor move)
-* **Simplification:** The tractor component (`0.21 kg/t`) implicitly assumes an average travel distance `d` of **~1.0 km** from the quay to the container stack. This is a major assumption.
-* **Allocation:** This is treated as a **variable cost**. In `accounting.py`, it is applied *only* to the specific shipments being **loaded or discharged** at that port.
+- **Diesel density**: `DIESEL_DENSITY_KG_PER_L = 0.84`.
+- **CO₂ factor (TTW)**: `EF_DIESEL_CO2_KG_PER_L = 2.68` kg CO₂ per liter.
+- **CO₂e**: road currently treats **CO₂ as CO₂e** (CH₄ and N₂O are not added in this function).
+- **Cost**: `liters × diesel_price_brl_per_l` (price is supplied at runtime via CLI/config and applied to all road legs in the evaluation).
 
 ---
 
-## 3. Routing & Distances
+## 2) Maritime model (`modules/cabotage/`)
 
-* **Road Distances (`modules/road/ors_client.py`):**
-  * All road routing (O->D, O->Po, Pd->D) is performed by **OpenRouteService (ORS)**.
-  * It specifically uses the `driving-hgv` (Heavy Goods Vehicle) profile, which is assumed to be the most realistic proxy for a heavy truck.
-* **Sea Distances (`modules/cabotage/_data/sea_matrix.json`):**
-  * Sea distances are **not** from a live routing engine.
-  * They are pre-calculated using the **Haversine (great-circle)** formula between port coordinates.
-  * A **+15% circuity factor** is added to the straight-line distance to approximate real-world navigation channels and coastal detours. This is a significant simplification.
-* **Nearest Port (`modules/cabotage/ports_nearest.py`):**
-  * The *initial* search for the "nearest port" to an address is done using simple Haversine (as-the-crow-flies) distance.
-  * The `cabotage/router.py` then *validates* this by requesting the *actual road route* from ORS to get the true drayage distance.
+Maritime impact is split into **At Sea** (main engines) and **At Port** (hotel + handling).
+
+### 2.1 At-sea (propulsion)
+
+- **Linear model**:  
+  `Fuel_kg = κ_sea × distance_km × cargo_t`
+- **Intensity factor**: default `κ_sea = 0.0027 kg/(t·km)` (constant used by the evaluator).  
+  This factor covers **propulsion only** (main engines), not port hotel load.
+- **Emissions (TTW)** use marine gas oil (MGO) constants below (see §2.3).
+
+### 2.2 At port (stopped)
+
+Two components are accounted for:
+
+**A) Hotel load (ship-side, time-based)**  
+
+- Modeled as a **per-port factor** expressed in **kg of fuel per tonne of cargo** (`kg/t`).  
+- Factors per port are produced offline by `calcs/hotel.py`, which:
+  1) derives **average time at berth** from ANTAQ’s port-call records (Cabotagem only),  
+  2) applies an engineering benchmark for auxiliary demand (`~600 kW`) and SFOC (`~225 g/kWh`),  
+  3) converts this to a per-tonne allocation for that port.  
+- The app loads these factors from `_data/hotel.json` and applies:
+  `Fuel_hotel_kg = cargo_t × (k_port_origin + k_port_destiny)`.
+
+**B) Port handling dwell & cost (land-side)**  
+
+- The cabotage leg **adds fixed handling dwell** to the schedule and a **fixed handling cost** to monetary totals:  
+  - Hours: `+ 2 × PORT_HANDLING_HOURS` (load + discharge).  
+  - Cost:  `+ 2 × PORT_HANDLING_COST`.  
+- No extra fuel is added here beyond the **hotel** term above.
+
+### 2.3 Maritime emissions & cost
+
+- **Fuel basis**: MGO (marine gas oil), using fuel **mass** (kg) directly.
+- **CO₂ factors (TTW) used in code**:  
+  `EF_TTW_MGO_KG_PER_T = {"CO2": 3206.0, "CH4": 0.0, "N2O": 0.0}` → **3.206 tCO₂ per tonne of fuel**.  
+  CH₄ and N₂O are set to zero in the current TTW calculation, so **CO₂e = CO₂** for maritime legs.
+- **Cost**: marine fuel cost is computed from mass using a constant default price:  
+  `MGO_PRICE_BRL_PER_T = 3200.0`, applied to both **at-sea** and **at-port** fuel.  
+  The **fixed port handling cost** above is **added on top** of fuel cost.
+
+---
+
+## 3) Routing, distances & addressing
+
+### 3.1 Road routing (`modules/road/ors_client.py`)
+
+- Routes are requested from **OpenRouteService (ORS)** using **`driving-hgv`**.
+- If directions return **404**, the client performs a **SNAP-to-road** and retries the same profile; the SNAP step may internally use `driving-car` only for snapping if the chosen profile isn’t supported for SNAP. The **directions profile remains `driving-hgv`** in this flow.
+
+### 3.2 Address resolution (`modules/addressing/resolver.py`)
+
+- Inputs can be free-text addresses, **CEP**, `"lat,lon"` strings, or `"City, State"`.
+- Geocoding uses ORS (biased to **BR**, `size=1`), returning `{lat, lon, label}` for downstream routing.
+
+### 3.3 Sea distances (`_data/sea_matrix.json`)
+
+- Port-to-port distances come from a **precomputed matrix** (looked up by normalized port label).  
+- Matrix entries were generated with **great-circle (Haversine)** distances between port centroids; when needed, a **coastline factor** is applied in generation and/or fallback (`coastline_factor = 1.18` in the JSON metadata).  
+- If a pair is missing from the matrix at runtime, the router **falls back** to Haversine × coastline factor.
+
+### 3.4 Nearest ports (gate-aware) & label normalization
+
+- The “nearest port” to O and D is selected **gate-aware**: the search uses each port’s **truck gate** coordinates (if present) to measure proximity and to pull drayage routes from ORS.
+- Port labels are normalized and **aliased** so that project labels match matrix labels (e.g., *Pecém* ↔ *São Gonçalo do Amarante*, *Suape* ↔ *Ipojuca*, *Vitória/TVV* ↔ *Vila Velha*, etc.).
+
+---
+
+## 4) Output structure highlights
+
+The evaluation output (single-route run) includes:
+
+- `input`: cargo, truck key, **`diesel_brl_l`**, `empty_backhaul_share`, profile flags, and κ/price constants used for maritime legs.
+- `selection`: picked ports (with lat/lon) and the routing profiles actually used (`road_direct`, `o_to_po`, `pd_to_d`).
+- `road_only` and `cabotage` (with per-leg and totals for **distance_km**, **fuel_kg**, **co2e_kg**, **cost_brl**).
+- `deltas_cabotage_minus_road` for **fuel**, **CO₂e**, and **cost**.
+- Sea leg provenance in `legs[i].extras.distance_source ∈ {"matrix","haversine"}`.
+
+---
+
+## 5) Model boundaries and simplifications
+
+- **TTW only** (tank-to-wake) for both road and maritime; **CO₂e ≡ CO₂** in current code paths.
+- **Sea matrix** is static; routing at sea is not simulated.
+- **Hotel factors** are applied as per-tonne port constants from preprocessing.
+- **Port handling** adds **fixed dwell hours** and a **fixed monetary cost**; no extra fuel beyond hotel load.
+- **Diesel price** is supplied at runtime (CLI/config) and applied uniformly to road legs in a run.
+- **No speed/weather effects, no transshipment modeling**, and no volumetric constraints (mass-only).

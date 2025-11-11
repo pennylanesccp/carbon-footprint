@@ -1,62 +1,67 @@
-# Bibliography
+# BIBLIOGRAPHY.md
 
-## 1. User-Provided Data Files
+This document lists the primary data sources, academic papers, and engineering benchmarks used by the model.
 
-* **`ports_br.json`**  
-  **What it is:** JSON for 28 Brazilian ports with coordinates, aliases, and (optionally) truck gates.  
-  **Use in code:** Master index for normalizing names and selecting nearest ports (`ports_index.py`, `ports_nearest.py`). Gate coordinates are used for the road legs.
+---
 
-* **`2025Atracacao.txt` (ANTAQ)**  
-  **What it is:** Raw public port-call records for 2025.  
-  **Use in code/analysis:** Basis for computing average **time at berth** per port (`T_avg_berth`) and for deriving **hotel factors** per city; filtered to `Tipo de Navegação == Cabotagem`.
+## 1) Primary data sources (raw)
 
-## 2. Public Data & Benchmark Reports
+- **ANTAQ — `2025Atracacao.txt`**  
+  Public port-call records for 2025. Used by `calcs/hotel.py` to compute **average time at berth** per port (Cabotagem only), which is transformed into per-tonne hotel factors saved to `_data/hotel.json`.
 
-* **ANTAQ – Estatístico Aquaviário & Metodologia de Indicadores**  
-  Clarifies timestamp semantics and standard indicators. Used to validate `T_avg_berth` and discuss possible port-to-port tonnage for building a denominator to calibrate `K_sea`.
+- **OpenRouteService (ORS) API**  
+  Geocoding and routing for road legs (profile `driving-hgv`; SNAP-to-road retry on 404).
 
-* **ICCT (Jul/2022). “Brazilian coastal shipping: New prospects for growth with decarbonization.”**  
-  Frames the policy context (BR do Mar) and highlights potential emissions growth without operational efficiency—motivating a bottom-up estimator for routes and port effects.
+---
 
-* **IMO & engineering references (auxiliary power at berth, SFOC ranges)**  
-  Benchmarks for **hotel load**: typical auxiliary demand around **~600 kW** and **SFOC ~225 g/kWh** for medium-speed auxiliaries. Combined, they motivate a rule-of-thumb **fuel ~135 kg/h** at berth, later adapted into **kg/t·call** factors per city in `hotel.json`.
+## 2) Pre-processed / generated files
 
-* **CETESB, CNT, PNLT, ICCT (truck fuel studies)**  
-  Empirical ranges for heavy-duty fuel consumption in Brazil; support the choice of ANTT axle-based baselines and linear payload sensitivity used in the road model.
+- **`ports_br.json`**  
+  Canonical list of Brazilian ports with coordinates, aliases, and **truck gate** positions. Used for port normalization and gate-aware nearest-port selection.
 
-* **OpenRouteService (ORS) documentation**  
-  API semantics for **geocoding** and **directions** (profiles like `driving-hgv` and `driving-car`) and the retry/`Retry-After` behavior. Informs our session setup, retries, and the profile fallback strategy.
+- **`sea_matrix.json`**  
+  Precomputed **port-to-port** distances (Haversine-based), with metadata including a **`coastline_factor = 1.18`**. Used directly by the cabotage leg; runtime fallback also uses Haversine × coastline factor.
 
-## 3. Key Academic Papers & Methodologies
+- **`hotel.json`**  
+  **Per-port hotel factors** in **kg of fuel per tonne** (`kg/t`) derived from ANTAQ time-at-berth and an auxiliary power/SFOC benchmark. Loaded by the cabotage logic.
 
-* **Leenders et al. (2017). “Emissions allocation in transportation routes.”**  
-  Establishes that allocating emissions on multi-stop, shared routes is non-trivial and that naïve per-distance splits can bias results—motivating allocation methods (see next item).
+- **`emissions.py` (road)**  
+  Contains `TRUCK_SPECS` (axles, payload, reference weight, empty-gain) and the **per-trip** estimator used by the evaluator. Baseline km/L by axle is embedded here.
 
-* **Cooperative Game Theory (Shapley Value)** — e.g., Arroyo et al. (2024) applications to transport cost allocation  
-  Underpins fair sharing of **common costs** (sea leg fuel, hotel fuel) among multiple shipments. This is referenced as a “gold-standard” path to extend the current constant-K approach.
+---
 
-* **Container port equipment fuel benchmarks (academic/technical papers)**  
-  Provide per-move consumption for quay cranes, RTGs, tractors, etc. These inform the **land-side factor** embodied in **`K_port_kg_per_t` ≈ 0.48 kg/t** used in the current MVP.
+## 3) Public benchmark references
 
-* **Naval engineering principles (propeller law, power–speed)**  
-  First-principles route to derive sea fuel from AIS speed and hull/engine parameters. We note this as an extension path beyond the constant **`K_sea`** factor.
+- **ICCT (Jul/2022). _Brazilian coastal shipping: New prospects for growth with decarbonization._**  
+  Policy and context frame for cabotage; supports modeling port effects and operational factors.
 
-## 4. Brazilian Regulations & Limits (Road)
+- **IMO / engineering references for auxiliaries (SFOC)**  
+  Benchmarks used in preprocessing for per-port hotel factors: **~600 kW** average auxiliary demand and **~225 g/kWh** SFOC, implying about **135 kg of fuel per hour** at berth.
 
-* **CONTRAN resolutions on weights and dimensions** (e.g., 12/1998, 68/1998, 184/2005, 189/2005, and later updates; plus consolidated tables widely reproduced)  
-  Define **axle-group weight limits** and **maximum gross combination mass** by configuration. These norms bound the **payload** per truck composition and thus the **number of trips** for a given cargo mass.
+- **ANTT (Brazil) axle-based fuel economy**  
+  Source of **baseline km/L by axle count** used in road calculations (e.g., 5-axle ≈ 2.3 km/L; 6–7 axles ≈ 2.0 km/L).
 
-* **ANTT Portaria SUROC/ANTT/MI nº 17/2020 (km/L baselines by axle count for containerized cargo)**  
-  Source of **baseline fuel efficiencies** per **axle class** used in the earlier MVP variant and for sensitivity checks (e.g., 5-axle ≈ **2.3 km/L** loaded).
+- **OpenRouteService documentation**  
+  API semantics for **geocoding**, **directions**, and **SNAP-to-road** behavior.
 
-## 5. How the sources map to code
+---
 
-* **ORS docs** → `ors_common.py`, `ors_client.py`, `ors_mixins.py` (timeouts, retries, headers, endpoints, fallback).
+## 4) Methodological papers cited by approach
 
-* **Ports & ANTAQ** → `ports_index.py`, `ports_nearest.py`, `sea_matrix.py`, `accounting.py` (hotel indices).
+- **Leenders et al. (2017). _Emissions allocation in transportation routes._**  
+  Motivation for treating multi-stop allocation carefully (future work path; current code uses per-tonne constants at port).
 
-* **Truck fuel studies & ANTT baselines** → `road/emissions.py` (per-trip estimator), plus future split into `vehicles.py` and `efficiency.py` for axle/payload logic.
+- **Cooperative game theory (Shapley value)** — e.g., Arroyo et al. (2024)  
+  “Gold-standard” fairness concept for common-cost sharing (not yet implemented; referenced as extension path).
 
-* **IMO/engineering** → constants and structure for the **hotel** and **sea** factors (used in `evaluator.py` through `accounting.emissions_ttw` and `SeaMatrix`).
+---
 
-> **Note:** Exact numeric constants in this MVP are intentionally conservative and easily replaceable. As you incorporate more granular telemetry (truck km/L, port equipment fuel logs, AIS), cite those new sources here and update the corresponding modules and defaults.
+## 5) Emission factors & constants used in code
+
+- **Road (diesel, TTW)**  
+  `DIESEL_DENSITY_KG_PER_L = 0.84`, `EF_DIESEL_CO2_KG_PER_L = 2.68`.
+
+- **Maritime (MGO, TTW)**  
+  `EF_TTW_MGO_KG_PER_T = {"CO2": 3206.0, "CH4": 0.0, "N2O": 0.0}` → **3.206 tCO₂ per t fuel**.  
+  Monetary cost uses `MGO_PRICE_BRL_PER_T = 3200.0`.  
+  Port handling also applies **fixed dwell hours** and a **fixed cost per call** in totals.
