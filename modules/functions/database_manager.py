@@ -15,13 +15,15 @@ CREATE TABLE IF NOT EXISTS heatmap_runs (
     , destiny_lat               REAL        NOT NULL
     , destiny_lon               REAL        NOT NULL
     , cargo_weight_ton          REAL        NOT NULL
+
     , road_only_distance_km     REAL
+
     , cab_po_name               TEXT
     , cab_pd_name               TEXT
+
     , cab_road_o_to_po_km       REAL
     , cab_road_pd_to_d_km       REAL
-    , cab_road_o_to_po_s        INTEGER
-    , cab_road_pd_to_d_s        INTEGER
+
     , is_hgv                    BOOL
     , insertion_timestamp       TIMESTAMP   NOT NULL DEFAULT (datetime('now'))
 );
@@ -120,9 +122,6 @@ CREATE TABLE IF NOT EXISTS {table} (
     , cab_road_o_to_po_km       REAL
     , cab_road_pd_to_d_km       REAL
 
-    , cab_road_o_to_po_s        INTEGER
-    , cab_road_pd_to_d_s        INTEGER
-
     , is_hgv                    BOOL
     , insertion_timestamp       TIMESTAMP   NOT NULL DEFAULT (datetime('now'))
 );
@@ -134,7 +133,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_{table}_key
     ON {table} (origin_name, cargo_weight_ton, destiny_name);
 """.strip()
 
-# Optional helper indexes (do not add columns)
+# Optional helper index
 _CREATE_IDX_DEST_SQL = """
 CREATE INDEX IF NOT EXISTS idx_{table}_destiny
     ON {table} (destiny_name);
@@ -179,8 +178,6 @@ def upsert_run(
     , cab_pd_name: Optional[str] = None
     , cab_road_o_to_po_km: Optional[float] = None
     , cab_road_pd_to_d_km: Optional[float] = None
-    , cab_road_o_to_po_s: Optional[int] = None
-    , cab_road_pd_to_d_s: Optional[int] = None
     , is_hgv: Optional[bool] = None
     , table_name: str = DEFAULT_TABLE
 ) -> None:
@@ -204,11 +201,9 @@ def upsert_run(
         , cab_pd_name
         , cab_road_o_to_po_km
         , cab_road_pd_to_d_km
-        , cab_road_o_to_po_s
-        , cab_road_pd_to_d_s
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(origin_name, cargo_weight_ton, destiny_name) DO UPDATE SET
           origin_lat            = excluded.origin_lat
         , origin_lon            = excluded.origin_lon
@@ -219,8 +214,6 @@ def upsert_run(
         , cab_pd_name           = excluded.cab_pd_name
         , cab_road_o_to_po_km   = excluded.cab_road_o_to_po_km
         , cab_road_pd_to_d_km   = excluded.cab_road_pd_to_d_km
-        , cab_road_o_to_po_s    = excluded.cab_road_o_to_po_s
-        , cab_road_pd_to_d_s    = excluded.cab_road_pd_to_d_s
         , is_hgv                = excluded.is_hgv
     ;
     """.strip()
@@ -238,8 +231,6 @@ def upsert_run(
         , cab_pd_name
         , (None if cab_road_o_to_po_km is None else float(cab_road_o_to_po_km))
         , (None if cab_road_pd_to_d_km is None else float(cab_road_pd_to_d_km))
-        , (None if cab_road_o_to_po_s  is None else int(cab_road_o_to_po_s))
-        , (None if cab_road_pd_to_d_s  is None else int(cab_road_pd_to_d_s))
         , _bool_to_int(is_hgv)
     )
     conn.execute(sql, params)
@@ -260,8 +251,6 @@ def insert_if_absent(
     , cab_pd_name: Optional[str] = None
     , cab_road_o_to_po_km: Optional[float] = None
     , cab_road_pd_to_d_km: Optional[float] = None
-    , cab_road_o_to_po_s: Optional[int] = None
-    , cab_road_pd_to_d_s: Optional[int] = None
     , is_hgv: Optional[bool] = None
     , table_name: str = DEFAULT_TABLE
 ) -> bool:
@@ -285,11 +274,9 @@ def insert_if_absent(
         , cab_pd_name
         , cab_road_o_to_po_km
         , cab_road_pd_to_d_km
-        , cab_road_o_to_po_s
-        , cab_road_pd_to_d_s
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     """.strip()
 
     cur = conn.execute(sql, (
@@ -305,8 +292,6 @@ def insert_if_absent(
         , cab_pd_name
         , (None if cab_road_o_to_po_km is None else float(cab_road_o_to_po_km))
         , (None if cab_road_pd_to_d_km is None else float(cab_road_pd_to_d_km))
-        , (None if cab_road_o_to_po_s  is None else int(cab_road_o_to_po_s))
-        , (None if cab_road_pd_to_d_s  is None else int(cab_road_pd_to_d_s))
         , _bool_to_int(is_hgv)
     ))
     return cur.rowcount == 1
@@ -337,11 +322,9 @@ def bulk_upsert_runs(
         , cab_pd_name
         , cab_road_o_to_po_km
         , cab_road_pd_to_d_km
-        , cab_road_o_to_po_s
-        , cab_road_pd_to_d_s
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(origin_name, cargo_weight_ton, destiny_name) DO UPDATE SET
           origin_lat            = excluded.origin_lat
         , origin_lon            = excluded.origin_lon
@@ -352,8 +335,6 @@ def bulk_upsert_runs(
         , cab_pd_name           = excluded.cab_pd_name
         , cab_road_o_to_po_km   = excluded.cab_road_o_to_po_km
         , cab_road_pd_to_d_km   = excluded.cab_road_pd_to_d_km
-        , cab_road_o_to_po_s    = excluded.cab_road_o_to_po_s
-        , cab_road_pd_to_d_s    = excluded.cab_road_pd_to_d_s
         , is_hgv                = excluded.is_hgv
     ;
     """.strip()
@@ -372,8 +353,6 @@ def bulk_upsert_runs(
             , r.get("cab_pd_name")
             , (None if r.get("cab_road_o_to_po_km") is None else float(r["cab_road_o_to_po_km"]))
             , (None if r.get("cab_road_pd_to_d_km") is None else float(r["cab_road_pd_to_d_km"]))
-            , (None if r.get("cab_road_o_to_po_s")  is None else int(r["cab_road_o_to_po_s"]))
-            , (None if r.get("cab_road_pd_to_d_s")  is None else int(r["cab_road_pd_to_d_s"]))
             , _bool_to_int(r.get("is_hgv"))
         )
 
@@ -444,8 +423,6 @@ def get_run(
         , cab_pd_name
         , cab_road_o_to_po_km
         , cab_road_pd_to_d_km
-        , cab_road_o_to_po_s
-        , cab_road_pd_to_d_s
         , is_hgv
         , insertion_timestamp
     FROM {table_name}
@@ -477,8 +454,6 @@ def get_run(
         , cab_pd_name_v
         , cab_road_o_to_po_km_v
         , cab_road_pd_to_d_km_v
-        , cab_road_o_to_po_s_v
-        , cab_road_pd_to_d_s_v
         , is_hgv_v
         , insertion_timestamp_v
     ) = row
@@ -497,8 +472,6 @@ def get_run(
         , "cab_pd_name": cab_pd_name_v
         , "cab_road_o_to_po_km": (None if cab_road_o_to_po_km_v is None else float(cab_road_o_to_po_km_v))
         , "cab_road_pd_to_d_km": (None if cab_road_pd_to_d_km_v is None else float(cab_road_pd_to_d_km_v))
-        , "cab_road_o_to_po_s": (None if cab_road_o_to_po_s_v is None else int(cab_road_o_to_po_s_v))
-        , "cab_road_pd_to_d_s": (None if cab_road_pd_to_d_s_v is None else int(cab_road_pd_to_d_s_v))
         , "is_hgv": (None if is_hgv_v is None else bool(is_hgv_v))
         , "insertion_timestamp": insertion_timestamp_v
     }
@@ -546,8 +519,6 @@ def list_runs(
         , cab_pd_name
         , cab_road_o_to_po_km
         , cab_road_pd_to_d_km
-        , cab_road_o_to_po_s
-        , cab_road_pd_to_d_s
         , is_hgv
         , insertion_timestamp
     FROM {table_name}
@@ -572,10 +543,8 @@ def list_runs(
             , "cab_pd_name": row[10]
             , "cab_road_o_to_po_km": (None if row[11] is None else float(row[11]))
             , "cab_road_pd_to_d_km": (None if row[12] is None else float(row[12]))
-            , "cab_road_o_to_po_s": (None if row[13] is None else int(row[13]))
-            , "cab_road_pd_to_d_s": (None if row[14] is None else int(row[14]))
-            , "is_hgv": (None if row[15] is None else bool(row[15]))
-            , "insertion_timestamp": row[16]
+            , "is_hgv": (None if row[13] is None else bool(row[13]))
+            , "insertion_timestamp": row[14]
         })
     return out
 
@@ -602,8 +571,6 @@ if __name__ == "__main__":
             , cab_pd_name="Itajaí"
             , cab_road_o_to_po_km=82.0
             , cab_road_pd_to_d_km=76.0
-            , cab_road_o_to_po_s=5400
-            , cab_road_pd_to_d_s=4200
             , is_hgv=True
         )
         log.info("Rows (limit 3): %s", list_runs(_conn, limit=3))
