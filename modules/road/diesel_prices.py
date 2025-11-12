@@ -20,7 +20,7 @@ from typing import Tuple, Dict, Any
 
 import pandas as pd
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 
 _log = get_logger(__name__)
 

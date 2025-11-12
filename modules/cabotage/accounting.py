@@ -30,7 +30,7 @@ import json
 import os
 import re
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 
 _log = get_logger(__name__)
 

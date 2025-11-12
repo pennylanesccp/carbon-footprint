@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
 import argparse
 import json
 
-from modules.functions.logging import init_logging
+from modules.functions._logging import init_logging
 from modules.app.evaluator import (
       evaluate
     , Dependencies

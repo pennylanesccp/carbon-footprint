@@ -25,7 +25,7 @@ import sqlite3
 from typing import Any, Dict, Tuple, Optional
 from datetime import datetime, timezone
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Errors

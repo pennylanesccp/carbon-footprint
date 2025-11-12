@@ -22,7 +22,7 @@ from __future__ import annotations
 from typing import Dict, Any, Optional, List
 from copy import deepcopy
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 
 _log = get_logger(__name__)
 

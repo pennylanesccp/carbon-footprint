@@ -32,7 +32,7 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, List, Optional, Tuple
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 
 _log = get_logger(__name__)
 

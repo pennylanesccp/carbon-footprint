@@ -68,7 +68,7 @@ import unicodedata
 from typing import Any, Dict, List, Optional, Set
 
 # standardized repo logging
-from modules.functions.logging import init_logging, get_logger, get_current_log_path
+from modules.functions._logging import init_logging, get_logger, get_current_log_path
 _LOG = get_logger("scripts.build_heatmap_from_file")  # explicit name for nicer prefixes
 
 # ────────────────────────────────────────────────────────────────────────────────

@@ -42,7 +42,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Tuple, Optional
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 
 __all__ = ["SeaMatrix"]
 

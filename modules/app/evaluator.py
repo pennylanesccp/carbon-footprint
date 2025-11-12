@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 from modules.road.ors_common import ORSConfig
 from modules.road.ors_client import ORSClient
 

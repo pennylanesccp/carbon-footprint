@@ -24,7 +24,7 @@ from __future__ import annotations
 from typing import Any as _Any, Dict as _Dict, List as _List, Optional as _Optional
 import requests as _req
 
-from modules.functions.logging import get_logger
+from modules.functions._logging import get_logger
 from .ors_common import (
     _short,
     _extract_error_text,
