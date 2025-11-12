@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-SQLite manager for persisting heatmap evaluations (minimal schema).
+SQLite manager for persisting precomputed routing data (minimal schema).
 
 Table (exactly as requested)
 ---------------------------
@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS heatmap_runs (
     , destiny_name              TEXT        NOT NULL
     , destiny_lat               REAL        NOT NULL
     , destiny_lon               REAL        NOT NULL
-    , cargo_weight_ton          REAL        NOT NULL
 
     , road_only_distance_km     REAL
 
@@ -30,9 +29,9 @@ CREATE TABLE IF NOT EXISTS heatmap_runs (
 
 Uniqueness & policy
 -------------------
-• Uniqueness enforced via a UNIQUE INDEX on (origin_name, cargo_weight_ton, destiny_name)
+• Uniqueness enforced via a UNIQUE INDEX on (origin_name, destiny_name)
   so ON CONFLICT upsert works while keeping `unique_id` as rowid PK.
-• No other columns are stored; everything else is derivable from these inputs/distances.
+• Only the fields needed to re-derive KPIs are stored.
 
 Style
 -----
@@ -112,7 +111,6 @@ CREATE TABLE IF NOT EXISTS {table} (
     , destiny_name              TEXT        NOT NULL
     , destiny_lat               REAL        NOT NULL
     , destiny_lon               REAL        NOT NULL
-    , cargo_weight_ton          REAL        NOT NULL
 
     , road_only_distance_km     REAL
 
@@ -127,13 +125,11 @@ CREATE TABLE IF NOT EXISTS {table} (
 );
 """.strip()
 
-# Unique index for upsert semantics (no extra columns are added)
 _CREATE_UNIQUE_INDEX_SQL = """
 CREATE UNIQUE INDEX IF NOT EXISTS uq_{table}_key
-    ON {table} (origin_name, cargo_weight_ton, destiny_name);
+    ON {table} (origin_name, destiny_name);
 """.strip()
 
-# Optional helper index
 _CREATE_IDX_DEST_SQL = """
 CREATE INDEX IF NOT EXISTS idx_{table}_destiny
     ON {table} (destiny_name);
@@ -172,7 +168,6 @@ def upsert_run(
     , destiny_name: str
     , destiny_lat: float
     , destiny_lon: float
-    , cargo_weight_ton: float
     , road_only_distance_km: Optional[float] = None
     , cab_po_name: Optional[str] = None
     , cab_pd_name: Optional[str] = None
@@ -182,7 +177,7 @@ def upsert_run(
     , table_name: str = DEFAULT_TABLE
 ) -> None:
     """
-    Insert or update a row keyed by (origin_name, cargo_weight_ton, destiny_name).
+    Insert or update a row keyed by (origin_name, destiny_name).
     Leaves insertion_timestamp unchanged on updates.
     """
     ensure_main_table(conn, table_name=table_name)
@@ -195,7 +190,6 @@ def upsert_run(
         , destiny_name
         , destiny_lat
         , destiny_lon
-        , cargo_weight_ton
         , road_only_distance_km
         , cab_po_name
         , cab_pd_name
@@ -203,8 +197,8 @@ def upsert_run(
         , cab_road_pd_to_d_km
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(origin_name, cargo_weight_ton, destiny_name) DO UPDATE SET
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(origin_name, destiny_name) DO UPDATE SET
           origin_lat            = excluded.origin_lat
         , origin_lon            = excluded.origin_lon
         , destiny_lat           = excluded.destiny_lat
@@ -225,7 +219,6 @@ def upsert_run(
         , destiny_name
         , float(destiny_lat)
         , float(destiny_lon)
-        , float(cargo_weight_ton)
         , (None if road_only_distance_km is None else float(road_only_distance_km))
         , cab_po_name
         , cab_pd_name
@@ -245,7 +238,6 @@ def insert_if_absent(
     , destiny_name: str
     , destiny_lat: float
     , destiny_lon: float
-    , cargo_weight_ton: float
     , road_only_distance_km: Optional[float] = None
     , cab_po_name: Optional[str] = None
     , cab_pd_name: Optional[str] = None
@@ -255,7 +247,7 @@ def insert_if_absent(
     , table_name: str = DEFAULT_TABLE
 ) -> bool:
     """
-    Insert only; ignore if the (origin_name, cargo_weight_ton, destiny_name) exists.
+    Insert only; ignore if (origin_name, destiny_name) exists.
     Returns True if a row was inserted, False otherwise.
     """
     ensure_main_table(conn, table_name=table_name)
@@ -268,7 +260,6 @@ def insert_if_absent(
         , destiny_name
         , destiny_lat
         , destiny_lon
-        , cargo_weight_ton
         , road_only_distance_km
         , cab_po_name
         , cab_pd_name
@@ -276,7 +267,7 @@ def insert_if_absent(
         , cab_road_pd_to_d_km
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     """.strip()
 
     cur = conn.execute(sql, (
@@ -286,7 +277,6 @@ def insert_if_absent(
         , destiny_name
         , float(destiny_lat)
         , float(destiny_lon)
-        , float(cargo_weight_ton)
         , (None if road_only_distance_km is None else float(road_only_distance_km))
         , cab_po_name
         , cab_pd_name
@@ -316,7 +306,6 @@ def bulk_upsert_runs(
         , destiny_name
         , destiny_lat
         , destiny_lon
-        , cargo_weight_ton
         , road_only_distance_km
         , cab_po_name
         , cab_pd_name
@@ -324,8 +313,8 @@ def bulk_upsert_runs(
         , cab_road_pd_to_d_km
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(origin_name, cargo_weight_ton, destiny_name) DO UPDATE SET
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(origin_name, destiny_name) DO UPDATE SET
           origin_lat            = excluded.origin_lat
         , origin_lon            = excluded.origin_lon
         , destiny_lat           = excluded.destiny_lat
@@ -347,7 +336,6 @@ def bulk_upsert_runs(
             , r["destiny_name"]
             , float(r["destiny_lat"])
             , float(r["destiny_lon"])
-            , float(r["cargo_weight_ton"])
             , (None if r.get("road_only_distance_km") is None else float(r["road_only_distance_km"]))
             , r.get("cab_po_name")
             , r.get("cab_pd_name")
@@ -367,7 +355,7 @@ def bulk_upsert_runs(
 def overwrite_keys(
     conn: sqlite3.Connection
     , *
-    , keys: Sequence[Tuple[str, float, str]]
+    , keys: Sequence[Tuple[str, str]]
     , rows: Iterable[Mapping[str, Any]]
     , table_name: str = DEFAULT_TABLE
 ) -> int:
@@ -375,22 +363,18 @@ def overwrite_keys(
     Overwrite semantics for a subset of composite keys:
         1) delete keys provided
         2) bulk-upsert replacement rows
-    keys = sequence of (origin_name, cargo_weight_ton, destiny_name)
+    keys = sequence of (origin_name, destiny_name)
     """
     ensure_main_table(conn, table_name=table_name)
 
     del_sql = f"""
     DELETE FROM {table_name}
     WHERE origin_name = ?
-      AND cargo_weight_ton = ?
       AND destiny_name = ?;
     """.strip()
 
     if keys:
-        conn.executemany(del_sql, [
-              (k[0], float(k[1]), k[2])
-            for k in keys
-        ])
+        conn.executemany(del_sql, [ (k[0], k[1]) for k in keys ])
 
     return bulk_upsert_runs(conn, rows=rows, table_name=table_name)
 
@@ -399,7 +383,6 @@ def get_run(
     conn: sqlite3.Connection
     , *
     , origin_name: str
-    , cargo_weight_ton: float
     , destiny_name: str
     , table_name: str = DEFAULT_TABLE
 ) -> Optional[Mapping[str, Any]]:
@@ -417,7 +400,6 @@ def get_run(
         , destiny_name
         , destiny_lat
         , destiny_lon
-        , cargo_weight_ton
         , road_only_distance_km
         , cab_po_name
         , cab_pd_name
@@ -427,16 +409,10 @@ def get_run(
         , insertion_timestamp
     FROM {table_name}
     WHERE origin_name = ?
-      AND cargo_weight_ton = ?
       AND destiny_name = ?;
     """.strip()
 
-    row = conn.execute(sql, (
-          origin_name
-        , float(cargo_weight_ton)
-        , destiny_name
-    )).fetchone()
-
+    row = conn.execute(sql, (origin_name, destiny_name)).fetchone()
     if not row:
         return None
 
@@ -448,7 +424,6 @@ def get_run(
         , destiny_name_v
         , destiny_lat_v
         , destiny_lon_v
-        , cargo_weight_ton_v
         , road_only_distance_km_v
         , cab_po_name_v
         , cab_pd_name_v
@@ -466,7 +441,6 @@ def get_run(
         , "destiny_name": destiny_name_v
         , "destiny_lat": float(destiny_lat_v)
         , "destiny_lon": float(destiny_lon_v)
-        , "cargo_weight_ton": float(cargo_weight_ton_v)
         , "road_only_distance_km": (None if road_only_distance_km_v is None else float(road_only_distance_km_v))
         , "cab_po_name": cab_po_name_v
         , "cab_pd_name": cab_pd_name_v
@@ -513,7 +487,6 @@ def list_runs(
         , destiny_name
         , destiny_lat
         , destiny_lon
-        , cargo_weight_ton
         , road_only_distance_km
         , cab_po_name
         , cab_pd_name
@@ -523,7 +496,7 @@ def list_runs(
         , insertion_timestamp
     FROM {table_name}
     {where}
-    ORDER BY origin_name, destiny_name, cargo_weight_ton
+    ORDER BY origin_name, destiny_name
     {lim};
     """.strip()
 
@@ -537,16 +510,33 @@ def list_runs(
             , "destiny_name": row[4]
             , "destiny_lat": float(row[5])
             , "destiny_lon": float(row[6])
-            , "cargo_weight_ton": float(row[7])
-            , "road_only_distance_km": (None if row[8]  is None else float(row[8]))
-            , "cab_po_name": row[9]
-            , "cab_pd_name": row[10]
-            , "cab_road_o_to_po_km": (None if row[11] is None else float(row[11]))
-            , "cab_road_pd_to_d_km": (None if row[12] is None else float(row[12]))
-            , "is_hgv": (None if row[13] is None else bool(row[13]))
-            , "insertion_timestamp": row[14]
+            , "road_only_distance_km": (None if row[7]  is None else float(row[7]))
+            , "cab_po_name": row[8]
+            , "cab_pd_name": row[9]
+            , "cab_road_o_to_po_km": (None if row[10] is None else float(row[10]))
+            , "cab_road_pd_to_d_km": (None if row[11] is None else float(row[11]))
+            , "is_hgv": (None if row[12] is None else bool(row[12]))
+            , "insertion_timestamp": row[13]
         })
     return out
+
+
+def delete_key(
+    conn: sqlite3.Connection
+    , *
+    , origin_name: str
+    , destiny_name: str
+    , table_name: str = DEFAULT_TABLE
+) -> int:
+    """
+    Delete a single composite key. Returns affected row count (0 or 1).
+    """
+    ensure_main_table(conn, table_name=table_name)
+    cur = conn.execute(
+        f"DELETE FROM {table_name} WHERE origin_name=? AND destiny_name=?",
+        (origin_name, destiny_name),
+    )
+    return cur.rowcount
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -565,7 +555,6 @@ if __name__ == "__main__":
             , destiny_name="Itapoá, SC, Brazil"
             , destiny_lat=-26.171181
             , destiny_lon=-48.600218
-            , cargo_weight_ton=50.0
             , road_only_distance_km=612.3
             , cab_po_name="Santos"
             , cab_pd_name="Itajaí"
