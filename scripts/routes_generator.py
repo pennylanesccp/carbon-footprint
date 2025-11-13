@@ -33,9 +33,9 @@ from modules.functions.database_manager import (
 )
 
 # ORS + geocoding
-from modules.road.ors_common import ORSConfig
+from modules.road.ors_common import ORSConfig, RateLimited, NoRoute
 from modules.road.ors_client import ORSClient
-from modules.addressing.resolver import resolve_point as geo_resolve
+from modules.addressing.resolver import resolve_point_null_safe as geo_resolve
 
 # Cabotage helpers (ports + nearest-port search)
 from modules.cabotage.ports_index import load_ports
@@ -108,41 +108,74 @@ def _route_distance_km(
     , destination: Any
     , primary_profile: str
     , fallback_to_car: bool
-) -> Tuple[str, Optional[float]]:
+) -> Tuple[Optional[str], Optional[float]]:
     """
-    Call ORS /v2/directions once with *primary_profile* and, if requested,
-    retry with driving-car on failure.
+    Call ORS /v2/directions for origin→destination.
 
-    Returns
-    -------
-    (profile_used, distance_km_or_None)
+    Tries:
+      1) primary_profile
+      2) driving-car (if fallback_to_car and primary_profile != driving-car)
+
+    Behaviour:
+      • On success: returns (profile_used, distance_km).
+      • On RateLimited: re-raises → caller should stop bulk run.
+      • On NoRoute/other failures: logs and returns (last_profile_tried, None).
     """
-    used_profile = primary_profile
-    try:
-        res = ors.route_road(origin, destination, profile=primary_profile)
-    except Exception as e:
-        if fallback_to_car and primary_profile != "driving-car":
-            log.warning(
-                  "Primary '%s' failed (%s). Falling back to 'driving-car'."
-                , primary_profile
-                , e
+    profiles: list[str] = [primary_profile]
+    if fallback_to_car and primary_profile != "driving-car":
+        profiles.append("driving-car")
+
+    last_exc: Optional[Exception] = None
+
+    for prof in profiles:
+        try:
+            res = ors.route_road(origin, destination, profile=prof)
+            dist_m = res.get("distance_m")
+            km = None if dist_m is None else float(dist_m) / 1000.0
+            log.info(
+                  "ROUTE origin→dest using %s: distance=%s km"
+                , prof
+                , "NULL" if km is None else f"{km:.3f}"
             )
-            used_profile = "driving-car"
-            res = ors.route_road(origin, destination, profile="driving-car")
-        else:
-            log.error(
-                  "Route failed for profile=%s origin=%r destination=%r: %s"
-                , primary_profile
+            return prof, km
+
+        except RateLimited:
+            # Bubble up so bulk runner can break the loop cleanly
+            raise
+
+        except NoRoute as e:
+            log.warning(
+                  "NoRoute for profile=%s origin=%r destination=%r: %s "
+                  "→ storing NULL distance for this leg."
+                , prof
                 , origin
                 , destination
                 , e
             )
-            raise
+            last_exc = e
 
-    dist_m = res.get("distance_m")
-    km: Optional[float]
-    km = None if dist_m is None else float(dist_m) / 1000.0
-    return used_profile, km
+        except Exception as e:
+            log.error(
+                  "Route failed for profile=%s origin=%r destination=%r: %s "
+                  "→ storing NULL distance for this leg."
+                , prof
+                , origin
+                , destination
+                , e
+            )
+            last_exc = e
+
+    if last_exc is not None:
+        log.warning(
+              "All route attempts failed for origin=%r destination=%r (profiles_tried=%r). "
+              "Distance will be NULL."
+            , origin
+            , destination
+            , profiles
+        )
+
+    # Return last profile tried (or None) and NULL distance
+    return (profiles[-1] if profiles else None), None
 
 
 def _port_anchor_point(port_info: dict[str, Any], *, suffix: str = "gate") -> dict[str, Any]:
@@ -210,29 +243,87 @@ def main(argv=None) -> int:
 
     # ------------------------------------------------------------------
     # 1) Geocode origin/destiny once (later reused for all legs)
+    #    • resolve_point_null_safe may return None → handle gracefully.
     # ------------------------------------------------------------------
-    origin_pt = geo_resolve(args.origin, ors=ors)    # {'lat','lon','label'}
-    destiny_pt = geo_resolve(args.destiny, ors=ors)  # {'lat','lon','label'}
+    origin_pt = geo_resolve(
+          value=args.origin
+        , ors=ors
+        , log=log
+    )
+    destiny_pt = geo_resolve(
+          value=args.destiny
+        , ors=ors
+        , log=log
+    )
 
+    if origin_pt is None or destiny_pt is None:
+        # Geocoding failed for at least one side → treat as handled NULL row
+        log.warning(
+              "Origin or destiny could not be geocoded; marking run as NULL."
+              " origin_raw=%r destiny_raw=%r"
+            , args.origin
+            , args.destiny
+        )
+
+        origin_name = str(args.origin)
+        destiny_name = str(args.destiny)
+
+        # Persist NULL distances and coords in SQLite so bulk runner
+        # knows this pair has been handled.
+        with db_session(db_path=args.db_path) as conn:
+            ensure_main_table(conn, table_name=args.table)
+            upsert_run(
+                  conn
+                , origin_name=origin_name
+                , origin_lat=None
+                , origin_lon=None
+                , destiny_name=destiny_name
+                , destiny_lat=None
+                , destiny_lon=None
+                , road_only_distance_km=None
+                , cab_po_name=None
+                , cab_pd_name=None
+                , cab_road_o_to_po_km=None
+                , cab_road_pd_to_d_km=None
+                , is_hgv=None
+                , table_name=args.table
+            )
+
+        # JSON echo (consistent structure, but all NULL-ish)
+        payload = {
+              "origin": origin_pt
+            , "destiny": destiny_pt
+            , "road_only_distance_km": None
+            , "cabotage": {
+                  "port_origin": None
+                , "port_destiny": None
+                , "road_o_to_po_km": None
+                , "road_pd_to_d_km": None
+            }
+            , "profile_used": None
+        }
+
+        if args.pretty:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+
+        log.info(
+              "Routes generator finished (NULL geocode) for (%s → %s)."
+            , origin_name
+            , destiny_name
+        )
+        # Exit 0 so bulk_routes_generator treats this as handled and continues
+        return 0
+
+    # At this point geocoding is OK
     origin_name = str(origin_pt.get("label") or args.origin)
     destiny_name = str(destiny_pt.get("label") or args.destiny)
 
     # ------------------------------------------------------------------
-    # 2) Load ports + find nearest to origin/destiny (haversine, gate-aware)
-    # ------------------------------------------------------------------
-    ports = load_ports(path=str(args.ports_json))
-
-    o_port = find_nearest_port(origin_pt["lat"], origin_pt["lon"], ports)
-    d_port = find_nearest_port(destiny_pt["lat"], destiny_pt["lon"], ports)
-
-    po_name = str(o_port["name"])
-    pd_name = str(d_port["name"])
-
-    po_anchor = _port_anchor_point(o_port, suffix="gate")
-    pd_anchor = _port_anchor_point(d_port, suffix="gate")
-
-    # ------------------------------------------------------------------
-    # 3) Road routes (direct O→D, O→Po, Pd→D) with fallback profile logic
+    # 2) Main road route O→D
+    #    • If this fails (road_only_km is None), DO NOT compute O→PO / PD→D.
+    #      Just persist a row with NULL cabotage legs and move on.
     # ------------------------------------------------------------------
     primary_profile = args.ors_profile
 
@@ -244,48 +335,83 @@ def main(argv=None) -> int:
         , fallback_to_car=args.fallback_to_car
     )
 
-    _profile_o_po, road_o_to_po_km = _route_distance_km(
-          ors
-        , origin_pt
-        , po_anchor
-        , primary_profile=primary_profile
-        , fallback_to_car=args.fallback_to_car
-    )
+    # Defaults for cabotage (may stay None if road-only fails)
+    o_port: Optional[dict[str, Any]] = None
+    d_port: Optional[dict[str, Any]] = None
+    po_name: Optional[str] = None
+    pd_name: Optional[str] = None
+    road_o_to_po_km: Optional[float] = None
+    road_pd_to_d_km: Optional[float] = None
 
-    _profile_pd_d, road_pd_to_d_km = _route_distance_km(
-          ors
-        , pd_anchor
-        , destiny_pt
-        , primary_profile=primary_profile
-        , fallback_to_car=args.fallback_to_car
-    )
-
-    # is_hgv: infer from the main road leg profile actually used
-    if profile_used_road == "driving-hgv":
-        is_hgv: Optional[bool] = True
-    elif profile_used_road == "driving-car":
-        is_hgv = False
+    # Determine is_hgv only if main road distance is known
+    if road_only_km is None:
+        is_hgv: Optional[bool] = None
     else:
-        is_hgv = None
+        if profile_used_road == "driving-hgv":
+            is_hgv = True
+        elif profile_used_road == "driving-car":
+            is_hgv = False
+        else:
+            is_hgv = None
 
-    log.info(
-          "Extracted geo and distances: origin=%r (%.6f,%.6f) → destiny=%r (%.6f,%.6f) "
-          "road_only_km=%s cab_po=%r cab_pd=%r o→po_km=%s pd→d_km=%s"
-        , origin_name
-        , float(origin_pt["lat"])
-        , float(origin_pt["lon"])
-        , destiny_name
-        , float(destiny_pt["lat"])
-        , float(destiny_pt["lon"])
-        , road_only_km
-        , po_name
-        , pd_name
-        , road_o_to_po_km
-        , road_pd_to_d_km
-    )
+    # ------------------------------------------------------------------
+    # 3) Only if road-only O→D exists, compute nearest ports and port legs.
+    # ------------------------------------------------------------------
+    if road_only_km is not None:
+        # Load ports and find nearest to origin/destiny
+        ports = load_ports(path=str(args.ports_json))
+
+        o_port = find_nearest_port(origin_pt["lat"], origin_pt["lon"], ports)
+        d_port = find_nearest_port(destiny_pt["lat"], destiny_pt["lon"], ports)
+
+        po_name = str(o_port["name"])
+        pd_name = str(d_port["name"])
+
+        po_anchor = _port_anchor_point(o_port, suffix="gate")
+        pd_anchor = _port_anchor_point(d_port, suffix="gate")
+
+        _profile_o_po, road_o_to_po_km = _route_distance_km(
+              ors
+            , origin_pt
+            , po_anchor
+            , primary_profile=primary_profile
+            , fallback_to_car=args.fallback_to_car
+        )
+
+        _profile_pd_d, road_pd_to_d_km = _route_distance_km(
+              ors
+            , pd_anchor
+            , destiny_pt
+            , primary_profile=primary_profile
+            , fallback_to_car=args.fallback_to_car
+        )
+
+        log.info(
+              "Extracted geo and distances: origin=%r (%.6f,%.6f) → destiny=%r (%.6f,%.6f) "
+              "road_only_km=%s cab_po=%r cab_pd=%r o→po_km=%s pd→d_km=%s"
+            , origin_name
+            , float(origin_pt["lat"])
+            , float(origin_pt["lon"])
+            , destiny_name
+            , float(destiny_pt["lat"])
+            , float(destiny_pt["lon"])
+            , road_only_km
+            , po_name
+            , pd_name
+            , road_o_to_po_km
+            , road_pd_to_d_km
+        )
+    else:
+        # No main road route → skip ports and short legs entirely
+        log.warning(
+              "No road route origin→destiny for (%s → %s); skipping O→PO and PD→D legs."
+            , origin_name
+            , destiny_name
+        )
 
     # ------------------------------------------------------------------
     # 4) Persist in SQLite (single upsert row)
+    #     • If road_only_km is None, cabotage columns may all be NULL.
     # ------------------------------------------------------------------
     with db_session(db_path=args.db_path) as conn:
         ensure_main_table(conn, table_name=args.table)
@@ -319,7 +445,7 @@ def main(argv=None) -> int:
             , "road_o_to_po_km": road_o_to_po_km
             , "road_pd_to_d_km": road_pd_to_d_km
         }
-        , "profile_used": profile_used_road
+        , "profile_used": profile_used_road if road_only_km is not None else None
     }
 
     if args.pretty:
