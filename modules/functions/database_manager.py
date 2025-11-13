@@ -4,16 +4,16 @@
 """
 SQLite manager for persisting precomputed routing data (minimal schema).
 
-Table (exactly as requested)
----------------------------
+Table
+-----
 CREATE TABLE IF NOT EXISTS heatmap_runs (
       unique_id                 INTEGER PRIMARY KEY AUTOINCREMENT
     , origin_name               TEXT        NOT NULL
-    , origin_lat                REAL        NOT NULL
-    , origin_lon                REAL        NOT NULL
+    , origin_lat                REAL
+    , origin_lon                REAL
     , destiny_name              TEXT        NOT NULL
-    , destiny_lat               REAL        NOT NULL
-    , destiny_lon               REAL        NOT NULL
+    , destiny_lat               REAL
+    , destiny_lon               REAL
 
     , road_only_distance_km     REAL
 
@@ -27,8 +27,9 @@ CREATE TABLE IF NOT EXISTS heatmap_runs (
     , insertion_timestamp       TIMESTAMP   NOT NULL DEFAULT (datetime('now'))
 );
 
-Uniqueness & policy
--------------------
+Notes
+-----
+• Coordinates are allowed to be NULL for geocoding failures or placeholder rows.
 • Uniqueness enforced via a UNIQUE INDEX on (origin_name, destiny_name)
   so ON CONFLICT upsert works while keeping `unique_id` as rowid PK.
 • Only the fields needed to re-derive KPIs are stored.
@@ -58,14 +59,45 @@ log = logging.getLogger(__name__)
 
 
 # ────────────────────────────────────────────────────────────────────────────────
+# Small helpers
+# ────────────────────────────────────────────────────────────────────────────────
+
+def _bool_to_int(
+    v: Optional[bool]
+) -> Optional[int]:
+    """
+    Convert a bool to 0/1, preserving None.
+    """
+    if v is None:
+        return None
+    return 1 if bool(v) else 0
+
+
+def _to_float_or_none(
+    v: Any
+) -> Optional[float]:
+    """
+    Safely convert to float, keeping None (and "") as None.
+    Accepts str/float/int/None.
+    """
+    if v is None or v == "":
+        return None
+    return float(v)
+
+
+# ────────────────────────────────────────────────────────────────────────────────
 # Connection helpers
 # ────────────────────────────────────────────────────────────────────────────────
 
-def _ensure_parent_dir(db_path: Path) -> None:
+def _ensure_parent_dir(
+    db_path: Path
+) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def _configure_pragmas(conn: sqlite3.Connection) -> None:
+def _configure_pragmas(
+    conn: sqlite3.Connection
+) -> None:
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
@@ -99,18 +131,18 @@ def db_session(
 
 
 # ────────────────────────────────────────────────────────────────────────────────
-# DDL — create table & indexes (ONLY the requested columns)
+# DDL — create table & indexes
 # ────────────────────────────────────────────────────────────────────────────────
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS {table} (
       unique_id                 INTEGER PRIMARY KEY AUTOINCREMENT
     , origin_name               TEXT        NOT NULL
-    , origin_lat                REAL        NOT NULL
-    , origin_lon                REAL        NOT NULL
+    , origin_lat                REAL
+    , origin_lon                REAL
     , destiny_name              TEXT        NOT NULL
-    , destiny_lat               REAL        NOT NULL
-    , destiny_lon               REAL        NOT NULL
+    , destiny_lat               REAL
+    , destiny_lon               REAL
 
     , road_only_distance_km     REAL
 
@@ -153,21 +185,15 @@ def ensure_main_table(
 # DML — upsert / insert-only / overwrite / reads
 # ────────────────────────────────────────────────────────────────────────────────
 
-def _bool_to_int(v: Optional[bool]) -> Optional[int]:
-    if v is None:
-        return None
-    return 1 if bool(v) else 0
-
-
 def upsert_run(
     conn: sqlite3.Connection
     , *
     , origin_name: str
-    , origin_lat: float
-    , origin_lon: float
+    , origin_lat: Optional[float]
+    , origin_lon: Optional[float]
     , destiny_name: str
-    , destiny_lat: float
-    , destiny_lon: float
+    , destiny_lat: Optional[float]
+    , destiny_lon: Optional[float]
     , road_only_distance_km: Optional[float] = None
     , cab_po_name: Optional[str] = None
     , cab_pd_name: Optional[str] = None
@@ -178,7 +204,8 @@ def upsert_run(
 ) -> None:
     """
     Insert or update a row keyed by (origin_name, destiny_name).
-    Leaves insertion_timestamp unchanged on updates.
+    Coordinates and distances may be NULL (e.g., geocode failures).
+    insertion_timestamp is left unchanged on updates.
     """
     ensure_main_table(conn, table_name=table_name)
 
@@ -214,16 +241,16 @@ def upsert_run(
 
     params = (
           origin_name
-        , float(origin_lat)
-        , float(origin_lon)
+        , _to_float_or_none(origin_lat)
+        , _to_float_or_none(origin_lon)
         , destiny_name
-        , float(destiny_lat)
-        , float(destiny_lon)
-        , (None if road_only_distance_km is None else float(road_only_distance_km))
+        , _to_float_or_none(destiny_lat)
+        , _to_float_or_none(destiny_lon)
+        , _to_float_or_none(road_only_distance_km)
         , cab_po_name
         , cab_pd_name
-        , (None if cab_road_o_to_po_km is None else float(cab_road_o_to_po_km))
-        , (None if cab_road_pd_to_d_km is None else float(cab_road_pd_to_d_km))
+        , _to_float_or_none(cab_road_o_to_po_km)
+        , _to_float_or_none(cab_road_pd_to_d_km)
         , _bool_to_int(is_hgv)
     )
     conn.execute(sql, params)
@@ -233,11 +260,11 @@ def insert_if_absent(
     conn: sqlite3.Connection
     , *
     , origin_name: str
-    , origin_lat: float
-    , origin_lon: float
+    , origin_lat: Optional[float]
+    , origin_lon: Optional[float]
     , destiny_name: str
-    , destiny_lat: float
-    , destiny_lon: float
+    , destiny_lat: Optional[float]
+    , destiny_lon: Optional[float]
     , road_only_distance_km: Optional[float] = None
     , cab_po_name: Optional[str] = None
     , cab_pd_name: Optional[str] = None
@@ -272,16 +299,16 @@ def insert_if_absent(
 
     cur = conn.execute(sql, (
           origin_name
-        , float(origin_lat)
-        , float(origin_lon)
+        , _to_float_or_none(origin_lat)
+        , _to_float_or_none(origin_lon)
         , destiny_name
-        , float(destiny_lat)
-        , float(destiny_lon)
-        , (None if road_only_distance_km is None else float(road_only_distance_km))
+        , _to_float_or_none(destiny_lat)
+        , _to_float_or_none(destiny_lon)
+        , _to_float_or_none(road_only_distance_km)
         , cab_po_name
         , cab_pd_name
-        , (None if cab_road_o_to_po_km is None else float(cab_road_o_to_po_km))
-        , (None if cab_road_pd_to_d_km is None else float(cab_road_pd_to_d_km))
+        , _to_float_or_none(cab_road_o_to_po_km)
+        , _to_float_or_none(cab_road_pd_to_d_km)
         , _bool_to_int(is_hgv)
     ))
     return cur.rowcount == 1
@@ -294,7 +321,8 @@ def bulk_upsert_runs(
     , table_name: str = DEFAULT_TABLE
 ) -> int:
     """
-    Bulk upsert rows. Each row dict must provide the same keys accepted by upsert_run.
+    Bulk upsert rows. Each row dict must provide the same keys
+    accepted by upsert_run (names only; types are relaxed).
     """
     ensure_main_table(conn, table_name=table_name)
 
@@ -328,19 +356,21 @@ def bulk_upsert_runs(
     ;
     """.strip()
 
-    def _row_to_params(r: Mapping[str, Any]) -> Tuple[Any, ...]:
+    def _row_to_params(
+        r: Mapping[str, Any]
+    ) -> Tuple[Any, ...]:
         return (
               r["origin_name"]
-            , float(r["origin_lat"])
-            , float(r["origin_lon"])
+            , _to_float_or_none(r.get("origin_lat"))
+            , _to_float_or_none(r.get("origin_lon"))
             , r["destiny_name"]
-            , float(r["destiny_lat"])
-            , float(r["destiny_lon"])
-            , (None if r.get("road_only_distance_km") is None else float(r["road_only_distance_km"]))
+            , _to_float_or_none(r.get("destiny_lat"))
+            , _to_float_or_none(r.get("destiny_lon"))
+            , _to_float_or_none(r.get("road_only_distance_km"))
             , r.get("cab_po_name")
             , r.get("cab_pd_name")
-            , (None if r.get("cab_road_o_to_po_km") is None else float(r["cab_road_o_to_po_km"]))
-            , (None if r.get("cab_road_pd_to_d_km") is None else float(r["cab_road_pd_to_d_km"]))
+            , _to_float_or_none(r.get("cab_road_o_to_po_km"))
+            , _to_float_or_none(r.get("cab_road_pd_to_d_km"))
             , _bool_to_int(r.get("is_hgv"))
         )
 
@@ -363,6 +393,7 @@ def overwrite_keys(
     Overwrite semantics for a subset of composite keys:
         1) delete keys provided
         2) bulk-upsert replacement rows
+
     keys = sequence of (origin_name, destiny_name)
     """
     ensure_main_table(conn, table_name=table_name)
@@ -436,16 +467,16 @@ def get_run(
     return {
           "unique_id": unique_id
         , "origin_name": origin_name_v
-        , "origin_lat": float(origin_lat_v)
-        , "origin_lon": float(origin_lon_v)
+        , "origin_lat": _to_float_or_none(origin_lat_v)
+        , "origin_lon": _to_float_or_none(origin_lon_v)
         , "destiny_name": destiny_name_v
-        , "destiny_lat": float(destiny_lat_v)
-        , "destiny_lon": float(destiny_lon_v)
-        , "road_only_distance_km": (None if road_only_distance_km_v is None else float(road_only_distance_km_v))
+        , "destiny_lat": _to_float_or_none(destiny_lat_v)
+        , "destiny_lon": _to_float_or_none(destiny_lon_v)
+        , "road_only_distance_km": _to_float_or_none(road_only_distance_km_v)
         , "cab_po_name": cab_po_name_v
         , "cab_pd_name": cab_pd_name_v
-        , "cab_road_o_to_po_km": (None if cab_road_o_to_po_km_v is None else float(cab_road_o_to_po_km_v))
-        , "cab_road_pd_to_d_km": (None if cab_road_pd_to_d_km_v is None else float(cab_road_pd_to_d_km_v))
+        , "cab_road_o_to_po_km": _to_float_or_none(cab_road_o_to_po_km_v)
+        , "cab_road_pd_to_d_km": _to_float_or_none(cab_road_pd_to_d_km_v)
         , "is_hgv": (None if is_hgv_v is None else bool(is_hgv_v))
         , "insertion_timestamp": insertion_timestamp_v
     }
@@ -464,8 +495,8 @@ def list_runs(
     """
     ensure_main_table(conn, table_name=table_name)
 
-    clauses = []
-    params  = []
+    clauses: list[str] = []
+    params:  list[Any] = []
 
     if origin_name is not None:
         clauses.append("origin_name = ?")
@@ -500,21 +531,21 @@ def list_runs(
     {lim};
     """.strip()
 
-    out = []
+    out: list[Mapping[str, Any]] = []
     for row in conn.execute(sql, tuple(params)).fetchall():
         out.append({
               "unique_id": row[0]
             , "origin_name": row[1]
-            , "origin_lat": float(row[2])
-            , "origin_lon": float(row[3])
+            , "origin_lat": _to_float_or_none(row[2])
+            , "origin_lon": _to_float_or_none(row[3])
             , "destiny_name": row[4]
-            , "destiny_lat": float(row[5])
-            , "destiny_lon": float(row[6])
-            , "road_only_distance_km": (None if row[7]  is None else float(row[7]))
+            , "destiny_lat": _to_float_or_none(row[5])
+            , "destiny_lon": _to_float_or_none(row[6])
+            , "road_only_distance_km": _to_float_or_none(row[7])
             , "cab_po_name": row[8]
             , "cab_pd_name": row[9]
-            , "cab_road_o_to_po_km": (None if row[10] is None else float(row[10]))
-            , "cab_road_pd_to_d_km": (None if row[11] is None else float(row[11]))
+            , "cab_road_o_to_po_km": _to_float_or_none(row[10])
+            , "cab_road_pd_to_d_km": _to_float_or_none(row[11])
             , "is_hgv": (None if row[12] is None else bool(row[12]))
             , "insertion_timestamp": row[13]
         })
@@ -533,8 +564,8 @@ def delete_key(
     """
     ensure_main_table(conn, table_name=table_name)
     cur = conn.execute(
-        f"DELETE FROM {table_name} WHERE origin_name=? AND destiny_name=?",
-        (origin_name, destiny_name),
+          f"DELETE FROM {table_name} WHERE origin_name=? AND destiny_name=?"
+        , (origin_name, destiny_name)
     )
     return cur.rowcount
 
