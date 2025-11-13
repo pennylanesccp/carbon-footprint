@@ -19,7 +19,7 @@ except NameError:
         sys.exit(1)
 
 # Set the correct output data directory for the road module
-DATA_DIR = os.path.join(REPO_ROOT, "modules", "road", "_data")
+DATA_DIR = os.path.join(REPO_ROOT, "data", "road_data")
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR, exist_ok=True)
     logging.info(f"Created data directory: {DATA_DIR}")

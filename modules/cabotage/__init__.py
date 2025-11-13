@@ -1,8 +1,9 @@
 from __future__ import annotations
 from pathlib import Path
+import os
 
 # ── package data paths ──────────────────────────────────────────────────────────
-_DATA_DIR  = Path(__file__).with_name("_data")
+_DATA_DIR  = os.path.join("data", "cabotage_data")
 PORTS_JSON = _DATA_DIR / "ports_br.json"
 K_JSON     = _DATA_DIR / "k.json"
 

@@ -22,7 +22,7 @@ ROOT = _repo_root()
 sys.path.insert(0, ROOT)
 
 from modules.cabotage import load_ports  # you already have this
-PORTS_PATH = os.path.join(ROOT, "modules", "cabotage", "_data", "ports_br.json")
+PORTS_PATH = os.path.join(ROOT, "data", "cabotage_data", "ports_br.json")
 ports = load_ports(PORTS_PATH)
 
 # Keep a stable list of (label, lat, lon)
@@ -97,7 +97,7 @@ for (i, (na, la, loa)) in enumerate(port_list):
         matrix_km.at[na, nb] = nm_to_km(nm)
 
 # 5) Persist outputs -----------------------------------------------------------
-outdir = Path(ROOT) / "modules" / "cabotage" / "_data"
+outdir = Path(ROOT) / "data" / "cabotage_data"
 outdir.mkdir(parents=True, exist_ok=True)
 
 csv_path  = outdir / "sea_matrix.csv"

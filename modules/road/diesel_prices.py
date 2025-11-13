@@ -25,7 +25,7 @@ from modules.functions._logging import get_logger
 _log = get_logger(__name__)
 
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_DIESEL_PRICES_CSV = os.path.join(_CURRENT_DIR, "_data", "latest_diesel_prices.csv")
+DEFAULT_DIESEL_PRICES_CSV = os.path.join("data", "road_data", "latest_diesel_prices.csv")
 
 
 def load_latest_diesel_price(csv_path: str | None = None) -> pd.DataFrame:

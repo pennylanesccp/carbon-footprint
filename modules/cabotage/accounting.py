@@ -673,7 +673,7 @@ def allocate_hotel_fuel_from_json(
     *
     , legs: List[Leg]
     , shipments: List[Shipment]
-    , hotel_json_path: str = os.path.join("modules", "cabotage", "_data", "hotel.json")
+    , hotel_json_path: str = os.path.join("data", "cabotage_data", "hotel.json")
     , default_kg_per_t: Optional[float] = None   # if a port city is missing, either use this fallback or skip
     , on_missing: str = "skip"                   # 'skip' | 'use_default' | 'raise'
 ) -> Dict[str, Any]:

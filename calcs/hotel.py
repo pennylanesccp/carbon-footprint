@@ -14,8 +14,8 @@ from typing import Dict, List, Optional, Tuple
 # Config
 # ────────────────────────────────────────────────────────────────────────────────
 
-INPUT_TXT  = os.path.join("modules", "cabotage", "_data", "2025Atracacao.txt")
-OUTPUT_JSON = os.path.join("modules", "cabotage", "_data", "hotel.json")
+INPUT_TXT  = os.path.join("data", "cabotage_data", "2025Atracacao.txt")
+OUTPUT_JSON = os.path.join("data", "cabotage_data", "hotel.json")
 
 R_HOTEL_KG_PER_HOUR = 135.0         # auxiliary genset fuel rate (kg/h)
 ASSUMED_T_PER_CALL  = 6000.0        # tonnes handled per call (conservative placeholder)
