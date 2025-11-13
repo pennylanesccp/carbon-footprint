@@ -59,10 +59,10 @@ class Dependencies:
 
 @dataclass
 class DataPaths:
-    ports_json: Path = Path("modules/cabotage/_data/ports_br.json")
-    sea_matrix_json: Path = Path("modules/cabotage/_data/sea_matrix.json")
-    hotel_json: Path = Path("modules/cabotage/_data/hotel.json")
-    diesel_prices_csv: Path = Path("modules/road/_data/latest_diesel_prices.csv")
+    ports_json: Path = Path("data/cabotage_data/ports_br.json")
+    sea_matrix_json: Path = Path("data/cabotage_data/sea_matrix.json")
+    hotel_json: Path = Path("data/cabotage_data/hotel.json")
+    diesel_prices_csv: Path = Path("data/road_data/latest_diesel_prices.csv")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Helpers

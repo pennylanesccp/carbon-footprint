@@ -3,9 +3,8 @@ from pathlib import Path
 import os
 
 # ── package data paths ──────────────────────────────────────────────────────────
-_DATA_DIR  = os.path.join("data", "cabotage_data")
-PORTS_JSON = _DATA_DIR / "ports_br.json"
-K_JSON     = _DATA_DIR / "k.json"
+PORTS_JSON = Path("data/cabotage_data/ports_br.json")
+K_JSON = Path("data/cabotage_data/k.json")
 
 def get_ports_path() -> str:
     return str(PORTS_JSON)

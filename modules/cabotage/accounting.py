@@ -582,7 +582,7 @@ def allocate_port_fuel_to_shipments(
 
 
 # ────────────────────────────────────────────────────────────────────────────────
-# Hotel @ berth (kg fuel per tonne handled) – from modules/cabotage/_data/hotel.json
+# Hotel @ berth (kg fuel per tonne handled) – from data/cabotage_data/hotel.json
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_hotel_entries(

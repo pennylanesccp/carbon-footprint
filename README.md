@@ -93,7 +93,7 @@ For a single `origin` and `destiny`:
 | Hotel factors         | from `hotel.json` (per city)                                | `cabotage.accounting`        |
 
 **Default data paths:**
-`modules/cabotage/_data/ports_br.json`, `modules/cabotage/_data/sea_matrix.json`, `modules/cabotage/_data/hotel.json`.
+`data/cabotage_data/ports_br.json`, `data/cabotage_data/sea_matrix.json`, `data/cabotage_data/hotel.json`.
 
 ---
 

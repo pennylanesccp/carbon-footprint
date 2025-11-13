@@ -35,7 +35,7 @@ def load_latest_diesel_price(csv_path: str | None = None) -> pd.DataFrame:
     Parameters
     ----------
     csv_path : Optional[str]
-        Explicit path. If None, defaults to modules/road/_data/latest_diesel_prices.csv
+        Explicit path. If None, defaults to data/road_data/latest_diesel_prices.csv
 
     Returns
     -------
