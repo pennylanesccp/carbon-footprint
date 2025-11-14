@@ -1,6 +1,6 @@
 [
     {
-        "name": "Santos",
+        "name": "Porto de Santos",
         "city": "Santos",
         "state": "SP",
         "lat": -23.9527,
@@ -15,7 +15,7 @@
         ]
     },
     {
-        "name": "Rio de Janeiro",
+        "name": "Porto do Rio de Janeiro",
         "city": "Rio de Janeiro",
         "state": "RJ",
         "lat": -22.9008,
@@ -30,12 +30,12 @@
         ]
     },
     {
-        "name": "Itaguaí (Sepetiba)",
+        "name": "Porto de Itaguaí",
         "city": "Itaguaí",
         "state": "RJ",
         "lat": -22.9341,
         "lon": -43.8497,
-        "aliases": ["Porto de Itaguaí", "Sepetiba", "BRIGI"],
+        "aliases": ["Itaguaí (Sepetiba)", "Sepetiba", "BRIGI"],
         "gates": [
             {
                 "label": "Gate",
@@ -45,12 +45,12 @@
         ]
     },
     {
-        "name": "Paranaguá",
+        "name": "Porto de Paranaguá",
         "city": "Paranaguá",
         "state": "PR",
         "lat": -25.508,
         "lon": -48.503,
-        "aliases": ["Porto de Paranaguá", "TCP", "BRPNG"],
+        "aliases": ["Paranaguá", "TCP", "BRPNG"],
         "gates": [
             {
                 "label": "Gate",
@@ -60,12 +60,12 @@
         ]
     },
     {
-        "name": "São Francisco do Sul",
+        "name": "Porto de São Francisco do Sul",
         "city": "São Francisco do Sul",
         "state": "SC",
         "lat": -26.2486,
         "lon": -48.6345,
-        "aliases": ["Porto de São Francisco do Sul", "SFS", "BRSFS"],
+        "aliases": ["São Francisco do Sul", "SFS", "BRSFS"],
         "gates": [
             {
                 "label": "Gate",
@@ -75,12 +75,12 @@
         ]
     },
     {
-        "name": "Itapoá",
+        "name": "Porto de Itapoá",
         "city": "Itapoá",
         "state": "SC",
         "lat": -26.1155,
         "lon": -48.6181,
-        "aliases": ["Porto Itapoá", "BRIOA"],
+        "aliases": ["Itapoá", "Porto Itapoá", "BRIOA"],
         "gates": [
             {
                 "label": "Gate",
@@ -90,12 +90,12 @@
         ]
     },
     {
-        "name": "Navegantes (Portonave)",
+        "name": "Porto de Navegantes",
         "city": "Navegantes",
         "state": "SC",
         "lat": -26.8889,
         "lon": -48.6517,
-        "aliases": ["Portonave", "Navegantes", "BRNVT"],
+        "aliases": ["Navegantes (Portonave)", "Portonave", "Navegantes", "BRNVT"],
         "gates": [
             {
                 "label": "Gate",
@@ -105,12 +105,12 @@
         ]
     },
     {
-        "name": "Itajaí",
+        "name": "Porto de Itajaí",
         "city": "Itajaí",
         "state": "SC",
         "lat": -26.9025,
         "lon": -48.6599,
-        "aliases": ["Porto de Itajaí", "BRITJ"],
+        "aliases": ["Itajaí", "BRITJ"],
         "gates": [
             {
                 "label": "Gate",
@@ -120,12 +120,12 @@
         ]
     },
     {
-        "name": "Imbituba",
+        "name": "Porto de Imbituba",
         "city": "Imbituba",
         "state": "SC",
         "lat": -28.2406,
         "lon": -48.657,
-        "aliases": ["Porto de Imbituba", "BRIBB"],
+        "aliases": ["Imbituba", "BRIBB"],
         "gates": [
             {
                 "label": "Gate",
@@ -135,12 +135,12 @@
         ]
     },
     {
-        "name": "Rio Grande",
+        "name": "Porto do Rio Grande",
         "city": "Rio Grande",
         "state": "RS",
         "lat": -32.0332,
         "lon": -52.091,
-        "aliases": ["Porto do Rio Grande", "BRRIG"],
+        "aliases": ["Rio Grande", "BRRIG"],
         "gates": [
             {
                 "label": "Gate",
@@ -150,12 +150,12 @@
         ]
     },
     {
-        "name": "Vitória / TVV (Vila Velha)",
+        "name": "Porto de Vitória",
         "city": "Vila Velha",
         "state": "ES",
         "lat": -20.3274,
         "lon": -40.3072,
-        "aliases": ["Porto de Vitória", "TVV", "Vila Velha", "BRVIX"],
+        "aliases": ["Vitória", "Vitória / TVV (Vila Velha)", "TVV", "Vila Velha", "BRVIX"],
         "gates": [
             {
                 "label": "Gate",
@@ -165,12 +165,12 @@
         ]
     },
     {
-        "name": "Salvador",
+        "name": "Porto de Salvador",
         "city": "Salvador",
         "state": "BA",
         "lat": -12.9677,
         "lon": -38.5142,
-        "aliases": ["Porto de Salvador", "Tecon Salvador", "BRSSA"],
+        "aliases": ["Salvador", "Tecon Salvador", "BRSSA"],
         "gates": [
             {
                 "label": "Gate",
@@ -180,12 +180,12 @@
         ]
     },
     {
-        "name": "Aratu-Candeias",
+        "name": "Porto de Aratu",
         "city": "Candeias",
         "state": "BA",
         "lat": -12.778,
         "lon": -38.546,
-        "aliases": ["Porto de Aratu", "Aratu", "Candeias", "BRATU"],
+        "aliases": ["Aratu-Candeias", "Aratu", "Candeias", "BRATU"],
         "gates": [
             {
                 "label": "Gate",
@@ -195,12 +195,12 @@
         ]
     },
     {
-        "name": "Suape",
+        "name": "Porto de Suape",
         "city": "Ipojuca",
         "state": "PE",
         "lat": -8.3866,
         "lon": -34.9458,
-        "aliases": ["Porto de Suape", "BRSUA", "Complexo de Suape"],
+        "aliases": ["Suape", "BRSUA", "Complexo de Suape"],
         "gates": [
             {
                 "label": "Gate",
@@ -210,48 +210,48 @@
         ]
     },
     {
-        "name": "Recife",
+        "name": "Porto do Recife",
         "city": "Recife",
         "state": "PE",
         "lat": -8.061,
         "lon": -34.871,
-        "aliases": ["Porto do Recife", "BRREC"],
+        "aliases": ["Recife", "BRREC"],
         "gates": []
     },
     {
-        "name": "Cabedelo",
+        "name": "Porto de Cabedelo",
         "city": "Cabedelo",
         "state": "PB",
         "lat": -6.966,
         "lon": -34.836,
-        "aliases": ["Porto de Cabedelo", "BRCAB"],
+        "aliases": ["Cabedelo", "BRCAB"],
         "gates": []
     },
     {
-        "name": "Natal",
+        "name": "Porto de Natal",
         "city": "Natal",
         "state": "RN",
         "lat": -5.771,
         "lon": -35.2,
-        "aliases": ["Porto de Natal", "BRNAT"],
+        "aliases": ["Natal", "BRNAT"],
         "gates": []
     },
     {
-        "name": "Maceió",
+        "name": "Porto de Maceió",
         "city": "Maceió",
         "state": "AL",
         "lat": -9.677,
         "lon": -35.726,
-        "aliases": ["Porto de Maceió", "BRMAC"],
+        "aliases": ["Maceió", "BRMAC"],
         "gates": []
     },
     {
-        "name": "Pecém",
+        "name": "Porto do Pecém",
         "city": "São Gonçalo do Amarante",
         "state": "CE",
         "lat": -3.5321,
         "lon": -38.8031,
-        "aliases": ["Porto do Pecém", "BRPEC"],
+        "aliases": ["Pecém", "BRPEC"],
         "gates": [
             {
                 "label": "Gate",
@@ -261,21 +261,21 @@
         ]
     },
     {
-        "name": "Fortaleza (Mucuripe)",
+        "name": "Porto de Fortaleza",
         "city": "Fortaleza",
         "state": "CE",
         "lat": -3.711,
         "lon": -38.475,
-        "aliases": ["Porto de Fortaleza", "Mucuripe", "BRFOR"],
+        "aliases": ["Fortaleza", "Fortaleza (Mucuripe)", "Mucuripe", "BRFOR"],
         "gates": []
     },
     {
-        "name": "Vila do Conde",
+        "name": "Porto de Vila do Conde",
         "city": "Barcarena",
         "state": "PA",
         "lat": -1.5319,
         "lon": -48.7552,
-        "aliases": ["Porto de Vila do Conde", "BRVLC", "Barcarena"],
+        "aliases": ["Vila do Conde", "BRVLC", "Barcarena"],
         "gates": [
             {
                 "label": "Gate",
@@ -285,12 +285,12 @@
         ]
     },
     {
-        "name": "Belém",
+        "name": "Porto de Belém",
         "city": "Belém",
         "state": "PA",
         "lat": -1.4429,
         "lon": -48.505,
-        "aliases": ["Porto de Belém", "BRELM"],
+        "aliases": ["Belém", "BRELM"],
         "gates": [
             {
                 "label": "Gate",
@@ -300,48 +300,48 @@
         ]
     },
     {
-        "name": "Santarém",
+        "name": "Porto de Santarém",
         "city": "Santarém",
         "state": "PA",
         "lat": -2.422,
         "lon": -54.719,
-        "aliases": ["Porto de Santarém", "BRSTM"],
+        "aliases": ["Santarém", "BRSTM"],
         "gates": []
     },
     {
-        "name": "Santana (AP)",
+        "name": "Porto de Santana",
         "city": "Santana",
         "state": "AP",
         "lat": 0.054,
         "lon": -51.174,
-        "aliases": ["Porto de Santana", "Macapá", "BRSNT"],
+        "aliases": ["Santana (AP)", "Macapá", "BRSNT"],
         "gates": []
     },
     {
-        "name": "Manaus",
+        "name": "Porto de Manaus",
         "city": "Manaus",
         "state": "AM",
         "lat": -3.1567,
         "lon": -60.0079,
-        "aliases": ["Porto de Manaus", "BRMAO"],
+        "aliases": ["Manaus", "BRMAO"],
         "gates": []
     },
     {
-        "name": "Itaqui",
+        "name": "Porto do Itaqui",
         "city": "São Luís",
         "state": "MA",
         "lat": -2.5828,
         "lon": -44.3686,
-        "aliases": ["Porto do Itaqui", "BRIQI"],
+        "aliases": ["Itaqui", "BRIQI"],
         "gates": []
     },
     {
-        "name": "São Sebastião",
+        "name": "Porto de São Sebastião",
         "city": "São Sebastião",
         "state": "SP",
         "lat": -23.801,
         "lon": -45.401,
-        "aliases": ["Porto de São Sebastião", "BRSSO"],
+        "aliases": ["São Sebastião", "BRSSO"],
         "gates": [
             {
                 "label": "Gate",
@@ -351,12 +351,12 @@
         ]
     },
     {
-        "name": "Angra dos Reis",
+        "name": "Porto de Angra dos Reis",
         "city": "Angra dos Reis",
         "state": "RJ",
         "lat": -23.0066,
         "lon": -44.3197,
-        "aliases": ["Porto de Angra dos Reis", "BRADR"],
+        "aliases": ["Angra dos Reis", "BRADR"],
         "gates": [
             {
                 "label": "Gate",

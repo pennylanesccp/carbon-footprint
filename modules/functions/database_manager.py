@@ -7,14 +7,15 @@ SQLite manager for persisting precomputed *road* routing data (generic O→D cac
 Table
 -----
 CREATE TABLE IF NOT EXISTS heatmap_runs (
-      origin       TEXT    NOT NULL
-    , origin_lat   REAL
-    , origin_lon   REAL
-    , destiny      TEXT    NOT NULL
-    , destiny_lat  REAL
-    , destiny_lon  REAL
-    , distance_km  REAL
-    , is_hgv       INTEGER   -- 1 = HGV profile, 0 = non-HGV, NULL = unspecified
+      origin              TEXT      NOT NULL
+    , origin_lat          REAL
+    , origin_lon          REAL
+    , destiny             TEXT      NOT NULL
+    , destiny_lat         REAL
+    , destiny_lon         REAL
+    , distance_km         REAL
+    , is_hgv              INTEGER   -- 1 = HGV profile, 0 = non-HGV, NULL = unspecified
+    , insertion_timestamp TIMESTAMP NOT NULL DEFAULT (datetime('now'))
 );
 
 Notes
@@ -149,14 +150,15 @@ def db_session(
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS {table} (
-      origin       TEXT    NOT NULL
-    , origin_lat   REAL
-    , origin_lon   REAL
-    , destiny      TEXT    NOT NULL
-    , destiny_lat  REAL
-    , destiny_lon  REAL
-    , distance_km  REAL
-    , is_hgv       INTEGER
+      origin              TEXT      NOT NULL
+    , origin_lat          REAL
+    , origin_lon          REAL
+    , destiny             TEXT      NOT NULL
+    , destiny_lat         REAL
+    , destiny_lon         REAL
+    , distance_km         REAL
+    , is_hgv              INTEGER
+    , insertion_timestamp TIMESTAMP NOT NULL DEFAULT (datetime('now'))
 );
 """.strip()
 
@@ -205,6 +207,10 @@ def upsert_run(
     Insert or update a *road leg* keyed by (origin, destiny, is_hgv).
 
     Coordinates and distances may be NULL (e.g., geocode failures).
+
+    insertion_timestamp:
+        - set automatically on INSERT via DEFAULT (datetime('now'))
+        - left unchanged on UPDATE (we don't touch it in the UPSERT clause)
     """
     ensure_main_table(conn, table_name=table_name)
 
@@ -424,6 +430,7 @@ def get_run(
             , destiny_lon
             , distance_km
             , is_hgv
+            , insertion_timestamp
         FROM {table_name}
         WHERE origin  = ?
           AND destiny = ?
@@ -441,6 +448,7 @@ def get_run(
             , destiny_lon
             , distance_km
             , is_hgv
+            , insertion_timestamp
         FROM {table_name}
         WHERE origin  = ?
           AND destiny = ?
@@ -461,6 +469,7 @@ def get_run(
         , destiny_lon_v
         , distance_km_v
         , is_hgv_v
+        , insertion_timestamp_v
     ) = row
 
     return {
@@ -472,6 +481,7 @@ def get_run(
         , "destiny_lon": _to_float_or_none(destiny_lon_v)
         , "distance_km": _to_float_or_none(distance_km_v)
         , "is_hgv": _int_to_bool(is_hgv_v)
+        , "insertion_timestamp": insertion_timestamp_v
     }
 
 
@@ -486,6 +496,10 @@ def list_runs(
 ) -> list[Mapping[str, Any]]:
     """
     List rows with optional filters. Useful for sanity checks / exports.
+
+    Semantics:
+      - if is_hgv is True/False → filter by that profile
+      - if is_hgv is None      → do not filter by profile
     """
     ensure_main_table(conn, table_name=table_name)
 
@@ -500,16 +514,7 @@ def list_runs(
         clauses.append("destiny = ?")
         params.append(destiny)
 
-    if is_hgv is None:
-        # If user explicitly passes None, filter to NULL-profile rows
-        # If user omits is_hgv, leave it unfiltered.
-        # We treat "is_hgv is not None" vs "is_hgv is None and was passed"
-        # by checking if it was specified, but Python can't distinguish that
-        # easily here. Simple rule:
-        #   - is_hgv is True/False → filter by that
-        #   - is_hgv is None      → no filter (to keep it simple)
-        pass
-    else:
+    if is_hgv is not None:
         clauses.append("is_hgv = ?")
         params.append(_bool_to_int(is_hgv))
 
@@ -526,6 +531,7 @@ def list_runs(
         , destiny_lon
         , distance_km
         , is_hgv
+        , insertion_timestamp
     FROM {table_name}
     {where}
     ORDER BY origin, destiny, is_hgv
@@ -543,6 +549,7 @@ def list_runs(
             , "destiny_lon": _to_float_or_none(row[5])
             , "distance_km": _to_float_or_none(row[6])
             , "is_hgv": _int_to_bool(row[7])
+            , "insertion_timestamp": row[8]
         })
     return out
 
@@ -596,10 +603,10 @@ if __name__ == "__main__":
             , origin="Avenida Professor Luciano Gualberto, São Paulo, Brazil"
             , origin_lat=-23.558808
             , origin_lon=-46.730357
-            , destiny="Itapoá, SC, Brazil"
-            , destiny_lat=-26.171181
-            , destiny_lon=-48.600218
-            , distance_km=612.3
+            , destiny="Porto de Santos"
+            , destiny_lat=-23.9608
+            , destiny_lon=-46.3336
+            , distance_km=90.5919
             , is_hgv=True
         )
         log.info("Rows (limit 3): %s", list_runs(_conn, limit=3))
