@@ -85,7 +85,7 @@ from typing import Any, Optional, Tuple
 # ────────────────────────────────────────────────────────────────────────────────
 # Project imports
 # ────────────────────────────────────────────────────────────────────────────────
-from modules.functions._logging import init_logging
+from modules.infra.logging import init_logging
 from modules.app.evaluator import DataPaths
 
 # DB utils

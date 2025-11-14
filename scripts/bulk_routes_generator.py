@@ -35,7 +35,7 @@ import importlib.util
 from types import ModuleType
 from typing import Any, List
 
-from modules.functions._logging import init_logging
+from modules.infra.logging import init_logging
 from modules.road.ors_common import RateLimited
 
 

@@ -1,0 +1,52 @@
+core/
+  1. models.py
+  2. types.py
+  3. config.py
+
+road/
+  4. geocoding.py
+  5. routing_http.py
+  6. routing_core.py
+  7. cache_repo.py
+  8. routes_service.py
+
+cabotage/
+  9. ports_index.py
+ 10. ports_nearest.py
+ 11. sea_matrix.py
+ 12. cabotage_service.py
+
+fuel/
+ 13. fuel_tables.py
+ 14. fuel_models.py
+ 15. fuel_road.py
+ 16. fuel_sea.py
+
+emissions/
+ 17. co2_road.py
+ 18. co2_sea.py
+ 19. scenarios.py
+
+plotting/
+ 20. base_maps.py
+ 21. heatmaps.py
+ 22. comparisons.py
+ 23. routes_map.py
+
+app/
+ 24. cli_routes.py
+ 25. cli_cabotage.py
+ 26. cli_heatmap.py
+ 27. cli_compare.py
+
+infra/
+ 28. logging.py
+ 29. database.py
+ 30. paths.py
+ 31. serializers.py
+ 32. exceptions.py
+
+cleanup/
+ 33. rewrite scripts/routes_generator.py
+ 34. migrate modules/functions/* into infra
+ 35. refactor ORS code spread across modules

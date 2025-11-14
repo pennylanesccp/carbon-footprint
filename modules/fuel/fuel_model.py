@@ -40,7 +40,7 @@ from __future__ import annotations
 import math
 from typing import Dict, Any, Tuple
 
-from modules.functions._logging import get_logger
+from modules.infra.logging import get_logger
 
 # Prefer the centralized truth from truck_specs; fall back gracefully if helpers are missing.
 try:

@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from typing import Dict, Any, Optional
 
-from modules.functions._logging import get_logger
+from modules.infra.logging import get_logger
 from modules.fuel.fuel_model import estimate_leg_liters, get_km_l_baseline
 from modules.fuel.truck_specs import get_truck_spec, guess_axles_from_payload
 

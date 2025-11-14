@@ -31,7 +31,7 @@ import requests as _req
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from modules.functions._logging import get_logger
+from modules.infra.logging import get_logger
 from .ors_common import (
       _rate_limiter
     , _retry_after_seconds
