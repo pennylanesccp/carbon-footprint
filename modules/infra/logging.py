@@ -5,22 +5,14 @@
 Central logging configuration for the project.
 
 This is the single source of truth for how logging is configured.
-Existing modules that imported `modules.functions._logging` will go
-through a thin adapter, but the implementation lives here.
 
-Usage (preferred for new code)
-------------------------------
+Usage
+-----
     from modules.infra.logging import init_logging, get_logger
 
     init_logging(level="INFO")
     log = get_logger(__name__)
-    log.info("Hello")
-
-Notes
------
-- By default logs go to stdout.
-- Optionally, logs can also be written to a file if `log_file` is given
-  or `write_output=True` (you can adapt this to your preference).
+    log.info("Hello from my module")
 """
 
 from __future__ import annotations
@@ -43,30 +35,30 @@ def init_logging(
 
     Parameters
     ----------
-    level : str
-        Logging level name (e.g. "DEBUG", "INFO", "WARNING").
+    level : str, default "INFO"
+        Logging level ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL").
     force : bool, default True
         If True, existing handlers on the root logger are removed before
-        applying the new configuration. This is useful for CLIs/tests.
+        applying the new configuration. Useful for CLIs/tests.
     write_output : bool, default False
         If True and `log_file` is not provided, a default file under
-        `logs/app.log` may be created (you can adjust this behaviour).
+        `logs/app.log` is created and logs are also written there.
     log_file : Optional[Path]
-        Optional explicit path to a log file. If provided, a FileHandler
-        will be added in addition to the stdout handler.
+        If provided, logs are written to this file *in addition* to stdout.
     """
-    # Translate level string to numeric level (fallback to INFO)
+    # Translate string level to numeric level (fallback to INFO if invalid)
     numeric_level = getattr(logging, str(level).upper(), logging.INFO)
 
     root = logging.getLogger()
     if force:
-        # Manually clear handlers to support older Python versions
+        # Manually clear handlers (works across Python versions)
         for handler in list(root.handlers):
             root.removeHandler(handler)
 
     root.setLevel(numeric_level)
 
-    # Common formatter: [YYYY-MM-DD HH:MM:SS][LEVEL][logger.name] message
+    # Common formatter:
+    # [YYYY-MM-DD HH:MM:SS][LEVEL][logger.name] message
     formatter = logging.Formatter(
           fmt="[{asctime}][{levelname}][{name}] {message}"
         , datefmt="%Y-%m-%d %H:%M:%S"
@@ -89,17 +81,33 @@ def init_logging(
         file_handler.setFormatter(formatter)
         root.addHandler(file_handler)
 
-    # Small confirmation (logger name shows this module)
     log = get_logger(__name__)
     log.info("Logging configured")
+
+    
+def log_banner(log: logging.Logger, msg: str, *, char: str = "=", width: int = 60, box: bool = False) -> None:
+    if not box:
+        bar = char * width
+        log.info(bar)
+        log.info(msg)
+        log.info(bar)
+    else:
+        inner = " " + msg + " "
+        pad = max(0, width - len(inner))
+        left = pad // 2
+        right = pad - left
+        top_bot = "═" * width
+        log.info(f"╔{top_bot}╗")
+        log.info(f"║{' ' * left}{inner}{' ' * right}║")
+        log.info(f"╚{top_bot}╝")
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
     Convenience wrapper around logging.getLogger.
 
-    New modules should use this instead of calling logging.getLogger
-    directly, so if the logging backend ever changes, the impact is
-    localized to this module.
+    New modules should use this instead of calling logging.getLogger()
+    directly, so if the logging backend ever changes, only this module
+    needs to be updated.
     """
     return logging.getLogger(name if name is not None else __name__)
