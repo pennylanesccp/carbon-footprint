@@ -3,11 +3,39 @@
 # -*- coding: utf-8 -*-
 
 """
-Precompute routing building blocks (road-only O→D, nearest ports road legs)
-and persist in SQLite.
+Precompute *road-only* routing building blocks (generic O→D legs)
+and persist them in SQLite as a reusable cache.
 
-Caching logic:
+Table (see modules.functions.database_manager)
+----------------------------------------------
+CREATE TABLE IF NOT EXISTS heatmap_runs (
+      origin       TEXT  NOT NULL
+    , origin_lat   REAL
+    , origin_lon   REAL
+    , destiny      TEXT  NOT NULL
+    , destiny_lat  REAL
+    , destiny_lon  REAL
+    , distance_km  REAL
+    , is_hgv       INTEGER   -- 1 = HGV profile, 0 = non-HGV, NULL = unspecified
+    , inserted_at  TEXT  NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    , PRIMARY KEY (origin, destiny)
+);
 
+Notes
+-----
+• This is a *generic road legs cache*:
+    (origin, destiny, is_hgv) → distance_km + coordinates.
+
+  It is meant to be reused across:
+    - road-only O→D legs
+    - cabotage legs (O→Po, Pd→D), computed elsewhere
+    - any other ORS directions calls.
+
+• Coordinates and distance are allowed to be NULL for geocoding failures
+  or placeholder rows (e.g. marks "we tried this pair and it failed").
+
+Caching logic
+-------------
   1) First, check if a row exists for the *raw* CLI inputs
      (origin = args.origin, destiny = args.destiny).
      If found and overwrite=False → skip everything.
@@ -21,16 +49,17 @@ Caching logic:
   4) Otherwise, call ORS directions and upsert the row using the
      resolved names as keys.
 
-Null-geocode behaviour:
-
+Null-geocode behaviour
+----------------------
   • If the origin is resolved but the destiny is not, persist a row with:
       - origin_* from the resolved origin
       - destiny_name = raw input (unresolved)
       - destiny_lat/lon = NULL
-      - all distances = NULL
+      - distance_km = NULL
+      - is_hgv = NULL
 
   • If the origin also cannot be resolved, skip DB persistence (origin_lat
-    is NOT NULL in the main table).
+    and origin_lon are then NULL).
 """
 
 from __future__ import annotations
@@ -41,7 +70,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /scripts)
+ROOT = Path(__file__).resolve().parents[2]  # repo root (one level above /scripts)
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -75,10 +104,6 @@ from modules.road.ors_common import ORSConfig, RateLimited, NoRoute
 from modules.road.ors_client import ORSClient
 from modules.road.addressing import resolve_point_null_safe as geo_resolve
 
-# Cabotage helpers (ports + nearest-port search)
-from modules.cabotage.ports_index import load_ports
-from modules.cabotage.ports_nearest import find_nearest_port
-
 log = logging.getLogger(__name__)
 
 
@@ -92,8 +117,7 @@ def _build_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         description=(
-            "Precompute routing building blocks (road-only O→D, nearest ports road legs) "
-            "and persist in SQLite."
+            "Precompute road-only routing (generic O→D legs) and persist in SQLite."
         )
     )
 
@@ -109,7 +133,7 @@ def _build_parser() -> argparse.ArgumentParser:
         , help="Destiny (address/city/CEP/'lat,lon')."
     )
 
-    # Routing knobs (profile affects is_hgv and short road legs)
+    # Routing knobs (profile affects is_hgv flag)
     parser.add_argument(
           "--ors-profile"
         , default="driving-hgv"
@@ -158,13 +182,13 @@ def _build_parser() -> argparse.ArgumentParser:
             , action="store_false"
         )
 
-    # Data paths (sea matrix / ports)
+    # Data paths (kept for compatibility, currently unused here)
     dp = DataPaths()
     parser.add_argument(
           "--ports-json"
         , type=Path
         , default=dp.ports_json
-        , help="Path to ports_br.json."
+        , help="(Unused here) Path to ports_br.json."
     )
     parser.add_argument(
           "--sea-matrix"
@@ -264,7 +288,7 @@ def _route_distance_km(
             )
             last_exc = exc
 
-        except Exception as exc:      # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.error(
                   "Route failed for profile=%s origin=%r destination=%r: %s "
                   "→ storing NULL distance for this leg."
@@ -288,31 +312,6 @@ def _route_distance_km(
     return (profiles[-1] if profiles else None), None
 
 
-def _port_anchor_point(
-      port_info: dict[str, Any]
-    , *
-    , suffix: str = "gate"
-) -> dict[str, Any]:
-    """
-    Build a (lat, lon, label) dict for routing to/from a port.
-
-    If a gate is present, its coordinates are used; otherwise the port centroid.
-    """
-    gate = port_info.get("gate")
-    if gate:
-        return {
-              "lat": float(gate["lat"])
-            , "lon": float(gate["lon"])
-            , "label": f"{port_info.get('name', 'port')} {suffix}".strip()
-        }
-
-    return {
-          "lat": float(port_info["lat"])
-        , "lon": float(port_info["lon"])
-        , "label": str(port_info.get("name", "port"))
-    }
-
-
 # ────────────────────────────────────────────────────────────────────────────────
 # NULL-geocode handling
 # ────────────────────────────────────────────────────────────────────────────────
@@ -328,8 +327,7 @@ def _persist_null_geocode_run(
     Persist a run where at least one side could not be fully geocoded.
 
     Rules:
-      - If the ORIGIN is resolved, store its coordinates and label
-        (NOT NULL constraint on origin_lat/origin_lon is respected).
+      - If the ORIGIN is resolved, store its coordinates and label.
       - If the DESTINY is not resolved, use the raw input text as
         destiny_name and keep destiny_lat/destiny_lon as NULL.
       - If the ORIGIN is also not resolved, skip DB persistence (only
@@ -348,7 +346,7 @@ def _persist_null_geocode_run(
         if origin_pt and origin_pt.get("label") is not None
         else str(origin_raw)
     )
-    destiny_name = (
+    destiny_label_resolved = (
         str(destiny_pt.get("label"))
         if destiny_pt and destiny_pt.get("label") is not None
         else str(destiny_raw)
@@ -376,32 +374,25 @@ def _persist_null_geocode_run(
         else None
     )
 
-    # If origin coords are missing, we cannot satisfy NOT NULL(origin_lat).
+    # If origin coords are missing, we cannot meaningfully cache this row.
     # In this case, only log + return payload (no DB write).
     if origin_lat is None or origin_lon is None:
         log.info(
               "Skipping DB persistence for NULL-geocode run because origin coords"
-              " are missing and origin_lat/origin_lon are NOT NULL."
-              " origin_raw=%r destiny_raw=%r"
-            , origin_name
+              " are missing. origin_raw=%r destiny_raw=%r"
+            , origin_raw
             , destiny_raw
         )
         payload = {
-              "origin": origin_name
+              "origin": origin_raw
             , "destiny": destiny_raw
-            , "road_only_distance_km": None
-            , "cabotage": {
-                  "port_origin": None
-                , "port_destiny": None
-                , "road_o_to_po_km": None
-                , "road_pd_to_d_km": None
-            }
+            , "distance_km": None
             , "profile_used": None
         }
         log.info(
               "Routes generator finished (NULL geocode, no DB write) for (%s → %s)."
-            , origin_name
-            , destiny_name
+            , origin_raw
+            , destiny_raw
         )
         return payload
 
@@ -410,31 +401,25 @@ def _persist_null_geocode_run(
         ensure_main_table(conn, table_name=args.table)
         upsert_run(
               conn
-            , origin_name=origin_name
+            , origin=origin_name
             , origin_lat=origin_lat
             , origin_lon=origin_lon
-            , destiny_name=destiny_raw
+            , destiny=destiny_raw  # store raw input when unresolved
             , destiny_lat=destiny_lat
             , destiny_lon=destiny_lon
-            , road_only_distance_km=None
-            , cab_po_name=None
-            , cab_pd_name=None
-            , cab_road_o_to_po_km=None
-            , cab_road_pd_to_d_km=None
+            , distance_km=None
             , is_hgv=None
             , table_name=args.table
         )
 
     payload = {
-          "origin": origin_pt
-        , "destiny": destiny_raw
-        , "road_only_distance_km": None
-        , "cabotage": {
-              "port_origin": None
-            , "port_destiny": None
-            , "road_o_to_po_km": None
-            , "road_pd_to_d_km": None
+          "origin": {
+              "label": origin_name
+            , "lat": origin_lat
+            , "lon": origin_lon
         }
+        , "destiny": destiny_label_resolved
+        , "distance_km": None
         , "profile_used": None
     }
 
@@ -473,8 +458,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
         exists_input = get_run(
               conn
-            , origin_name=args.origin
-            , destiny_name=args.destiny
+            , origin=args.origin
+            , destiny=args.destiny
             , table_name=args.table
         )
 
@@ -489,8 +474,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         if exists_input and args.overwrite:
             delete_key(
                   conn
-                , origin_name=args.origin
-                , destiny_name=args.destiny
+                , origin=args.origin
+                , destiny=args.destiny
                 , table_name=args.table
             )
             log.info(
@@ -503,7 +488,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     ors = ORSClient(cfg=ORSConfig())
 
     # ------------------------------------------------------------------
-    # 1) Geocode origin/destiny once (later reused for all legs)
+    # 1) Geocode origin/destiny once (later reused for the leg)
     #    • resolve_point_null_safe may return None → handle gracefully.
     # ------------------------------------------------------------------
     origin_pt = geo_resolve(
@@ -544,8 +529,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
         exists_resolved = get_run(
               conn
-            , origin_name=origin_name
-            , destiny_name=destiny_name
+            , origin=origin_name
+            , destiny=destiny_name
             , table_name=args.table
         )
 
@@ -561,8 +546,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         if exists_resolved and args.overwrite:
             delete_key(
                   conn
-                , origin_name=origin_name
-                , destiny_name=destiny_name
+                , origin=origin_name
+                , destiny=destiny_name
                 , table_name=args.table
             )
             log.info(
@@ -572,12 +557,11 @@ def main(argv: Optional[list[str]] = None) -> int:
             )
 
     # ------------------------------------------------------------------
-    # 3) Main road route O→D
-    #    • If this fails (road_only_km is None), DO NOT compute O→PO / PD→D.
+    # 3) Main road route O→D (single generic leg)
     # ------------------------------------------------------------------
     primary_profile = args.ors_profile
 
-    profile_used_road, road_only_km = _route_distance_km(
+    profile_used_road, distance_km = _route_distance_km(
           ors
         , origin_pt
         , destiny_pt
@@ -585,16 +569,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         , fallback_to_car=args.fallback_to_car
     )
 
-    # Defaults for cabotage (may stay None if road-only fails)
-    o_port: Optional[dict[str, Any]] = None
-    d_port: Optional[dict[str, Any]] = None
-    po_name: Optional[str] = None
-    pd_name: Optional[str] = None
-    road_o_to_po_km: Optional[float] = None
-    road_pd_to_d_km: Optional[float] = None
-
-    # Determine is_hgv only if main road distance is known
-    if road_only_km is None:
+    # Determine is_hgv only if distance is known
+    if distance_km is None:
         is_hgv: Optional[bool] = None
     else:
         if profile_used_road == "driving-hgv":
@@ -604,95 +580,45 @@ def main(argv: Optional[list[str]] = None) -> int:
         else:
             is_hgv = None
 
-    # ------------------------------------------------------------------
-    # 4) Only if road-only O→D exists, compute nearest ports and port legs.
-    # ------------------------------------------------------------------
-    if road_only_km is not None:
-        ports = load_ports(path=str(args.ports_json))
-
-        o_port = find_nearest_port(origin_pt["lat"], origin_pt["lon"], ports)
-        d_port = find_nearest_port(destiny_pt["lat"], destiny_pt["lon"], ports)
-
-        po_name = str(o_port["name"])
-        pd_name = str(d_port["name"])
-
-        po_anchor = _port_anchor_point(o_port, suffix="gate")
-        pd_anchor = _port_anchor_point(d_port, suffix="gate")
-
-        _profile_o_po, road_o_to_po_km = _route_distance_km(
-              ors
-            , origin_pt
-            , po_anchor
-            , primary_profile=primary_profile
-            , fallback_to_car=args.fallback_to_car
-        )
-
-        _profile_pd_d, road_pd_to_d_km = _route_distance_km(
-              ors
-            , pd_anchor
-            , destiny_pt
-            , primary_profile=primary_profile
-            , fallback_to_car=args.fallback_to_car
-        )
-
-        log.info(
-              "Extracted geo and distances: origin=%r (%.6f,%.6f) → destiny=%r (%.6f,%.6f) "
-              "road_only_km=%s cab_po=%r cab_pd=%r o→po_km=%s pd→d_km=%s"
-            , origin_name
-            , float(origin_pt["lat"])
-            , float(origin_pt["lon"])
-            , destiny_name
-            , float(destiny_pt["lat"])
-            , float(destiny_pt["lon"])
-            , road_only_km
-            , po_name
-            , pd_name
-            , road_o_to_po_km
-            , road_pd_to_d_km
-        )
-    else:
-        log.warning(
-              "No road route origin→destiny for (%s → %s); skipping O→PO and PD→D legs."
-            , origin_name
-            , destiny_name
-        )
+    log.info(
+          "Extracted geo and distance: origin=%r (%.6f,%.6f) → destiny=%r (%.6f,%.6f) "
+          "distance_km=%s is_hgv=%r"
+        , origin_name
+        , float(origin_pt["lat"])
+        , float(origin_pt["lon"])
+        , destiny_name
+        , float(destiny_pt["lat"])
+        , float(destiny_pt["lon"])
+        , "NULL" if distance_km is None else f"{distance_km:.3f}"
+        , is_hgv
+    )
 
     # ------------------------------------------------------------------
-    # 5) Persist in SQLite (single upsert row)
+    # 4) Persist in SQLite (single upsert row)
     # ------------------------------------------------------------------
     with db_session(db_path=args.db_path) as conn:
         ensure_main_table(conn, table_name=args.table)
         upsert_run(
               conn
-            , origin_name=origin_name
+            , origin=origin_name
             , origin_lat=float(origin_pt["lat"])
             , origin_lon=float(origin_pt["lon"])
-            , destiny_name=destiny_name
+            , destiny=destiny_name
             , destiny_lat=float(destiny_pt["lat"])
             , destiny_lon=float(destiny_pt["lon"])
-            , road_only_distance_km=road_only_km
-            , cab_po_name=po_name
-            , cab_pd_name=pd_name
-            , cab_road_o_to_po_km=road_o_to_po_km
-            , cab_road_pd_to_d_km=road_pd_to_d_km
+            , distance_km=distance_km
             , is_hgv=is_hgv
             , table_name=args.table
         )
 
     # ------------------------------------------------------------------
-    # 6) Optional JSON echo (handy for CI logs / quick checks)
+    # 5) Optional JSON echo (handy for CI logs / quick checks)
     # ------------------------------------------------------------------
     payload = {
           "origin": origin_pt
         , "destiny": destiny_pt
-        , "road_only_distance_km": road_only_km
-        , "cabotage": {
-              "port_origin": o_port
-            , "port_destiny": d_port
-            , "road_o_to_po_km": road_o_to_po_km
-            , "road_pd_to_d_km": road_pd_to_d_km
-        }
-        , "profile_used": profile_used_road if road_only_km is not None else None
+        , "distance_km": distance_km
+        , "profile_used": profile_used_road if distance_km is not None else None
     }
 
     if args.pretty:
@@ -709,4 +635,11 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # Quick manual test (bypass CLI parsing)
+    test_argv = [
+        "--origin", "Av. Paulista, São Paulo",
+        "--destiny", "Rio de Janeiro",
+        "--pretty"
+    ]
+
+    raise SystemExit(main(test_argv))
