@@ -14,7 +14,7 @@ Expectations for the concrete client class that inherits these mixins:
 
 Notes
 -----
-• All logs use the standardized logger (modules.functions.logging).
+• All logs use the standardized logger (modules.infra.logging).
 • These helpers log both inputs (sanitized) and outputs (summaries).
 • They raise domain exceptions from ors_common for clearer upstream handling.
 """
@@ -34,6 +34,46 @@ from .ors_common import (
 )
 
 _log = get_logger(__name__)
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Small helpers
+# ────────────────────────────────────────────────────────────────────────────────
+
+def _point_to_dict(obj: _Any) -> _Dict[str, _Any]:
+    """
+    Normalize a point-like object (GeoPoint or mapping) into:
+
+        {"lat": float, "lon": float, "label": str}
+
+    This keeps ORSClient methods JSON-serializable even if the resolver
+    now returns rich domain objects (e.g. GeoPoint dataclasses).
+    """
+    # Attribute-style (GeoPoint or similar)
+    lat = getattr(obj, "lat", None)
+    lon = getattr(obj, "lon", None)
+    label = getattr(obj, "label", None)
+    if lat is not None and lon is not None:
+        lat_f = float(lat)
+        lon_f = float(lon)
+        return {
+            "lat": lat_f,
+            "lon": lon_f,
+            "label": label or f"{lat_f:.6f},{lon_f:.6f}",
+        }
+
+    # Mapping-style (legacy dicts)
+    if isinstance(obj, dict):
+        if "lat" in obj and "lon" in obj:
+            lat_f = float(obj["lat"])
+            lon_f = float(obj["lon"])
+            return {
+                "lat": lat_f,
+                "lon": lon_f,
+                "label": obj.get("label") or f"{lat_f:.6f},{lon_f:.6f}",
+            }
+
+    raise TypeError(f"Unsupported point type: {type(obj).__name__}")
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -130,7 +170,10 @@ class GeocodingMixin:
 
         _log.info("GEOCODE structured params=%s", _short(params))
         out = self._get("/geocode/search/structured", params)
-        _log.debug("GEOCODE structured raw_keys=%s", list(out.keys()) if isinstance(out, dict) else type(out).__name__)
+        _log.debug(
+            "GEOCODE structured raw_keys=%s",
+            list(out.keys()) if isinstance(out, dict) else type(out).__name__,
+        )
         return out
 
 
@@ -169,7 +212,8 @@ class RoutingMixin:
             if code in (400, 404):
                 _log.warning(
                     "SNAP %s unavailable (status=%s) — falling back to driving-car",
-                    profile, code
+                    profile,
+                    code,
                 )
                 data = self._post("/v2/snap/driving-car", json=payload)
             else:
@@ -209,7 +253,10 @@ class RoutingMixin:
         _log.info("ROUTE raw %s coords=%s", profile, _short(coords))
         try:
             data = self._post(f"/v2/directions/{profile}", json=body)
-            _log.debug("ROUTE raw ok keys=%s", list(data.keys()) if isinstance(data, dict) else type(data).__name__)
+            _log.debug(
+                "ROUTE raw ok keys=%s",
+                list(data.keys()) if isinstance(data, dict) else type(data).__name__,
+            )
             return data
         except RateLimited:
             raise
@@ -235,15 +282,18 @@ class RoutingMixin:
             {
               "distance_m": float | None,
               "duration_s": float | None,
-              "origin": {...resolved...},
-              "destination": {...resolved...},
+              "origin": {"lat","lon","label"},
+              "destination": {"lat","lon","label"},
               ["geometry"]: <geojson/linestring>  # if geometry=True
             }
         """
         from modules.addressing.resolver import resolve_point
 
-        o = resolve_point(origin, ors=self)
-        d = resolve_point(destination, ors=self)
+        # GeoPoint (or dict) → simple dicts for external callers / JSON
+        o_raw = resolve_point(origin, ors=self)
+        d_raw = resolve_point(destination, ors=self)
+        o = _point_to_dict(o_raw)
+        d = _point_to_dict(d_raw)
         prof = (profile or self.cfg.default_profile)
 
         payload: _Dict[str, _Any] = {
@@ -266,10 +316,16 @@ class RoutingMixin:
             _log.error("ROUTE try1 failed status=%s msg=%s", code, body)
 
             if getattr(self.cfg, "snap_retry_on_404", True) and code == 404:
-                snapped = self._snap_to_road(payload["coordinates"], prof, radius_m=self.cfg.snap_radius_m)
+                snapped = self._snap_to_road(
+                    payload["coordinates"], prof, radius_m=self.cfg.snap_radius_m
+                )
                 if snapped != payload["coordinates"]:
                     payload["coordinates"] = snapped
-                    _log.info("ROUTE try2 after SNAP %s coords=%s", prof, payload["coordinates"])
+                    _log.info(
+                        "ROUTE try2 after SNAP %s coords=%s",
+                        prof,
+                        payload["coordinates"],
+                    )
                     data = self._post(f"/v2/directions/{prof}", json=payload)
                 else:
                     _log.warning("ROUTE SNAP made no change; re-raising")
@@ -316,16 +372,19 @@ class RoutingMixin:
         Returns
         -------
         dict: {
-          "origins":      [resolved origins],
-          "destinations": [resolved destinations],
+          "origins":      [ {"lat","lon","label"}, ... ],
+          "destinations": [ {"lat","lon","label"}, ... ],
           "distances_m":  [[...]],
           "durations_s":  [[...]],
         }
         """
         from modules.addressing.resolver import resolve_point
 
-        os_ = [resolve_point(x, ors=self) for x in origins]
-        ds_ = [resolve_point(x, ors=self) for x in destinations]
+        # Normalize points → simple dicts
+        os_raw = [resolve_point(x, ors=self) for x in origins]
+        ds_raw = [resolve_point(x, ors=self) for x in destinations]
+        os_ = [_point_to_dict(p) for p in os_raw]
+        ds_ = [_point_to_dict(p) for p in ds_raw]
 
         coords = [[p["lon"], p["lat"]] for p in (os_ + ds_)]
         n_o = len(os_)
@@ -357,23 +416,65 @@ class RoutingMixin:
         }
 
 
-"""
-────────────────────────────────────────────────────────────────────────────────
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging; `
-from modules.road.ors_common import ORSConfig; `
-from modules.road.ors_client import ORSClient; `
-import json; `
-init_logging(level='INFO', force=True, write_output=False); `
-ors = ORSClient(cfg=ORSConfig()); `
-print('== geocode_text =='); `
-print(json.dumps(ors.geocode_text('avenida luciano gualberto, 380', size=1), ensure_ascii=False)[:400]); print(); `
-print('== geocode_structured =='); `
-print(json.dumps(ors.geocode_structured(street='Av. Paulista', housenumber='1000', locality='São Paulo', region='SP', size=1), ensure_ascii=False)[:400]); print(); `
-print('== route_road =='); `
-print(json.dumps(ors.route_road('avenida luciano gualberto, 380', 'Curitiba, PR'), ensure_ascii=False, indent=2)); print(); `
-print('== matrix_road (1x1) =='); `
-print(json.dumps(ors.matrix_road(['São Paulo, SP'], ['Curitiba, PR']), ensure_ascii=False, indent=2)); "
-────────────────────────────────────────────────────────────────────────────────
-"""
+# ────────────────────────────────────────────────────────────────────────────────
+# Smoke-test entrypoint
+# ────────────────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    """
+    Quick smoke test for GeocodingMixin and RoutingMixin.
+
+    Run from repo root:
+
+        python -m modules.road.ors_mixins
+    """
+    import json as _json
+
+    from modules.infra.logging import init_logging
+    from .ors_common import ORSConfig
+    from .ors_client import ORSClient
+
+    init_logging(level="INFO", force=True, write_output=True)
+
+    ors = ORSClient(cfg=ORSConfig())
+
+    print("== geocode_text ==")
+    try:
+        feats = ors.geocode_text("avenida luciano gualberto, 380", size=1)
+        print(_json.dumps(feats, ensure_ascii=False)[:400])
+    except Exception as e:
+        print("geocode_text error:", type(e).__name__, e)
+    print()
+
+    print("== geocode_structured ==")
+    try:
+        structured = ors.geocode_structured(
+            street="Av. Paulista",
+            housenumber="1000",
+            locality="São Paulo",
+            region="SP",
+            size=1,
+        )
+        print(_json.dumps(structured, ensure_ascii=False)[:400])
+    except Exception as e:
+        print("geocode_structured error:", type(e).__name__, e)
+    print()
+
+    print("== route_road ==")
+    try:
+        r = ors.route_road(
+            "avenida luciano gualberto, 380",
+            "Curitiba, PR",
+        )
+        print(_json.dumps(r, ensure_ascii=False, indent=2)[:800])
+    except Exception as e:
+        print("route_road error:", type(e).__name__, e)
+    print()
+
+    print("== matrix_road (1x1) ==")
+    try:
+        m = ors.matrix_road(["São Paulo, SP"], ["Curitiba, PR"])
+        print(_json.dumps(m, ensure_ascii=False, indent=2)[:800])
+    except Exception as e:
+        print("matrix_road error:", type(e).__name__, e)
+    print("Smoke test finished.")

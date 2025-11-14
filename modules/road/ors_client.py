@@ -372,23 +372,77 @@ class ORSClient(GeocodingMixin, RoutingMixin):
 __all__ = ["ORSClient", "ORSConfig"]
 
 
-"""
-────────────────────────────────────────────────────────────────────────────────
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging; `
-from modules.road.ors_common import ORSConfig; `
-from modules.road.ors_client import ORSClient; `
-import json; `
-init_logging(level='INFO', force=True, write_output=False); `
-ors = ORSClient(cfg=ORSConfig()); `
-print('== geocode_text =='); `
-print(json.dumps(ors.geocode_text('avenida luciano gualberto, 380', size=1), ensure_ascii=False)[:400]); print(); `
-print('== geocode_structured =='); `
-print(json.dumps(ors.geocode_structured(street='Av. Paulista', housenumber='1000', locality='São Paulo', region='SP', size=1), ensure_ascii=False)[:400]); print(); `
-print('== route_road =='); `
-print(json.dumps(ors.route_road('avenida luciano gualberto, 380', 'Curitiba, PR'), ensure_ascii=False, indent=2)); print(); `
-print('== matrix_road (1x1) =='); `
-print(json.dumps(ors.matrix_road(['São Paulo, SP'], ['Curitiba, PR']), ensure_ascii=False, indent=2)); "
-────────────────────────────────────────────────────────────────────────────────
-"""
+# ────────────────────────────────────────────────────────────────────────────────
+# Smoke-test entrypoint
+# ────────────────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    """
+    Quick logging smoke test.
+
+    Run from repo root:
+
+        python -m modules.road.ors_client
+    """
+    import json as __json
+
+    from modules.infra.logging import init_logging
+
+    init_logging(level="INFO", force=True, write_output=True)
+
+    print("== ORSClient smoke test ==")
+
+    # ORSConfig / ORSClient init
+    try:
+        cfg = ORSConfig()
+        client = ORSClient(cfg=cfg)
+        print("ORSClient init OK:", cfg.base_url, cfg.default_country, cfg.default_profile)
+    except Exception as e:
+        print("ORSClient init error:", type(e).__name__, e)
+        raise SystemExit(1)
+
+    # geocode_text
+    print("\n== geocode_text ==")
+    try:
+        feats = client.geocode_text("avenida luciano gualberto, 380", size=1)
+        print(__json.dumps(feats, ensure_ascii=False)[:400])
+    except Exception as e:
+        print("geocode_text error:", type(e).__name__, e)
+
+    # geocode_structured
+    print("\n== geocode_structured ==")
+    try:
+        structured = client.geocode_structured(
+              street="Av. Paulista"
+            , housenumber="1000"
+            , locality="São Paulo"
+            , region="SP"
+            , size=1
+        )
+        print(__json.dumps(structured, ensure_ascii=False)[:400])
+    except Exception as e:
+        print("geocode_structured error:", type(e).__name__, e)
+
+    # route_road
+    print("\n== route_road ==")
+    try:
+        r = client.route_road(
+              "avenida luciano gualberto, 380"
+            , "Curitiba, PR"
+        )
+        print(__json.dumps(r, ensure_ascii=False, indent=2)[:800])
+    except Exception as e:
+        print("route_road error:", type(e).__name__, e)
+
+    # matrix_road (1x1)
+    print("\n== matrix_road (1x1) ==")
+    try:
+        m = client.matrix_road(
+              ["São Paulo, SP"]
+            , ["Curitiba, PR"]
+        )
+        print(__json.dumps(m, ensure_ascii=False, indent=2)[:800])
+    except Exception as e:
+        print("matrix_road error:", type(e).__name__, e)
+
+    print("\nSmoke test finished.")

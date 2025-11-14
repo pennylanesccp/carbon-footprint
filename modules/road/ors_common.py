@@ -3,7 +3,7 @@
 """
 Common pieces for the ORS client stack:
 - Error classes
-- Standardized logging (via modules.functions.logging)
+- Standardized logging (via modules.infra.logging)
 - Simple token-bucket-ish rate limiter
 - Lightweight SQLite cache (keyed by endpoint+payload hash)
 - Helpers for Retry-After/backoff and response error extraction
@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 
 from modules.infra.logging import get_logger
 
+
 # ────────────────────────────────────────────────────────────────────────────────
 # Errors
 # ────────────────────────────────────────────────────────────────────────────────
@@ -35,9 +36,11 @@ class RateLimited(Exception):
     """Raised by higher-level code when a 429 was seen repeatedly."""
     ...
 
+
 class NoRoute(Exception):
     """Raised when ORS reports that no route could be found."""
     ...
+
 
 class GeocodeNotFound(Exception):
     """Raised when geocoding produced no acceptable results after fallbacks."""
@@ -49,6 +52,7 @@ class GeocodeNotFound(Exception):
 # ────────────────────────────────────────────────────────────────────────────────
 
 _log = get_logger(__name__)
+
 
 def _short(v: Any, maxlen: int = 420) -> str:
     """
@@ -87,11 +91,15 @@ class _RateLimiter:
             if sleep_s > 0:
                 _log.debug(
                     "rate-limit: window=%ss max_calls=%s current=%s → sleeping %.3fs",
-                    self.per, self.max_calls, len(self.ts), sleep_s
+                    self.per,
+                    self.max_calls,
+                    len(self.ts),
+                    sleep_s,
                 )
                 time.sleep(sleep_s)
         # record this call time
         self.ts.append(time.time())
+
 
 _rate_limiter = _RateLimiter()
 
@@ -116,7 +124,9 @@ def _retry_after_seconds(resp) -> Optional[float]:
     # HTTP-date
     try:
         # Example: 'Wed, 21 Oct 2015 07:28:00 GMT'
-        dt = datetime.strptime(ra, "%a, %d %b %Y %H:%M:%S %Z").replace(tzinfo=timezone.utc)
+        dt = datetime.strptime(ra, "%a, %d %b %Y %H:%M:%S %Z").replace(
+            tzinfo=timezone.utc
+        )
         now = datetime.now(timezone.utc)
         return max(0.0, (dt - now).total_seconds())
     except Exception:
@@ -143,13 +153,15 @@ class _Cache:
         con = sqlite3.connect(self._path)
         try:
             with con:
-                con.execute("""
+                con.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS cache (
                           k  TEXT PRIMARY KEY
                         , v  BLOB NOT NULL
                         , ts INTEGER NOT NULL
                     )
-                """)
+                    """
+                )
         finally:
             con.close()
         _log.debug("cache: ensured db at %s (ttl_s=%s)", self._path, self._ttl)
@@ -164,7 +176,9 @@ class _Cache:
             v_raw, ts = row
             age = int(time.time()) - int(ts)
             if age > self._ttl:
-                _log.debug("cache: EXPIRED key=%s age=%ss ttl=%ss", k[:12], age, self._ttl)
+                _log.debug(
+                    "cache: EXPIRED key=%s age=%ss ttl=%ss", k[:12], age, self._ttl
+                )
                 return None
             try:
                 val = json.loads(v_raw)
@@ -185,7 +199,9 @@ class _Cache:
                     "INSERT OR REPLACE INTO cache(k,v,ts) VALUES (?,?,?)",
                     (k, payload, int(time.time())),
                 )
-            _log.debug("cache: SET key=%s size=%sB", k[:12], len(payload.encode("utf-8")))
+            _log.debug(
+                "cache: SET key=%s size=%sB", k[:12], len(payload.encode("utf-8"))
+            )
         finally:
             con.close()
 
@@ -202,6 +218,7 @@ def _sha_key(endpoint: str, payload: Dict[str, Any]) -> str:
     msg = endpoint + "||" + json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(msg.encode("utf-8")).hexdigest()
 
+
 def _extract_error_text(resp) -> str:
     """
     Best-effort extraction of a human-friendly error from a HTTP response.
@@ -216,6 +233,7 @@ def _extract_error_text(resp) -> str:
             return (resp.text or "")[:500]
         except Exception:
             return "<no-text>"
+
 
 def _parse_retry_after(headers: Dict[str, str], default_s: float) -> float:
     """
@@ -329,37 +347,101 @@ class ORSConfig:
         """Return (connect_timeout_s, read_timeout_s) for requests."""
         return (self.connect_timeout_s, self.read_timeout_s)
 
-"""
-────────────────────────────────────────────────────────────────────────────────
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging, get_logger, get_current_log_path; `
-from modules.road.ors_common import ORSConfig, _Cache, _sha_key, _parse_retry_after, _RateLimiter, _retry_after_seconds; `
-import os, json, time; from datetime import datetime, timezone, timedelta; `
-init_logging(level='INFO', force=True, write_output=True); `
-log = get_logger('smoke.ors_common'); `
-print('LOGFILE =', get_current_log_path()); `
-# ORSConfig test (will raise if ORS_API_KEY is not set)
-try: `
-    cfg = ORSConfig(); `
-    print('ORSConfig OK:', cfg.base_url, cfg.default_country, cfg.default_profile); `
-except Exception as e: `
-    print('ORSConfig error:', type(e).__name__, str(e)); `
-# Cache test
-c = _Cache('.cache/test_ors_common.sqlite', ttl_s=60); `
-k = _sha_key('/geocode', {'q':'test'}); `
-c.set(k, {'hello':'world'}); `
-print('Cache get:', json.dumps(c.get(k), ensure_ascii=False)); `
-# Rate limiter test (force a sleep by allowing only 2 calls/sec and making 3)
-rl = _RateLimiter(max_calls=2, per_seconds=1.0); `
-t0 = time.time(); rl.wait(); rl.wait(); rl.wait(); dt = time.time()-t0; `
-print('RateLimiter elapsed >= 1s?', dt>=1.0, 'dt=', round(dt,3)); `
-# Retry-After tests
-class Resp: `
-    def __init__(self, h): self.headers = h `
-r1 = Resp({'Retry-After':'2'}); `
-print('Retry-After seconds:', _retry_after_seconds(r1)); `
-r2 = Resp({'Retry-After': (datetime.now(timezone.utc)+timedelta(seconds=3)).strftime('%a, %d %b %Y %H:%M:%S GMT')}); `
-print('Retry-After http-date:', round(_retry_after_seconds(r2) or -1, 3)); "
-────────────────────────────────────────────────────────────────────────────────
-"""
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Smoke-test entrypoint
+# ────────────────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    """
+    Quick logging + infra smoke test.
+
+    Run from repo root:
+
+        python -m modules.road.ors_common
+    """
+    import json as _json
+    import time as _time
+    from datetime import timedelta as _timedelta
+
+    try:
+        from modules.infra.logging import init_logging, get_current_log_path
+    except Exception:  # pragma: no cover - defensive
+        init_logging = None
+        get_current_log_path = lambda: "<unknown>"
+
+    # Init logging
+    if init_logging is not None:
+        init_logging(level="INFO", force=True, write_output=True)
+
+    log = get_logger("smoke.ors_common")
+    log.info("Starting ORS common smoke test")
+    try:
+        logfile = get_current_log_path()
+    except Exception:
+        logfile = "<unknown>"
+    print(f"LOGFILE = {logfile}")
+
+    # ORSConfig test (will raise if ORS_API_KEY is not set)
+    try:
+        cfg = ORSConfig()
+        print(
+            "ORSConfig OK:",
+            cfg.base_url,
+            cfg.default_country,
+            cfg.default_profile,
+        )
+    except Exception as e:
+        print("ORSConfig error:", type(e).__name__, str(e))
+
+    # Cache test
+    cache = _Cache(".cache/test_ors_common.sqlite", ttl_s=60)
+    key = _sha_key("/geocode", {"q": "test"})
+    cache.set(key, {"hello": "world"})
+    cache_val = cache.get(key)
+    print("Cache get:", _json.dumps(cache_val, ensure_ascii=False))
+
+    # Rate limiter test (force a sleep by allowing only 2 calls/sec and making 3)
+    rl = _RateLimiter(max_calls=2, per_seconds=1.0)
+    t0 = _time.time()
+    rl.wait()
+    rl.wait()
+    rl.wait()
+    dt = _time.time() - t0
+    print("RateLimiter elapsed >= 1s?", dt >= 1.0, "dt=", round(dt, 3))
+
+    # Retry-After tests (header-based helper)
+    class _Resp:
+        def __init__(self, headers: Dict[str, str]) -> None:
+            self.headers = headers
+
+        def json(self) -> Dict[str, Any]:
+            return {"dummy": True}
+
+        @property
+        def text(self) -> str:  # for _extract_error_text, if needed
+            return ""
+
+    r1 = _Resp({"Retry-After": "2"})
+    print("Retry-After seconds (delta):", _retry_after_seconds(r1))
+
+    r2_dt = datetime.now(timezone.utc) + _timedelta(seconds=3)
+    r2 = _Resp(
+        {
+            "Retry-After": r2_dt.strftime("%a, %d %b %Y %H:%M:%S GMT"),
+        }
+    )
+    ra_dt = _retry_after_seconds(r2)
+    print("Retry-After seconds (http-date):", round(ra_dt or -1, 3))
+
+    # _parse_retry_after helper
+    print(
+        "parse_retry_after (header=5, default=1):",
+        round(_parse_retry_after({"Retry-After": "5"}, default_s=1.0), 3),
+    )
+    print(
+        "parse_retry_after (no header, default=1):",
+        round(_parse_retry_after({}, default_s=1.0), 3),
+    )
+
+    print("Smoke test finished.")

@@ -1,4 +1,4 @@
-# modules/functions/database_manager.py
+# modules/infra/database_manager.py
 # -*- coding: utf-8 -*-
 
 """
@@ -7,10 +7,10 @@ SQLite manager for persisting precomputed *road* routing data (generic O→D cac
 Table
 -----
 CREATE TABLE IF NOT EXISTS heatmap_runs (
-      origin              TEXT      NOT NULL
+      origin_name         TEXT      NOT NULL
     , origin_lat          REAL
     , origin_lon          REAL
-    , destiny             TEXT      NOT NULL
+    , destiny_name        TEXT      NOT NULL
     , destiny_lat         REAL
     , destiny_lon         REAL
     , distance_km         REAL
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS heatmap_runs (
 Notes
 -----
 • This is a *generic road legs cache*:
-    (origin, destiny, is_hgv) → distance_km + coordinates.
+    (origin_name, destiny_name, is_hgv) → distance_km + coordinates.
 
   It is meant to be reused across:
     - road-only O→D legs
@@ -31,7 +31,7 @@ Notes
 • Coordinates and distance are allowed to be NULL for geocoding failures
   or placeholder rows (e.g. you want to mark "we tried and failed").
 
-• Uniqueness is enforced via a UNIQUE INDEX on (origin, destiny, is_hgv),
+• Uniqueness is enforced via a UNIQUE INDEX on (origin_name, destiny_name, is_hgv),
   so ON CONFLICT upsert works without a manual PK column.
 
 Style
@@ -45,7 +45,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 from contextlib import contextmanager
-from pathlib import Path
+from modules.core.types import Path
 from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -150,10 +150,10 @@ def db_session(
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS {table} (
-      origin              TEXT      NOT NULL
+      origin_name         TEXT      NOT NULL
     , origin_lat          REAL
     , origin_lon          REAL
-    , destiny             TEXT      NOT NULL
+    , destiny_name        TEXT      NOT NULL
     , destiny_lat         REAL
     , destiny_lon         REAL
     , distance_km         REAL
@@ -164,12 +164,12 @@ CREATE TABLE IF NOT EXISTS {table} (
 
 _CREATE_UNIQUE_INDEX_SQL = """
 CREATE UNIQUE INDEX IF NOT EXISTS uq_{table}_key
-    ON {table} (origin, destiny, is_hgv);
+    ON {table} (origin_name, destiny_name, is_hgv);
 """.strip()
 
 _CREATE_IDX_DEST_SQL = """
-CREATE INDEX IF NOT EXISTS idx_{table}_destiny
-    ON {table} (destiny);
+CREATE INDEX IF NOT EXISTS idx_{table}_destiny_name
+    ON {table} (destiny_name);
 """.strip()
 
 
@@ -204,7 +204,13 @@ def upsert_run(
     , table_name: str = DEFAULT_TABLE
 ) -> None:
     """
-    Insert or update a *road leg* keyed by (origin, destiny, is_hgv).
+    Insert or update a *road leg* keyed by (origin_name, destiny_name, is_hgv).
+
+    Parameters
+    ----------
+    origin / destiny
+        Human-readable names. They are stored in columns
+        origin_name / destiny_name in the database.
 
     Coordinates and distances may be NULL (e.g., geocode failures).
 
@@ -216,17 +222,17 @@ def upsert_run(
 
     sql = f"""
     INSERT INTO {table_name} (
-          origin
+          origin_name
         , origin_lat
         , origin_lon
-        , destiny
+        , destiny_name
         , destiny_lat
         , destiny_lon
         , distance_km
         , is_hgv
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(origin, destiny, is_hgv) DO UPDATE SET
+    ON CONFLICT(origin_name, destiny_name, is_hgv) DO UPDATE SET
           origin_lat   = excluded.origin_lat
         , origin_lon   = excluded.origin_lon
         , destiny_lat  = excluded.destiny_lat
@@ -263,7 +269,7 @@ def insert_if_absent(
     , table_name: str = DEFAULT_TABLE
 ) -> bool:
     """
-    Insert only; ignore if (origin, destiny, is_hgv) already exists.
+    Insert only; ignore if (origin_name, destiny_name, is_hgv) already exists.
 
     Returns True if a row was inserted, False otherwise.
     """
@@ -271,10 +277,10 @@ def insert_if_absent(
 
     sql = f"""
     INSERT OR IGNORE INTO {table_name} (
-          origin
+          origin_name
         , origin_lat
         , origin_lon
-        , destiny
+        , destiny_name
         , destiny_lat
         , destiny_lon
         , distance_km
@@ -308,22 +314,24 @@ def bulk_upsert_runs(
     Each row dict must provide keys compatible with `upsert_run`:
       origin, origin_lat, origin_lon, destiny, destiny_lat, destiny_lon,
       distance_km (optional), is_hgv (optional).
+
+    They are stored in DB columns origin_name / destiny_name.
     """
     ensure_main_table(conn, table_name=table_name)
 
     sql = f"""
     INSERT INTO {table_name} (
-          origin
+          origin_name
         , origin_lat
         , origin_lon
-        , destiny
+        , destiny_name
         , destiny_lat
         , destiny_lon
         , distance_km
         , is_hgv
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(origin, destiny, is_hgv) DO UPDATE SET
+    ON CONFLICT(origin_name, destiny_name, is_hgv) DO UPDATE SET
           origin_lat   = excluded.origin_lat
         , origin_lon   = excluded.origin_lon
         , destiny_lat  = excluded.destiny_lat
@@ -347,7 +355,7 @@ def bulk_upsert_runs(
             , _bool_to_int(r.get("is_hgv"))
         )
 
-    params = [ _row_to_params(r) for r in rows ]
+    params = [_row_to_params(r) for r in rows]
     if not params:
         return 0
 
@@ -370,20 +378,22 @@ def overwrite_keys(
 
     keys = sequence of (origin, destiny, is_hgv)
            (is_hgv can be None to target the NULL-profile row).
+
+    In the DB these map to origin_name / destiny_name columns.
     """
     ensure_main_table(conn, table_name=table_name)
 
     del_sql_null = f"""
     DELETE FROM {table_name}
-    WHERE origin  = ?
-      AND destiny = ?
+    WHERE origin_name  = ?
+      AND destiny_name = ?
       AND is_hgv IS NULL;
     """.strip()
 
     del_sql_bool = f"""
     DELETE FROM {table_name}
-    WHERE origin  = ?
-      AND destiny = ?
+    WHERE origin_name  = ?
+      AND destiny_name = ?
       AND is_hgv = ?;
     """.strip()
 
@@ -413,7 +423,7 @@ def get_run(
     , table_name: str = DEFAULT_TABLE
 ) -> Optional[Mapping[str, Any]]:
     """
-    Fetch a single row by (origin, destiny, is_hgv). Returns dict or None.
+    Fetch a single row by (origin_name, destiny_name, is_hgv). Returns dict or None.
 
     If is_hgv is None, this looks for the NULL-profile row.
     """
@@ -422,36 +432,36 @@ def get_run(
     if is_hgv is None:
         sql = f"""
         SELECT
-              origin
+              origin_name
             , origin_lat
             , origin_lon
-            , destiny
+            , destiny_name
             , destiny_lat
             , destiny_lon
             , distance_km
             , is_hgv
             , insertion_timestamp
         FROM {table_name}
-        WHERE origin  = ?
-          AND destiny = ?
+        WHERE origin_name  = ?
+          AND destiny_name = ?
           AND is_hgv IS NULL;
         """.strip()
         params: Tuple[Any, ...] = (origin, destiny)
     else:
         sql = f"""
         SELECT
-              origin
+              origin_name
             , origin_lat
             , origin_lon
-            , destiny
+            , destiny_name
             , destiny_lat
             , destiny_lon
             , distance_km
             , is_hgv
             , insertion_timestamp
         FROM {table_name}
-        WHERE origin  = ?
-          AND destiny = ?
+        WHERE origin_name  = ?
+          AND destiny_name = ?
           AND is_hgv = ?;
         """.strip()
         params = (origin, destiny, _bool_to_int(is_hgv))
@@ -461,10 +471,10 @@ def get_run(
         return None
 
     (
-          origin_v
+          origin_name_v
         , origin_lat_v
         , origin_lon_v
-        , destiny_v
+        , destiny_name_v
         , destiny_lat_v
         , destiny_lon_v
         , distance_km_v
@@ -473,10 +483,10 @@ def get_run(
     ) = row
 
     return {
-          "origin": origin_v
+          "origin": origin_name_v
         , "origin_lat": _to_float_or_none(origin_lat_v)
         , "origin_lon": _to_float_or_none(origin_lon_v)
-        , "destiny": destiny_v
+        , "destiny": destiny_name_v
         , "destiny_lat": _to_float_or_none(destiny_lat_v)
         , "destiny_lon": _to_float_or_none(destiny_lon_v)
         , "distance_km": _to_float_or_none(distance_km_v)
@@ -500,6 +510,9 @@ def list_runs(
     Semantics:
       - if is_hgv is True/False → filter by that profile
       - if is_hgv is None      → do not filter by profile
+
+    Filters use origin / destiny, but in the DB those map to
+    origin_name / destiny_name columns.
     """
     ensure_main_table(conn, table_name=table_name)
 
@@ -507,11 +520,11 @@ def list_runs(
     params:  list[Any] = []
 
     if origin is not None:
-        clauses.append("origin = ?")
+        clauses.append("origin_name = ?")
         params.append(origin)
 
     if destiny is not None:
-        clauses.append("destiny = ?")
+        clauses.append("destiny_name = ?")
         params.append(destiny)
 
     if is_hgv is not None:
@@ -523,10 +536,10 @@ def list_runs(
 
     sql = f"""
     SELECT
-          origin
+          origin_name
         , origin_lat
         , origin_lon
-        , destiny
+        , destiny_name
         , destiny_lat
         , destiny_lon
         , distance_km
@@ -534,7 +547,7 @@ def list_runs(
         , insertion_timestamp
     FROM {table_name}
     {where}
-    ORDER BY origin, destiny, is_hgv
+    ORDER BY origin_name, destiny_name, is_hgv
     {lim};
     """.strip()
 
@@ -565,7 +578,7 @@ def delete_key(
     """
     Delete a single composite key. Returns affected row count.
 
-    If is_hgv is None, deletes all rows for (origin, destiny),
+    If is_hgv is None, deletes all rows for (origin_name, destiny_name),
     regardless of profile.
     """
     ensure_main_table(conn, table_name=table_name)
@@ -573,15 +586,15 @@ def delete_key(
     if is_hgv is None:
         sql = f"""
         DELETE FROM {table_name}
-        WHERE origin  = ?
-          AND destiny = ?;
+        WHERE origin_name  = ?
+          AND destiny_name = ?;
         """.strip()
         params = (origin, destiny)
     else:
         sql = f"""
         DELETE FROM {table_name}
-        WHERE origin  = ?
-          AND destiny = ?
+        WHERE origin_name  = ?
+          AND destiny_name = ?
           AND is_hgv = ?;
         """.strip()
         params = (origin, destiny, _bool_to_int(is_hgv))

@@ -29,7 +29,7 @@ from modules.fuel.truck_specs import TRUCK_SPECS
 from modules.fuel.diesel_prices import DEFAULT_DIESEL_PRICES_CSV
 
 # DB utils
-from modules.functions.database_manager import (
+from modules.infra.database_manager import (
       db_session
     , ensure_main_table
     , get_run

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# scripts/routes_generator.py
+# road/router.py
 # -*- coding: utf-8 -*-
 
 """
@@ -9,7 +9,7 @@ and persist them in SQLite as a reusable cache.
 Table (see modules.functions.database_manager)
 ----------------------------------------------
 CREATE TABLE IF NOT EXISTS heatmap_runs (
-      origin       TEXT  NOT NULL
+      origin_name       TEXT  NOT NULL
     , origin_lat   REAL
     , origin_lon   REAL
     , destiny      TEXT  NOT NULL
@@ -89,7 +89,7 @@ from modules.infra.logging import init_logging
 from modules.app.evaluator import DataPaths
 
 # DB utils
-from modules.functions.database_manager import (
+from modules.infra.database_manager import (
       db_session
     , ensure_main_table
     , get_run
