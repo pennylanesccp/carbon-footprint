@@ -1,4 +1,4 @@
-# modules/cabotage/ports_nearest.py
+# modules/ports/ports_nearest.py
 # -*- coding: utf-8 -*-
 """
 Nearest-port utilities (gate-aware) with haversine
@@ -7,11 +7,11 @@ Nearest-port utilities (gate-aware) with haversine
 Purpose
 -------
 Given a latitude/longitude, find the **nearest port** from a normalized list
-(see modules.cabotage.ports_index.load_ports). If a port has **gates**, the
+(see modules.ports.ports_index.load_ports). If a port has **gates**, the
 distance is measured to the **closest gate**; otherwise to the port centroid.
 
-Public API (kept stable)
-------------------------
+Public API
+----------
 - haversine_km(lat1, lon1, lat2, lon2) -> float
 - port_distance_km(lat, lon, port) -> Tuple[float, Optional[Dict[str, Any]]]
 - find_nearest_port(lat, lon, ports) -> Dict[str, Any]
@@ -24,7 +24,7 @@ Public API (kept stable)
 Notes
 -----
 - Inputs should be numeric (floats). Basic coercions are applied and errors raise.
-- Invalid gate entries are ignored; if none valid, centroid is used.
+- Invalid gate entries are ignored; if none are valid, the centroid is used.
 """
 
 from __future__ import annotations
@@ -36,19 +36,36 @@ from modules.infra.logging import get_logger
 
 _log = get_logger(__name__)
 
+__all__ = [
+      "haversine_km"
+    , "port_distance_km"
+    , "find_nearest_port"
+]
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ────────────────────────────────────────────────────────────────────────────────
-def _to_float(x: Any, *, name: str) -> float:
-    """Strict float coercion with explicit error context."""
+def _to_float(
+    x: Any
+    , *
+    , name: str
+) -> float:
+    """
+    Strict float coercion with explicit error context.
+    """
     try:
         return float(x)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise TypeError(f"Expected float-like value for '{name}', got {x!r}") from e
 
 
-def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+def haversine_km(
+    lat1: float
+    , lon1: float
+    , lat2: float
+    , lon2: float
+) -> float:
     """
     Great-circle distance on a WGS84 sphere approximation (km).
     """
@@ -58,15 +75,24 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     lon2 = _to_float(lon2, name="lon2")
 
     r = 6371.0088  # mean Earth radius (km)
-    p1, p2 = math.radians(lat1), math.radians(lat2)
+    p1 = math.radians(lat1)
+    p2 = math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
     dl = math.radians(lon2 - lon1)
-    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+
+    a = (
+          math.sin(dphi / 2) ** 2
+        + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    )
     km = 2 * r * math.asin(min(1.0, math.sqrt(a)))  # guard for rounding
     return float(km)
 
 
-def _best_port_anchor(port: Dict[str, Any], lat: float, lon: float) -> Tuple[float, float, Optional[Dict[str, Any]]]:
+def _best_port_anchor(
+    port: Dict[str, Any]
+    , lat: float
+    , lon: float
+) -> Tuple[float, float, Optional[Dict[str, Any]]]:
     """
     Choose the best (lat, lon) anchor for distance to *port*:
 
@@ -83,24 +109,32 @@ def _best_port_anchor(port: Dict[str, Any], lat: float, lon: float) -> Tuple[flo
     gates = port.get("gates") or []
     best_gate: Optional[Dict[str, Any]] = None
     best_d = float("inf")
-    if isinstance(gates, (list, tuple)) and len(gates) > 0:
+
+    if isinstance(gates, (list, tuple)) and gates:
         for g in gates:
             try:
                 glat = _to_float(g.get("lat"), name="gate.lat")
                 glon = _to_float(g.get("lon"), name="gate.lon")
-            except Exception:
+            except Exception:  # noqa: BLE001
                 # Skip invalid gate silently; debug-logged to avoid noise at INFO
                 _log.debug("Skipping invalid gate in _best_port_anchor: %r", g)
                 continue
+
             d = haversine_km(lat, lon, glat, glon)
             if d < best_d:
                 best_d = d
-                best_gate = {"label": g.get("label") or "gate", "lat": glat, "lon": glon}
+                best_gate = {
+                      "label": g.get("label") or "gate"
+                    , "lat": glat
+                    , "lon": glon
+                }
 
         if best_gate is not None:
             _log.debug(
-                "_best_port_anchor: using gate '%s' for port '%s' (d=%.3f km).",
-                best_gate.get("label"), port.get("name"), best_d
+                  "_best_port_anchor: using gate '%s' for port '%s' (d=%.3f km)."
+                , best_gate.get("label")
+                , port.get("name")
+                , best_d
             )
             return float(best_gate["lat"]), float(best_gate["lon"]), best_gate
 
@@ -114,9 +148,14 @@ def _best_port_anchor(port: Dict[str, Any], lat: float, lon: float) -> Tuple[flo
 # ────────────────────────────────────────────────────────────────────────────────
 # Public API
 # ────────────────────────────────────────────────────────────────────────────────
-def port_distance_km(lat: float, lon: float, port: Dict[str, Any]) -> Tuple[float, Optional[Dict[str, Any]]]:
+def port_distance_km(
+    lat: float
+    , lon: float
+    , port: Dict[str, Any]
+) -> Tuple[float, Optional[Dict[str, Any]]]:
     """
-    Distance (km) from (lat, lon) to the **best anchor** for *port* and the anchor meta.
+    Distance (km) from (lat, lon) to the **best anchor** for *port*
+    and the anchor metadata.
 
     Returns
     -------
@@ -124,16 +163,21 @@ def port_distance_km(lat: float, lon: float, port: Dict[str, Any]) -> Tuple[floa
     """
     plat, plon, gate = _best_port_anchor(port, lat, lon)
     d = haversine_km(lat, lon, plat, plon)
+
     _log.debug(
-        "port_distance_km: to port '%s' via %s → %.3f km",
-        port.get("name"),
-        f"gate '{gate.get('label')}'" if gate else "centroid",
-        d,
+          "port_distance_km: to port '%s' via %s → %.3f km"
+        , port.get("name")
+        , f"gate '{gate.get('label')}'" if gate else "centroid"
+        , d
     )
     return float(d), gate
 
 
-def find_nearest_port(lat: float, lon: float, ports: List[Dict[str, Any]]) -> Dict[str, Any]:
+def find_nearest_port(
+    lat: float
+    , lon: float
+    , ports: List[Dict[str, Any]]
+) -> Dict[str, Any]:
     """
     Find the nearest port to (lat, lon).
 
@@ -142,7 +186,7 @@ def find_nearest_port(lat: float, lon: float, ports: List[Dict[str, Any]]) -> Di
     lat, lon : float
         Query coordinates.
     ports : List[Dict[str, Any]]
-        Normalized port list (see modules.cabotage.ports_index.load_ports).
+        Normalized port list (see modules.ports.ports_index.load_ports).
 
     Returns
     -------
@@ -155,12 +199,12 @@ def find_nearest_port(lat: float, lon: float, ports: List[Dict[str, Any]]) -> Di
     Raises
     ------
     ValueError
-        If *ports* is empty.
+        If *ports* is empty or contains no valid entries.
     """
     lat = _to_float(lat, name="lat")
     lon = _to_float(lon, name="lon")
 
-    if not isinstance(ports, list) or len(ports) == 0:
+    if not isinstance(ports, list) or not ports:
         _log.error("find_nearest_port: empty or invalid 'ports' list.")
         raise ValueError("No ports provided.")
 
@@ -171,9 +215,10 @@ def find_nearest_port(lat: float, lon: float, ports: List[Dict[str, Any]]) -> Di
     for p in ports:
         try:
             d, gate = port_distance_km(lat, lon, p)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _log.debug("Skipping port due to error: %r (err=%s)", p, e)
             continue
+
         if d < best_d:
             best_d = d
             best_port = p
@@ -183,38 +228,61 @@ def find_nearest_port(lat: float, lon: float, ports: List[Dict[str, Any]]) -> Di
         _log.error("find_nearest_port: no valid ports after filtering.")
         raise ValueError("No valid ports after filtering invalid entries.")
 
-    result = {
-        "name": best_port["name"],
-        "city": best_port["city"],
-        "state": best_port["state"],
-        "lat": float(best_port["lat"]),
-        "lon": float(best_port["lon"]),
-        "distance_km": float(best_d),
-        "gate": best_gate,  # None if centroid
+    result: Dict[str, Any] = {
+          "name": best_port["name"]
+        , "city": best_port["city"]
+        , "state": best_port["state"]
+        , "lat": float(best_port["lat"])
+        , "lon": float(best_port["lon"])
+        , "distance_km": float(best_d)
+        , "gate": best_gate  # None if centroid
     }
 
     _log.info(
-        "find_nearest_port: nearest='%s' (UF=%s) distance=%.3f km via %s.",
-        result["name"],
-        result["state"],
-        result["distance_km"],
-        f"gate '{best_gate.get('label')}'" if best_gate else "centroid",
+          "find_nearest_port: nearest='%s' (UF=%s) distance=%.3f km via %s."
+        , result["name"]
+        , result["state"]
+        , result["distance_km"]
+        , f"gate '{best_gate.get('label')}'" if best_gate else "centroid"
     )
     return result
 
 
-"""
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging; `
-from modules.cabotage.ports_nearest import haversine_km, port_distance_km, find_nearest_port; `
-init_logging(level='INFO', force=True, write_output=False); `
-ports = [ `
-  { 'name':'Santos (SP)', 'city':'Santos', 'state':'SP', 'lat':-23.952, 'lon':-46.328, `
-    'gates':[{'label':'Ponta da Praia','lat':-23.986,'lon':-46.296}, {'lat':-23.97,'lon':-46.33}] }, `
-  { 'name':'Rio de Janeiro (RJ)', 'city':'Rio de Janeiro', 'state':'RJ', 'lat':-22.903, 'lon':-43.172 } `
-]; `
-print('haversine SP-RJ ~', round(haversine_km(-23.55,-46.63,-22.90,-43.17), 1), 'km'); `
-print('dist→Santos:', port_distance_km(-23.55, -46.63, ports[0])); `
-print('nearest:', find_nearest_port(-23.55, -46.63, ports)); "
-"""
+# ────────────────────────────────────────────────────────────────────────────────
+# CLI / direct smoke test
+# ────────────────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    # Simple smoke test:
+    #   python -m modules.ports.ports_nearest
+    from modules.infra.logging import init_logging
+
+    init_logging(level="INFO", force=True, write_output=False)
+
+    ports_example: List[Dict[str, Any]] = [
+        {
+              "name": "Santos (SP)"
+            , "city": "Santos"
+            , "state": "SP"
+            , "lat": -23.952
+            , "lon": -46.328
+            , "gates": [
+                  {"label": "Ponta da Praia", "lat": -23.986, "lon": -46.296}
+                , {"lat": -23.97, "lon": -46.33}
+            ]
+        },
+        {
+              "name": "Rio de Janeiro (RJ)"
+            , "city": "Rio de Janeiro"
+            , "state": "RJ"
+            , "lat": -22.903
+            , "lon": -43.172
+        },
+    ]
+
+    print(
+          "haversine SP-RJ ~"
+        , round(haversine_km(-23.55, -46.63, -22.90, -43.17), 1)
+        , "km"
+    )
+    print("dist→Santos:", port_distance_km(-23.55, -46.63, ports_example[0]))
+    print("nearest:", find_nearest_port(-23.55, -46.63, ports_example))

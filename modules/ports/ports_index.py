@@ -1,4 +1,4 @@
-# modules/cabotage/ports_index.py
+# modules/ports/ports_index.py
 # -*- coding: utf-8 -*-
 """
 Gate-aware Brazilian ports loader (JSON) + backward-compat 'load_cts'
@@ -12,20 +12,20 @@ ensuring each record has the canonical fields and optional **gates** with coordi
 Record shape (normalized)
 -------------------------
 {
-  "name":    str,                 # canonical port name (e.g., "Santos (SP)")
-  "city":    str,                 # city name
-  "state":   str,                 # UF (2-letter)
-  "lat":     float,               # port reference latitude
-  "lon":     float,               # port reference longitude
-  "aliases": List[str],           # optional aliases (deduped, trimmed)
-  "gates":   List[{"label": str, "lat": float, "lon": float}]  # optional access gates
+    "name":    str,                 # canonical port name (e.g., "Santos (SP)")
+    "city":    str,                 # city name
+    "state":   str,                 # UF (2-letter)
+    "lat":     float,               # port reference latitude
+    "lon":     float,               # port reference longitude
+    "aliases": List[str],           # optional aliases (deduped, trimmed)
+    "gates":   List[{"label": str, "lat": float, "lon": float}]  # optional access gates
 }
 
-Public API (kept stable)
-------------------------
-- load_ports(path: Optional[str] = None, *, fallback: Optional[List[Dict[str,Any]]] = None)
+Public API
+----------
+- load_ports(path: Optional[str] = None, *, fallback: Optional[List[Dict[str, Any]]] = None)
     -> List[Dict[str, Any]]
-- load_cts(...)  # alias for backward compatibility
+- load_cts(...)  # simple alias for backwards compatibility
 
 Notes
 -----
@@ -53,7 +53,10 @@ _GATE_KEYS = ("label", "lat", "lon")  # retained for documentation/reference
 # ────────────────────────────────────────────────────────────────────────────────
 # Helpers (normalization & coercion)
 # ────────────────────────────────────────────────────────────────────────────────
-def _as_float(x: Any, default: Optional[float] = None) -> Optional[float]:
+def _as_float(
+    x: Any,
+    default: Optional[float] = None,
+) -> Optional[float]:
     """Best-effort float coercion with default fallback (does not raise)."""
     try:
         return float(x)
@@ -61,12 +64,16 @@ def _as_float(x: Any, default: Optional[float] = None) -> Optional[float]:
         return default
 
 
-def _norm_text(s: Any) -> str:
+def _norm_text(
+    s: Any,
+) -> str:
     """Trimmed string representation (None → '')."""
     return str(s or "").strip()
 
 
-def _norm_gate(g: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _norm_gate(
+    g: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
     """
     Normalize a single gate entry.
 
@@ -74,16 +81,29 @@ def _norm_gate(g: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     if not isinstance(g, dict):
         return None
+
     label = _norm_text(g.get("label")) or "gate"
     lat = _as_float(g.get("lat"))
     lon = _as_float(g.get("lon"))
+
     if lat is None or lon is None:
         return None
+
     return {"label": label, "lat": float(lat), "lon": float(lon)}
 
 
-def _dedupe_aliases(aliases_in: Any, *, main_name: str) -> List[str]:
-    """Case-insensitive, trimmed dedupe; drops empty and the same as main name."""
+def _dedupe_aliases(
+    aliases_in: Any,
+    *,
+    main_name: str,
+) -> List[str]:
+    """
+    Case-insensitive, trimmed dedupe for aliases.
+
+    Drops:
+      - empty strings
+      - aliases equal (case-insensitive) to the main name
+    """
     aliases_out: List[str] = []
     if isinstance(aliases_in, (list, tuple)):
         seen = set()
@@ -101,7 +121,9 @@ def _dedupe_aliases(aliases_in: Any, *, main_name: str) -> List[str]:
     return aliases_out
 
 
-def _norm_record(r: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _norm_record(
+    r: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
     """
     Normalize a single port record.
 
@@ -120,6 +142,7 @@ def _norm_record(r: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     state = _norm_text(r["state"])
     lat = _as_float(r["lat"])
     lon = _as_float(r["lon"])
+
     if lat is None or lon is None:
         return None
 
@@ -187,14 +210,14 @@ def load_ports(
         if not isinstance(raw_loaded, list):
             raise ValueError(f"ports JSON at '{path}' must be a list of records.")
         raw = raw_loaded  # type: ignore[assignment]
-        _log.info(f"load_ports: loaded {len(raw)} raw records from '{path}'.")
+        _log.info("load_ports: loaded %d raw records from '%s'.", len(raw), path)
     else:
         if fallback is None:
             raise ValueError("No JSON path provided and no fallback data.")
         if not isinstance(fallback, list):
             raise ValueError("fallback must be a list of records.")
         raw = fallback
-        _log.info(f"load_ports: using fallback with {len(raw)} raw records.")
+        _log.info("load_ports: using fallback with %d raw records.", len(raw))
 
     # Normalize
     out: List[Dict[str, Any]] = []
@@ -214,41 +237,60 @@ def load_ports(
     with_gates = sum(1 for it in out if it.get("gates"))
     _log.info(
         "load_ports: normalized %d records (invalid skipped=%d, with_gates=%d).",
-        len(out), invalid, with_gates
+        len(out),
+        invalid,
+        with_gates,
     )
-    _log.debug(
-        "load_ports: example[0]=%s",
-        out[0] if out else None
-    )
+    _log.debug("load_ports: example[0]=%s", out[0] if out else None)
 
     return out
 
 
-# Backward compatibility: some code/notebooks call this name
 def load_cts(
     path: Optional[str] = None,
     *,
     fallback: Optional[List[Dict[str, Any]]] = None,
 ):
-    """Alias to load_ports for backward compatibility."""
+    """
+    Alias to load_ports for backward compatibility.
+
+    Some legacy code may still call `load_cts`; keep it as a thin wrapper.
+    """
     return load_ports(path, fallback=fallback)
 
 
-"""
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging; `
-from modules.cabotage.ports_index import load_ports, load_cts; `
-init_logging(level='INFO', force=True, write_output=False); `
-fallback = [ `
-  { 'name':'Santos (SP)', 'city':'Santos', 'state':'SP', 'lat':-23.952, 'lon':-46.328, `
-    'aliases':['Porto de Santos','santos (sp)'], `
-    'gates':[{'label':'Ponta da Praia','lat':-23.986,'lon':-46.296}, {'lat':-23.97,'lon':-46.33}] }, `
-  { 'name':'Rio de Janeiro (RJ)', 'city':'Rio de Janeiro', 'state':'RJ', 'lat':-22.903, 'lon':-43.172 } `
-]; `
-ports = load_ports(fallback=fallback); `
-print('count=', len(ports)); `
-print('first=', ports[0]); `
-ports2 = load_cts(fallback=fallback); `
-print('alias_count=', len(ports2)); "
-"""
+if __name__ == "__main__":
+    # Simple smoke test:
+    #   python -m modules.ports.ports_index
+    from modules.infra.logging import init_logging
+
+    init_logging(level="INFO", force=True, write_output=False)
+
+    fallback = [
+        {
+              "name": "Santos (SP)"
+            , "city": "Santos"
+            , "state": "SP"
+            , "lat": -23.952
+            , "lon": -46.328
+            , "aliases": ["Porto de Santos", "santos (sp)"]
+            , "gates": [
+                  {"label": "Ponta da Praia", "lat": -23.986, "lon": -46.296}
+                , {"lat": -23.97, "lon": -46.33}
+            ]
+        },
+        {
+              "name": "Rio de Janeiro (RJ)"
+            , "city": "Rio de Janeiro"
+            , "state": "RJ"
+            , "lat": -22.903
+            , "lon": -43.172
+        },
+    ]
+
+    ports = load_ports(fallback=fallback)
+    print("count =", len(ports))
+    print("first =", ports[0])
+
+    ports2 = load_cts(fallback=fallback)
+    print("alias_count =", len(ports2))

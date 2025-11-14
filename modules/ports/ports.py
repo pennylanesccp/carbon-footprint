@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from modules.addressing.resolver import resolve_point
 from modules.cabotage import ports_index
-from modules.port.ports_nearest import find_nearest_port
+from modules.ports.ports_nearest import find_nearest_port
 from modules.cabotage.sea_matrix import SeaMatrix
 
 import math
