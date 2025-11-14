@@ -18,7 +18,7 @@ from typing import Dict, Any, List
 
 from modules.infra.logging import init_logging, get_logger
 from modules.app.evaluator import DataPaths
-from modules.road.addressing import resolve_point
+from modules.addressing.resolver import resolve_point
 from modules.road.ors_common import ORSConfig, NoRoute
 from modules.road.ors_client import ORSClient
 

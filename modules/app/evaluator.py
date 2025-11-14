@@ -15,16 +15,15 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from modules.core import Path, Any, Dict, List, Optional, Tuple
 
 from modules.infra.logging import get_logger
 from modules.road.ors_common import ORSConfig
 from modules.road.ors_client import ORSClient
 
-from modules.road.addressing    import resolve_point
-from modules.cabotage.ports_index   import load_ports
-from modules.cabotage.ports_nearest import find_nearest_port
+from modules.addressing.resolver    import resolve_point
+from modules.port.ports_index   import load_ports
+from modules.port.ports_nearest import find_nearest_port
 from modules.cabotage.sea_matrix    import SeaMatrix
 from modules.cabotage               import accounting as acc
 

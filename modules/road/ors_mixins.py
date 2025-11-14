@@ -240,7 +240,7 @@ class RoutingMixin:
               ["geometry"]: <geojson/linestring>  # if geometry=True
             }
         """
-        from modules.road.addressing import resolve_point
+        from modules.addressing.resolver import resolve_point
 
         o = resolve_point(origin, ors=self)
         d = resolve_point(destination, ors=self)
@@ -322,7 +322,7 @@ class RoutingMixin:
           "durations_s":  [[...]],
         }
         """
-        from modules.road.addressing import resolve_point
+        from modules.addressing.resolver import resolve_point
 
         os_ = [resolve_point(x, ors=self) for x in origins]
         ds_ = [resolve_point(x, ors=self) for x in destinations]

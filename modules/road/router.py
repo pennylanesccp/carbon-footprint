@@ -102,7 +102,7 @@ from modules.functions.database_manager import (
 # ORS + geocoding
 from modules.road.ors_common import ORSConfig, RateLimited, NoRoute
 from modules.road.ors_client import ORSClient
-from modules.road.addressing import resolve_point_null_safe as geo_resolve
+from modules.addressing.resolver import resolve_point_null_safe as geo_resolve
 
 log = logging.getLogger(__name__)
 
