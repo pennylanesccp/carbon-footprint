@@ -2,37 +2,36 @@
 # -*- coding: utf-8 -*-
 
 """
-SQLite manager for persisting precomputed routing data (minimal schema).
+SQLite manager for persisting precomputed *road* routing data (generic O→D cache).
 
 Table
 -----
 CREATE TABLE IF NOT EXISTS heatmap_runs (
-      unique_id                 INTEGER PRIMARY KEY AUTOINCREMENT
-    , origin_name               TEXT        NOT NULL
-    , origin_lat                REAL
-    , origin_lon                REAL
-    , destiny_name              TEXT        NOT NULL
-    , destiny_lat               REAL
-    , destiny_lon               REAL
-
-    , road_only_distance_km     REAL
-
-    , cab_po_name               TEXT
-    , cab_pd_name               TEXT
-
-    , cab_road_o_to_po_km       REAL
-    , cab_road_pd_to_d_km       REAL
-
-    , is_hgv                    BOOL
-    , insertion_timestamp       TIMESTAMP   NOT NULL DEFAULT (datetime('now'))
+      origin       TEXT    NOT NULL
+    , origin_lat   REAL
+    , origin_lon   REAL
+    , destiny      TEXT    NOT NULL
+    , destiny_lat  REAL
+    , destiny_lon  REAL
+    , distance_km  REAL
+    , is_hgv       INTEGER   -- 1 = HGV profile, 0 = non-HGV, NULL = unspecified
 );
 
 Notes
 -----
-• Coordinates are allowed to be NULL for geocoding failures or placeholder rows.
-• Uniqueness enforced via a UNIQUE INDEX on (origin_name, destiny_name)
-  so ON CONFLICT upsert works while keeping `unique_id` as rowid PK.
-• Only the fields needed to re-derive KPIs are stored.
+• This is a *generic road legs cache*:
+    (origin, destiny, is_hgv) → distance_km + coordinates.
+
+  It is meant to be reused across:
+    - road-only O→D legs
+    - cabotage legs (O→Po, Pd→D)
+    - any other ORS directions calls.
+
+• Coordinates and distance are allowed to be NULL for geocoding failures
+  or placeholder rows (e.g. you want to mark "we tried and failed").
+
+• Uniqueness is enforced via a UNIQUE INDEX on (origin, destiny, is_hgv),
+  so ON CONFLICT upsert works without a manual PK column.
 
 Style
 -----
@@ -53,7 +52,7 @@ from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
 # ────────────────────────────────────────────────────────────────────────────────
 
 DEFAULT_DB_PATH = Path("data/database/carbon_footprint.sqlite")
-DEFAULT_TABLE   = "heatmap_runs"
+DEFAULT_TABLE   = "routes"
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +70,17 @@ def _bool_to_int(
     if v is None:
         return None
     return 1 if bool(v) else 0
+
+
+def _int_to_bool(
+    v: Any
+) -> Optional[bool]:
+    """
+    Convert DB integer (0/1/NULL) back to bool/None.
+    """
+    if v is None:
+        return None
+    return bool(v)
 
 
 def _to_float_or_none(
@@ -118,6 +128,9 @@ def connect(
 def db_session(
     db_path: Path | str = DEFAULT_DB_PATH
 ):
+    """
+    Context-managed connection with commit/rollback.
+    """
     conn = connect(db_path)
     try:
         yield conn
@@ -136,35 +149,25 @@ def db_session(
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS {table} (
-      unique_id                 INTEGER PRIMARY KEY AUTOINCREMENT
-    , origin_name               TEXT        NOT NULL
-    , origin_lat                REAL
-    , origin_lon                REAL
-    , destiny_name              TEXT        NOT NULL
-    , destiny_lat               REAL
-    , destiny_lon               REAL
-
-    , road_only_distance_km     REAL
-
-    , cab_po_name               TEXT
-    , cab_pd_name               TEXT
-
-    , cab_road_o_to_po_km       REAL
-    , cab_road_pd_to_d_km       REAL
-
-    , is_hgv                    BOOL
-    , insertion_timestamp       TIMESTAMP   NOT NULL DEFAULT (datetime('now'))
+      origin       TEXT    NOT NULL
+    , origin_lat   REAL
+    , origin_lon   REAL
+    , destiny      TEXT    NOT NULL
+    , destiny_lat  REAL
+    , destiny_lon  REAL
+    , distance_km  REAL
+    , is_hgv       INTEGER
 );
 """.strip()
 
 _CREATE_UNIQUE_INDEX_SQL = """
 CREATE UNIQUE INDEX IF NOT EXISTS uq_{table}_key
-    ON {table} (origin_name, destiny_name);
+    ON {table} (origin, destiny, is_hgv);
 """.strip()
 
 _CREATE_IDX_DEST_SQL = """
 CREATE INDEX IF NOT EXISTS idx_{table}_destiny
-    ON {table} (destiny_name);
+    ON {table} (destiny);
 """.strip()
 
 
@@ -174,7 +177,7 @@ def ensure_main_table(
     , table_name: str = DEFAULT_TABLE
 ) -> None:
     """
-    Create the main table + unique index if not present.
+    Create the main table + indexes if not present.
     """
     conn.execute(_CREATE_TABLE_SQL.format(table=table_name))
     conn.execute(_CREATE_UNIQUE_INDEX_SQL.format(table=table_name))
@@ -188,69 +191,53 @@ def ensure_main_table(
 def upsert_run(
     conn: sqlite3.Connection
     , *
-    , origin_name: str
+    , origin: str
     , origin_lat: Optional[float]
     , origin_lon: Optional[float]
-    , destiny_name: str
+    , destiny: str
     , destiny_lat: Optional[float]
     , destiny_lon: Optional[float]
-    , road_only_distance_km: Optional[float] = None
-    , cab_po_name: Optional[str] = None
-    , cab_pd_name: Optional[str] = None
-    , cab_road_o_to_po_km: Optional[float] = None
-    , cab_road_pd_to_d_km: Optional[float] = None
+    , distance_km: Optional[float] = None
     , is_hgv: Optional[bool] = None
     , table_name: str = DEFAULT_TABLE
 ) -> None:
     """
-    Insert or update a row keyed by (origin_name, destiny_name).
+    Insert or update a *road leg* keyed by (origin, destiny, is_hgv).
+
     Coordinates and distances may be NULL (e.g., geocode failures).
-    insertion_timestamp is left unchanged on updates.
     """
     ensure_main_table(conn, table_name=table_name)
 
     sql = f"""
     INSERT INTO {table_name} (
-          origin_name
+          origin
         , origin_lat
         , origin_lon
-        , destiny_name
+        , destiny
         , destiny_lat
         , destiny_lon
-        , road_only_distance_km
-        , cab_po_name
-        , cab_pd_name
-        , cab_road_o_to_po_km
-        , cab_road_pd_to_d_km
+        , distance_km
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(origin_name, destiny_name) DO UPDATE SET
-          origin_lat            = excluded.origin_lat
-        , origin_lon            = excluded.origin_lon
-        , destiny_lat           = excluded.destiny_lat
-        , destiny_lon           = excluded.destiny_lon
-        , road_only_distance_km = excluded.road_only_distance_km
-        , cab_po_name           = excluded.cab_po_name
-        , cab_pd_name           = excluded.cab_pd_name
-        , cab_road_o_to_po_km   = excluded.cab_road_o_to_po_km
-        , cab_road_pd_to_d_km   = excluded.cab_road_pd_to_d_km
-        , is_hgv                = excluded.is_hgv
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(origin, destiny, is_hgv) DO UPDATE SET
+          origin_lat   = excluded.origin_lat
+        , origin_lon   = excluded.origin_lon
+        , destiny_lat  = excluded.destiny_lat
+        , destiny_lon  = excluded.destiny_lon
+        , distance_km  = excluded.distance_km
+        , is_hgv       = excluded.is_hgv
     ;
     """.strip()
 
     params = (
-          origin_name
+          origin
         , _to_float_or_none(origin_lat)
         , _to_float_or_none(origin_lon)
-        , destiny_name
+        , destiny
         , _to_float_or_none(destiny_lat)
         , _to_float_or_none(destiny_lon)
-        , _to_float_or_none(road_only_distance_km)
-        , cab_po_name
-        , cab_pd_name
-        , _to_float_or_none(cab_road_o_to_po_km)
-        , _to_float_or_none(cab_road_pd_to_d_km)
+        , _to_float_or_none(distance_km)
         , _bool_to_int(is_hgv)
     )
     conn.execute(sql, params)
@@ -259,56 +246,45 @@ def upsert_run(
 def insert_if_absent(
     conn: sqlite3.Connection
     , *
-    , origin_name: str
+    , origin: str
     , origin_lat: Optional[float]
     , origin_lon: Optional[float]
-    , destiny_name: str
+    , destiny: str
     , destiny_lat: Optional[float]
     , destiny_lon: Optional[float]
-    , road_only_distance_km: Optional[float] = None
-    , cab_po_name: Optional[str] = None
-    , cab_pd_name: Optional[str] = None
-    , cab_road_o_to_po_km: Optional[float] = None
-    , cab_road_pd_to_d_km: Optional[float] = None
+    , distance_km: Optional[float] = None
     , is_hgv: Optional[bool] = None
     , table_name: str = DEFAULT_TABLE
 ) -> bool:
     """
-    Insert only; ignore if (origin_name, destiny_name) exists.
+    Insert only; ignore if (origin, destiny, is_hgv) already exists.
+
     Returns True if a row was inserted, False otherwise.
     """
     ensure_main_table(conn, table_name=table_name)
 
     sql = f"""
     INSERT OR IGNORE INTO {table_name} (
-          origin_name
+          origin
         , origin_lat
         , origin_lon
-        , destiny_name
+        , destiny
         , destiny_lat
         , destiny_lon
-        , road_only_distance_km
-        , cab_po_name
-        , cab_pd_name
-        , cab_road_o_to_po_km
-        , cab_road_pd_to_d_km
+        , distance_km
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     """.strip()
 
     cur = conn.execute(sql, (
-          origin_name
+          origin
         , _to_float_or_none(origin_lat)
         , _to_float_or_none(origin_lon)
-        , destiny_name
+        , destiny
         , _to_float_or_none(destiny_lat)
         , _to_float_or_none(destiny_lon)
-        , _to_float_or_none(road_only_distance_km)
-        , cab_po_name
-        , cab_pd_name
-        , _to_float_or_none(cab_road_o_to_po_km)
-        , _to_float_or_none(cab_road_pd_to_d_km)
+        , _to_float_or_none(distance_km)
         , _bool_to_int(is_hgv)
     ))
     return cur.rowcount == 1
@@ -321,38 +297,33 @@ def bulk_upsert_runs(
     , table_name: str = DEFAULT_TABLE
 ) -> int:
     """
-    Bulk upsert rows. Each row dict must provide the same keys
-    accepted by upsert_run (names only; types are relaxed).
+    Bulk upsert rows.
+
+    Each row dict must provide keys compatible with `upsert_run`:
+      origin, origin_lat, origin_lon, destiny, destiny_lat, destiny_lon,
+      distance_km (optional), is_hgv (optional).
     """
     ensure_main_table(conn, table_name=table_name)
 
     sql = f"""
     INSERT INTO {table_name} (
-          origin_name
+          origin
         , origin_lat
         , origin_lon
-        , destiny_name
+        , destiny
         , destiny_lat
         , destiny_lon
-        , road_only_distance_km
-        , cab_po_name
-        , cab_pd_name
-        , cab_road_o_to_po_km
-        , cab_road_pd_to_d_km
+        , distance_km
         , is_hgv
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(origin_name, destiny_name) DO UPDATE SET
-          origin_lat            = excluded.origin_lat
-        , origin_lon            = excluded.origin_lon
-        , destiny_lat           = excluded.destiny_lat
-        , destiny_lon           = excluded.destiny_lon
-        , road_only_distance_km = excluded.road_only_distance_km
-        , cab_po_name           = excluded.cab_po_name
-        , cab_pd_name           = excluded.cab_pd_name
-        , cab_road_o_to_po_km   = excluded.cab_road_o_to_po_km
-        , cab_road_pd_to_d_km   = excluded.cab_road_pd_to_d_km
-        , is_hgv                = excluded.is_hgv
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(origin, destiny, is_hgv) DO UPDATE SET
+          origin_lat   = excluded.origin_lat
+        , origin_lon   = excluded.origin_lon
+        , destiny_lat  = excluded.destiny_lat
+        , destiny_lon  = excluded.destiny_lon
+        , distance_km  = excluded.distance_km
+        , is_hgv       = excluded.is_hgv
     ;
     """.strip()
 
@@ -360,17 +331,13 @@ def bulk_upsert_runs(
         r: Mapping[str, Any]
     ) -> Tuple[Any, ...]:
         return (
-              r["origin_name"]
+              r["origin"]
             , _to_float_or_none(r.get("origin_lat"))
             , _to_float_or_none(r.get("origin_lon"))
-            , r["destiny_name"]
+            , r["destiny"]
             , _to_float_or_none(r.get("destiny_lat"))
             , _to_float_or_none(r.get("destiny_lon"))
-            , _to_float_or_none(r.get("road_only_distance_km"))
-            , r.get("cab_po_name")
-            , r.get("cab_pd_name")
-            , _to_float_or_none(r.get("cab_road_o_to_po_km"))
-            , _to_float_or_none(r.get("cab_road_pd_to_d_km"))
+            , _to_float_or_none(r.get("distance_km"))
             , _bool_to_int(r.get("is_hgv"))
         )
 
@@ -385,27 +352,48 @@ def bulk_upsert_runs(
 def overwrite_keys(
     conn: sqlite3.Connection
     , *
-    , keys: Sequence[Tuple[str, str]]
+    , keys: Sequence[Tuple[str, str, Optional[bool]]]
     , rows: Iterable[Mapping[str, Any]]
     , table_name: str = DEFAULT_TABLE
 ) -> int:
     """
     Overwrite semantics for a subset of composite keys:
+
         1) delete keys provided
         2) bulk-upsert replacement rows
 
-    keys = sequence of (origin_name, destiny_name)
+    keys = sequence of (origin, destiny, is_hgv)
+           (is_hgv can be None to target the NULL-profile row).
     """
     ensure_main_table(conn, table_name=table_name)
 
-    del_sql = f"""
+    del_sql_null = f"""
     DELETE FROM {table_name}
-    WHERE origin_name = ?
-      AND destiny_name = ?;
+    WHERE origin  = ?
+      AND destiny = ?
+      AND is_hgv IS NULL;
     """.strip()
 
-    if keys:
-        conn.executemany(del_sql, [ (k[0], k[1]) for k in keys ])
+    del_sql_bool = f"""
+    DELETE FROM {table_name}
+    WHERE origin  = ?
+      AND destiny = ?
+      AND is_hgv = ?;
+    """.strip()
+
+    batch_null: list[tuple[Any, ...]] = []
+    batch_bool: list[tuple[Any, ...]] = []
+
+    for origin_v, destiny_v, is_hgv_v in keys:
+        if is_hgv_v is None:
+            batch_null.append((origin_v, destiny_v))
+        else:
+            batch_bool.append((origin_v, destiny_v, _bool_to_int(is_hgv_v)))
+
+    if batch_null:
+        conn.executemany(del_sql_null, batch_null)
+    if batch_bool:
+        conn.executemany(del_sql_bool, batch_bool)
 
     return bulk_upsert_runs(conn, rows=rows, table_name=table_name)
 
@@ -413,80 +401,86 @@ def overwrite_keys(
 def get_run(
     conn: sqlite3.Connection
     , *
-    , origin_name: str
-    , destiny_name: str
+    , origin: str
+    , destiny: str
+    , is_hgv: Optional[bool] = None
     , table_name: str = DEFAULT_TABLE
 ) -> Optional[Mapping[str, Any]]:
     """
-    Fetch a single row by the composite key. Returns dict or None.
+    Fetch a single row by (origin, destiny, is_hgv). Returns dict or None.
+
+    If is_hgv is None, this looks for the NULL-profile row.
     """
     ensure_main_table(conn, table_name=table_name)
 
-    sql = f"""
-    SELECT
-          unique_id
-        , origin_name
-        , origin_lat
-        , origin_lon
-        , destiny_name
-        , destiny_lat
-        , destiny_lon
-        , road_only_distance_km
-        , cab_po_name
-        , cab_pd_name
-        , cab_road_o_to_po_km
-        , cab_road_pd_to_d_km
-        , is_hgv
-        , insertion_timestamp
-    FROM {table_name}
-    WHERE origin_name = ?
-      AND destiny_name = ?;
-    """.strip()
+    if is_hgv is None:
+        sql = f"""
+        SELECT
+              origin
+            , origin_lat
+            , origin_lon
+            , destiny
+            , destiny_lat
+            , destiny_lon
+            , distance_km
+            , is_hgv
+        FROM {table_name}
+        WHERE origin  = ?
+          AND destiny = ?
+          AND is_hgv IS NULL;
+        """.strip()
+        params: Tuple[Any, ...] = (origin, destiny)
+    else:
+        sql = f"""
+        SELECT
+              origin
+            , origin_lat
+            , origin_lon
+            , destiny
+            , destiny_lat
+            , destiny_lon
+            , distance_km
+            , is_hgv
+        FROM {table_name}
+        WHERE origin  = ?
+          AND destiny = ?
+          AND is_hgv = ?;
+        """.strip()
+        params = (origin, destiny, _bool_to_int(is_hgv))
 
-    row = conn.execute(sql, (origin_name, destiny_name)).fetchone()
+    row = conn.execute(sql, params).fetchone()
     if not row:
         return None
 
     (
-          unique_id
-        , origin_name_v
+          origin_v
         , origin_lat_v
         , origin_lon_v
-        , destiny_name_v
+        , destiny_v
         , destiny_lat_v
         , destiny_lon_v
-        , road_only_distance_km_v
-        , cab_po_name_v
-        , cab_pd_name_v
-        , cab_road_o_to_po_km_v
-        , cab_road_pd_to_d_km_v
+        , distance_km_v
         , is_hgv_v
-        , insertion_timestamp_v
     ) = row
 
     return {
-          "unique_id": unique_id
-        , "origin_name": origin_name_v
+          "origin": origin_v
         , "origin_lat": _to_float_or_none(origin_lat_v)
         , "origin_lon": _to_float_or_none(origin_lon_v)
-        , "destiny_name": destiny_name_v
+        , "destiny": destiny_v
         , "destiny_lat": _to_float_or_none(destiny_lat_v)
         , "destiny_lon": _to_float_or_none(destiny_lon_v)
-        , "road_only_distance_km": _to_float_or_none(road_only_distance_km_v)
-        , "cab_po_name": cab_po_name_v
-        , "cab_pd_name": cab_pd_name_v
-        , "cab_road_o_to_po_km": _to_float_or_none(cab_road_o_to_po_km_v)
-        , "cab_road_pd_to_d_km": _to_float_or_none(cab_road_pd_to_d_km_v)
-        , "is_hgv": (None if is_hgv_v is None else bool(is_hgv_v))
-        , "insertion_timestamp": insertion_timestamp_v
+        , "distance_km": _to_float_or_none(distance_km_v)
+        , "is_hgv": _int_to_bool(is_hgv_v)
     }
 
 
 def list_runs(
     conn: sqlite3.Connection
     , *
-    , origin_name: Optional[str] = None
-    , destiny_name: Optional[str] = None
+    , origin: Optional[str] = None
+    , destiny: Optional[str] = None
+    , is_hgv: Optional[bool] = None
     , table_name: str = DEFAULT_TABLE
     , limit: Optional[int] = None
 ) -> list[Mapping[str, Any]]:
@@ -498,56 +492,57 @@ def list_runs(
     clauses: list[str] = []
     params:  list[Any] = []
 
-    if origin_name is not None:
-        clauses.append("origin_name = ?")
-        params.append(origin_name)
+    if origin is not None:
+        clauses.append("origin = ?")
+        params.append(origin)
 
-    if destiny_name is not None:
-        clauses.append("destiny_name = ?")
-        params.append(destiny_name)
+    if destiny is not None:
+        clauses.append("destiny = ?")
+        params.append(destiny)
+
+    if is_hgv is None:
+        # If user explicitly passes None, filter to NULL-profile rows
+        # If user omits is_hgv, leave it unfiltered.
+        # We treat "is_hgv is not None" vs "is_hgv is None and was passed"
+        # by checking if it was specified, but Python can't distinguish that
+        # easily here. Simple rule:
+        #   - is_hgv is True/False → filter by that
+        #   - is_hgv is None      → no filter (to keep it simple)
+        pass
+    else:
+        clauses.append("is_hgv = ?")
+        params.append(_bool_to_int(is_hgv))
 
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     lim   = f" LIMIT {int(limit)}" if (limit is not None and limit > 0) else ""
 
     sql = f"""
     SELECT
-          unique_id
-        , origin_name
+          origin
         , origin_lat
         , origin_lon
-        , destiny_name
+        , destiny
         , destiny_lat
         , destiny_lon
-        , road_only_distance_km
-        , cab_po_name
-        , cab_pd_name
-        , cab_road_o_to_po_km
-        , cab_road_pd_to_d_km
+        , distance_km
         , is_hgv
-        , insertion_timestamp
     FROM {table_name}
     {where}
-    ORDER BY origin_name, destiny_name
+    ORDER BY origin, destiny, is_hgv
     {lim};
     """.strip()
 
     out: list[Mapping[str, Any]] = []
     for row in conn.execute(sql, tuple(params)).fetchall():
         out.append({
-              "unique_id": row[0]
-            , "origin_name": row[1]
-            , "origin_lat": _to_float_or_none(row[2])
-            , "origin_lon": _to_float_or_none(row[3])
-            , "destiny_name": row[4]
-            , "destiny_lat": _to_float_or_none(row[5])
-            , "destiny_lon": _to_float_or_none(row[6])
-            , "road_only_distance_km": _to_float_or_none(row[7])
-            , "cab_po_name": row[8]
-            , "cab_pd_name": row[9]
-            , "cab_road_o_to_po_km": _to_float_or_none(row[10])
-            , "cab_road_pd_to_d_km": _to_float_or_none(row[11])
-            , "is_hgv": (None if row[12] is None else bool(row[12]))
-            , "insertion_timestamp": row[13]
+              "origin": row[0]
+            , "origin_lat": _to_float_or_none(row[1])
+            , "origin_lon": _to_float_or_none(row[2])
+            , "destiny": row[3]
+            , "destiny_lat": _to_float_or_none(row[4])
+            , "destiny_lon": _to_float_or_none(row[5])
+            , "distance_km": _to_float_or_none(row[6])
+            , "is_hgv": _int_to_bool(row[7])
         })
     return out
 
@@ -555,18 +550,36 @@ def list_runs(
 def delete_key(
     conn: sqlite3.Connection
     , *
-    , origin_name: str
-    , destiny_name: str
+    , origin: str
+    , destiny: str
+    , is_hgv: Optional[bool] = None
     , table_name: str = DEFAULT_TABLE
 ) -> int:
     """
-    Delete a single composite key. Returns affected row count (0 or 1).
+    Delete a single composite key. Returns affected row count.
+
+    If is_hgv is None, deletes all rows for (origin, destiny),
+    regardless of profile.
     """
     ensure_main_table(conn, table_name=table_name)
-    cur = conn.execute(
-          f"DELETE FROM {table_name} WHERE origin_name=? AND destiny_name=?"
-        , (origin_name, destiny_name)
-    )
+
+    if is_hgv is None:
+        sql = f"""
+        DELETE FROM {table_name}
+        WHERE origin  = ?
+          AND destiny = ?;
+        """.strip()
+        params = (origin, destiny)
+    else:
+        sql = f"""
+        DELETE FROM {table_name}
+        WHERE origin  = ?
+          AND destiny = ?
+          AND is_hgv = ?;
+        """.strip()
+        params = (origin, destiny, _bool_to_int(is_hgv))
+
+    cur = conn.execute(sql, params)
     return cur.rowcount
 
 
@@ -580,17 +593,13 @@ if __name__ == "__main__":
         ensure_main_table(_conn)
         upsert_run(
               _conn
-            , origin_name="Avenida Professor Luciano Gualberto, São Paulo, Brazil"
+            , origin="Avenida Professor Luciano Gualberto, São Paulo, Brazil"
             , origin_lat=-23.558808
             , origin_lon=-46.730357
-            , destiny_name="Itapoá, SC, Brazil"
+            , destiny="Itapoá, SC, Brazil"
             , destiny_lat=-26.171181
             , destiny_lon=-48.600218
-            , road_only_distance_km=612.3
-            , cab_po_name="Santos"
-            , cab_pd_name="Itajaí"
-            , cab_road_o_to_po_km=82.0
-            , cab_road_pd_to_d_km=76.0
+            , distance_km=612.3
             , is_hgv=True
         )
         log.info("Rows (limit 3): %s", list_runs(_conn, limit=3))
