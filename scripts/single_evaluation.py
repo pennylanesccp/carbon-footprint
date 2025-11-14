@@ -25,8 +25,8 @@ from modules.app.evaluator import (
     , DEFAULT_SEA_K_KG_PER_TKM
     , DEFAULT_MGO_PRICE_BRL_PER_T
 )
-from modules.road.truck_specs import TRUCK_SPECS
-from modules.road.diesel_prices import DEFAULT_DIESEL_PRICES_CSV
+from modules.fuel.truck_specs import TRUCK_SPECS
+from modules.fuel.diesel_prices import DEFAULT_DIESEL_PRICES_CSV
 
 # DB utils
 from modules.functions.database_manager import (

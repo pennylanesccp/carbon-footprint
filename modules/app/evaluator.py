@@ -22,15 +22,15 @@ from modules.functions._logging import get_logger
 from modules.road.ors_common import ORSConfig
 from modules.road.ors_client import ORSClient
 
-from modules.addressing.resolver    import resolve_point
+from modules.road.addressing    import resolve_point
 from modules.cabotage.ports_index   import load_ports
 from modules.cabotage.ports_nearest import find_nearest_port
 from modules.cabotage.sea_matrix    import SeaMatrix
 from modules.cabotage               import accounting as acc
 
-from modules.road.emissions   import estimate_road_trip
-from modules.road.truck_specs import get_truck_spec
-from modules.road.diesel_prices import load_latest_diesel_price, avg_price_for_ufs
+from modules.fuel.emissions   import estimate_road_trip
+from modules.fuel.truck_specs import get_truck_spec
+from modules.fuel.diesel_prices import load_latest_diesel_price, avg_price_for_ufs
 
 _log = get_logger(__name__)
 
@@ -233,7 +233,7 @@ def evaluate(
 ) -> Dict[str, Any]:
     # axle strategy
     if truck_key in ("auto", "auto_by_weight"):
-        from modules.road.fuel_model import infer_axles_for_payload
+        from modules.fuel.fuel_model import infer_axles_for_payload
         axles_eff = infer_axles_for_payload(cargo_t)
         _log.info("Axles resolved via payload=%.3f t → %d (truck_key='%s').", cargo_t, axles_eff, truck_key)
     else:

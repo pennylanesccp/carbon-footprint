@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Dict, Any, Tuple, Optional, List
 from dataclasses import dataclass
 
-from modules.addressing.resolver import resolve_point
+from modules.road.addressing import resolve_point
 from modules.cabotage import ports_index
 from modules.cabotage.ports_nearest import find_nearest_port
 from modules.cabotage.sea_matrix import SeaMatrix

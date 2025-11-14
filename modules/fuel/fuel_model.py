@@ -44,14 +44,14 @@ from modules.functions._logging import get_logger
 
 # Prefer the centralized truth from truck_specs; fall back gracefully if helpers are missing.
 try:
-    from modules.road.truck_specs import (  # type: ignore
+    from modules.fuel.truck_specs import (  # type: ignore
         ANTT_KM_PER_L_BY_AXLES as _ANTT_KM_PER_L_BY_AXLES,
         guess_axles_from_payload as _guess_axles_from_payload,
         baseline_km_per_l_from_axles as _baseline_km_per_l_from_axles,
     )
     _HAS_BASELINE_FN = True
 except Exception:  # pragma: no cover - defensive import
-    from modules.road.truck_specs import (  # type: ignore
+    from modules.fuel.truck_specs import (  # type: ignore
         ANTT_KM_PER_L_BY_AXLES as _ANTT_KM_PER_L_BY_AXLES,
         guess_axles_from_payload as _guess_axles_from_payload,
     )
