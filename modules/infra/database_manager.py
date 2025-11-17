@@ -1,38 +1,72 @@
 # modules/infra/database_manager.py
 # -*- coding: utf-8 -*-
-
 """
-SQLite manager for persisting precomputed *road* routing data (generic O→D cache).
+SQLite manager for routing cache + multimodal fuel/emissions results
+====================================================================
 
-Table
------
-CREATE TABLE IF NOT EXISTS heatmap_runs (
-      origin_name         TEXT      NOT NULL
-    , origin_lat          REAL
-    , origin_lon          REAL
-    , destiny_name        TEXT      NOT NULL
-    , destiny_lat         REAL
-    , destiny_lon         REAL
-    , distance_km         REAL
-    , is_hgv              INTEGER   -- 1 = HGV profile, 0 = non-HGV, NULL = unspecified
-    , insertion_timestamp TIMESTAMP NOT NULL DEFAULT (datetime('now'))
-);
+This module now handles two generic families of tables:
 
-Notes
------
-• This is a *generic road legs cache*:
-    (origin_name, destiny_name, is_hgv) → distance_km + coordinates.
+1) Road legs cache (existing behavior, default table = "routes")
+   ----------------------------------------------------------------
+   Schema (per table):
 
-  It is meant to be reused across:
-    - road-only O→D legs
-    - cabotage legs (O→Po, Pd→D)
-    - any other ORS directions calls.
+       CREATE TABLE IF NOT EXISTS {table} (
+             origin_name         TEXT      NOT NULL
+           , origin_lat          REAL
+           , origin_lon          REAL
+           , destiny_name        TEXT      NOT NULL
+           , destiny_lat         REAL
+           , destiny_lon         REAL
+           , distance_km         REAL
+           , is_hgv              INTEGER   -- 1 = HGV profile, 0 = non-HGV, NULL = unspecified
+           , insertion_timestamp TIMESTAMP NOT NULL DEFAULT (datetime('now'))
+       );
 
-• Coordinates and distance are allowed to be NULL for geocoding failures
-  or placeholder rows (e.g. you want to mark "we tried and failed").
+   Unique index on (origin_name, destiny_name, is_hgv).
 
-• Uniqueness is enforced via a UNIQUE INDEX on (origin_name, destiny_name, is_hgv),
-  so ON CONFLICT upsert works without a manual PK column.
+   This is a *generic road legs cache*:
+     (origin_name, destiny_name, is_hgv) → distance_km + coordinates.
+
+   It is meant to be reused across:
+     - road-only O→D legs
+     - cabotage legs (O→Po, Pd→D)
+     - any other ORS directions calls.
+
+2) Multimodal results tables (NEW, generic name per origin/amount)
+   ----------------------------------------------------------------
+   Schema (per table):
+
+       CREATE TABLE IF NOT EXISTS {table} (
+             origin_name             TEXT      NOT NULL
+           , destiny_name            TEXT      NOT NULL
+           , cargo_t                 REAL      NOT NULL
+           , road_distance_km        REAL
+           , road_fuel_liters        REAL
+           , road_fuel_kg            REAL
+           , road_fuel_cost_r        REAL
+           , road_co2e_kg            REAL
+           , mm_road_fuel_liters     REAL
+           , mm_road_fuel_kg         REAL
+           , mm_road_fuel_cost_r     REAL
+           , mm_road_co2e_kg         REAL
+           , sea_km                  REAL
+           , sea_fuel_kg             REAL
+           , sea_fuel_cost_r         REAL
+           , sea_co2e_kg             REAL
+           , total_fuel_kg           REAL
+           , total_fuel_cost_r       REAL
+           , total_co2e_kg           REAL
+           , delta_cost_r            REAL
+           , delta_co2e_kg           REAL
+           , insertion_timestamp     TIMESTAMP NOT NULL DEFAULT (datetime('now'))
+       );
+
+   Unique index on (destiny_name).
+
+   Intended usage:
+     - One table per (origin, cargo_t) run, with a name such as:
+         "Sao_Paulo__26tons"
+     - Each row = one destination with full road×multimodal metrics.
 
 Style
 -----
@@ -45,8 +79,9 @@ from __future__ import annotations
 import logging
 import sqlite3
 from contextlib import contextmanager
+from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, List
+
 from modules.core.types import Path
-from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Defaults & logger
@@ -109,6 +144,9 @@ def _ensure_parent_dir(
 def _configure_pragmas(
     conn: sqlite3.Connection
 ) -> None:
+    """
+    Apply pragmatic defaults for a small local analytical DB.
+    """
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
@@ -118,6 +156,9 @@ def _configure_pragmas(
 def connect(
     db_path: Path | str = DEFAULT_DB_PATH
 ) -> sqlite3.Connection:
+    """
+    Open a SQLite connection with parent folder + PRAGMAs taken care of.
+    """
     path = Path(db_path)
     _ensure_parent_dir(path)
     conn = sqlite3.connect(path.as_posix())
@@ -131,6 +172,14 @@ def db_session(
 ):
     """
     Context-managed connection with commit/rollback.
+
+    Example
+    -------
+        with db_session() as conn:
+            ensure_main_table(conn)
+            upsert_run(conn, origin=..., destiny=..., ...)
+
+    Any exception will rollback and re-raise.
     """
     conn = connect(db_path)
     try:
@@ -145,7 +194,7 @@ def db_session(
 
 
 # ────────────────────────────────────────────────────────────────────────────────
-# DDL — create table & indexes
+# DDL — road legs cache (existing behavior)
 # ────────────────────────────────────────────────────────────────────────────────
 
 _CREATE_TABLE_SQL = """
@@ -179,7 +228,12 @@ def ensure_main_table(
     , table_name: str = DEFAULT_TABLE
 ) -> None:
     """
-    Create the main table + indexes if not present.
+    Create the main road-legs table + indexes if not present.
+
+    Parameters
+    ----------
+    table_name
+        Name of the road-legs table to manage (default: "routes").
     """
     conn.execute(_CREATE_TABLE_SQL.format(table=table_name))
     conn.execute(_CREATE_UNIQUE_INDEX_SQL.format(table=table_name))
@@ -187,7 +241,7 @@ def ensure_main_table(
 
 
 # ────────────────────────────────────────────────────────────────────────────────
-# DML — upsert / insert-only / overwrite / reads
+# DML — road legs cache (upsert / insert-only / reads)
 # ────────────────────────────────────────────────────────────────────────────────
 
 def upsert_run(
@@ -271,7 +325,10 @@ def insert_if_absent(
     """
     Insert only; ignore if (origin_name, destiny_name, is_hgv) already exists.
 
-    Returns True if a row was inserted, False otherwise.
+    Returns
+    -------
+    bool
+        True if a row was inserted, False otherwise.
     """
     ensure_main_table(conn, table_name=table_name)
 
@@ -309,7 +366,7 @@ def bulk_upsert_runs(
     , table_name: str = DEFAULT_TABLE
 ) -> int:
     """
-    Bulk upsert rows.
+    Bulk upsert rows for a road-legs table.
 
     Each row dict must provide keys compatible with `upsert_run`:
       origin, origin_lat, origin_lon, destiny, destiny_lat, destiny_lon,
@@ -604,12 +661,383 @@ def delete_key(
 
 
 # ────────────────────────────────────────────────────────────────────────────────
+# DDL — multimodal results tables (NEW)
+# ────────────────────────────────────────────────────────────────────────────────
+
+_CREATE_MM_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS {table} (
+      origin_name             TEXT      NOT NULL
+    , destiny_name            TEXT      NOT NULL
+    , cargo_t                 REAL      NOT NULL
+    , road_distance_km        REAL
+    , road_fuel_liters        REAL
+    , road_fuel_kg            REAL
+    , road_fuel_cost_r        REAL
+    , road_co2e_kg            REAL
+    , mm_road_fuel_liters     REAL
+    , mm_road_fuel_kg         REAL
+    , mm_road_fuel_cost_r     REAL
+    , mm_road_co2e_kg         REAL
+    , sea_km                  REAL
+    , sea_fuel_kg             REAL
+    , sea_fuel_cost_r         REAL
+    , sea_co2e_kg             REAL
+    , total_fuel_kg           REAL
+    , total_fuel_cost_r       REAL
+    , total_co2e_kg           REAL
+    , delta_cost_r            REAL
+    , delta_co2e_kg           REAL
+    , insertion_timestamp     TIMESTAMP NOT NULL DEFAULT (datetime('now'))
+);
+""".strip()
+
+_CREATE_MM_UNIQUE_INDEX_SQL = """
+CREATE UNIQUE INDEX IF NOT EXISTS uq_{table}_destiny
+    ON {table} (destiny_name);
+""".strip()
+
+
+def ensure_multimodal_results_table(
+    conn: sqlite3.Connection
+    , *
+    , table_name: str
+) -> None:
+    """
+    Ensure a multimodal results table exists with the standard schema.
+
+    The name is fully configurable, so you can use patterns like:
+
+        origin_tag = "Sao_Paulo"
+        amount_tag = "26tons"
+        table_name = f"{origin_tag}__{amount_tag}"
+
+        ensure_multimodal_results_table(conn, table_name=table_name)
+    """
+    conn.execute(_CREATE_MM_TABLE_SQL.format(table=table_name))
+    conn.execute(_CREATE_MM_UNIQUE_INDEX_SQL.format(table=table_name))
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+# DML — multimodal results (upsert / bulk / reads)
+# ────────────────────────────────────────────────────────────────────────────────
+
+def upsert_multimodal_result(
+    conn: sqlite3.Connection
+    , *
+    , origin_name: str
+    , destiny_name: str
+    , cargo_t: float
+    , road_distance_km: Optional[float]
+    , road_fuel_liters: Optional[float]
+    , road_fuel_kg: Optional[float]
+    , road_fuel_cost_r: Optional[float]
+    , road_co2e_kg: Optional[float]
+    , mm_road_fuel_liters: Optional[float]
+    , mm_road_fuel_kg: Optional[float]
+    , mm_road_fuel_cost_r: Optional[float]
+    , mm_road_co2e_kg: Optional[float]
+    , sea_km: Optional[float]
+    , sea_fuel_kg: Optional[float]
+    , sea_fuel_cost_r: Optional[float]
+    , sea_co2e_kg: Optional[float]
+    , total_fuel_kg: Optional[float]
+    , total_fuel_cost_r: Optional[float]
+    , total_co2e_kg: Optional[float]
+    , delta_cost_r: Optional[float]
+    , delta_co2e_kg: Optional[float]
+    , table_name: str
+) -> None:
+    """
+    Upsert a single multimodal result row keyed by destiny_name.
+
+    Parameters are intentionally explicit to keep callsites self-documenting.
+    """
+    ensure_multimodal_results_table(conn, table_name=table_name)
+
+    sql = f"""
+    INSERT INTO {table_name} (
+          origin_name
+        , destiny_name
+        , cargo_t
+        , road_distance_km
+        , road_fuel_liters
+        , road_fuel_kg
+        , road_fuel_cost_r
+        , road_co2e_kg
+        , mm_road_fuel_liters
+        , mm_road_fuel_kg
+        , mm_road_fuel_cost_r
+        , mm_road_co2e_kg
+        , sea_km
+        , sea_fuel_kg
+        , sea_fuel_cost_r
+        , sea_co2e_kg
+        , total_fuel_kg
+        , total_fuel_cost_r
+        , total_co2e_kg
+        , delta_cost_r
+        , delta_co2e_kg
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(destiny_name) DO UPDATE SET
+          origin_name         = excluded.origin_name
+        , cargo_t             = excluded.cargo_t
+        , road_distance_km    = excluded.road_distance_km
+        , road_fuel_liters    = excluded.road_fuel_liters
+        , road_fuel_kg        = excluded.road_fuel_kg
+        , road_fuel_cost_r    = excluded.road_fuel_cost_r
+        , road_co2e_kg        = excluded.road_co2e_kg
+        , mm_road_fuel_liters = excluded.mm_road_fuel_liters
+        , mm_road_fuel_kg     = excluded.mm_road_fuel_kg
+        , mm_road_fuel_cost_r = excluded.mm_road_fuel_cost_r
+        , mm_road_co2e_kg     = excluded.mm_road_co2e_kg
+        , sea_km              = excluded.sea_km
+        , sea_fuel_kg         = excluded.sea_fuel_kg
+        , sea_fuel_cost_r     = excluded.sea_fuel_cost_r
+        , sea_co2e_kg         = excluded.sea_co2e_kg
+        , total_fuel_kg       = excluded.total_fuel_kg
+        , total_fuel_cost_r   = excluded.total_fuel_cost_r
+        , total_co2e_kg       = excluded.total_co2e_kg
+        , delta_cost_r        = excluded.delta_cost_r
+        , delta_co2e_kg       = excluded.delta_co2e_kg
+    ;
+    """.strip()
+
+    params = (
+          origin_name
+        , destiny_name
+        , _to_float_or_none(cargo_t)
+        , _to_float_or_none(road_distance_km)
+        , _to_float_or_none(road_fuel_liters)
+        , _to_float_or_none(road_fuel_kg)
+        , _to_float_or_none(road_fuel_cost_r)
+        , _to_float_or_none(road_co2e_kg)
+        , _to_float_or_none(mm_road_fuel_liters)
+        , _to_float_or_none(mm_road_fuel_kg)
+        , _to_float_or_none(mm_road_fuel_cost_r)
+        , _to_float_or_none(mm_road_co2e_kg)
+        , _to_float_or_none(sea_km)
+        , _to_float_or_none(sea_fuel_kg)
+        , _to_float_or_none(sea_fuel_cost_r)
+        , _to_float_or_none(sea_co2e_kg)
+        , _to_float_or_none(total_fuel_kg)
+        , _to_float_or_none(total_fuel_cost_r)
+        , _to_float_or_none(total_co2e_kg)
+        , _to_float_or_none(delta_cost_r)
+        , _to_float_or_none(delta_co2e_kg)
+    )
+    conn.execute(sql, params)
+
+
+def bulk_upsert_multimodal_results(
+    conn: sqlite3.Connection
+    , *
+    , rows: Iterable[Mapping[str, Any]]
+    , table_name: str
+) -> int:
+    """
+    Bulk upsert multimodal results.
+
+    Each row dict must provide keys compatible with `upsert_multimodal_result`:
+
+        origin_name, destiny_name, cargo_t,
+        road_distance_km, road_fuel_liters, road_fuel_kg, road_fuel_cost_r, road_co2e_kg,
+        mm_road_fuel_liters, mm_road_fuel_kg, mm_road_fuel_cost_r, mm_road_co2e_kg,
+        sea_km, sea_fuel_kg, sea_fuel_cost_r, sea_co2e_kg,
+        total_fuel_kg, total_fuel_cost_r, total_co2e_kg,
+        delta_cost_r, delta_co2e_kg
+    """
+    ensure_multimodal_results_table(conn, table_name=table_name)
+
+    sql = f"""
+    INSERT INTO {table_name} (
+          origin_name
+        , destiny_name
+        , cargo_t
+        , road_distance_km
+        , road_fuel_liters
+        , road_fuel_kg
+        , road_fuel_cost_r
+        , road_co2e_kg
+        , mm_road_fuel_liters
+        , mm_road_fuel_kg
+        , mm_road_fuel_cost_r
+        , mm_road_co2e_kg
+        , sea_km
+        , sea_fuel_kg
+        , sea_fuel_cost_r
+        , sea_co2e_kg
+        , total_fuel_kg
+        , total_fuel_cost_r
+        , total_co2e_kg
+        , delta_cost_r
+        , delta_co2e_kg
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(destiny_name) DO UPDATE SET
+          origin_name         = excluded.origin_name
+        , cargo_t             = excluded.cargo_t
+        , road_distance_km    = excluded.road_distance_km
+        , road_fuel_liters    = excluded.road_fuel_liters
+        , road_fuel_kg        = excluded.road_fuel_kg
+        , road_fuel_cost_r    = excluded.road_fuel_cost_r
+        , road_co2e_kg        = excluded.road_co2e_kg
+        , mm_road_fuel_liters = excluded.mm_road_fuel_liters
+        , mm_road_fuel_kg     = excluded.mm_road_fuel_kg
+        , mm_road_fuel_cost_r = excluded.mm_road_fuel_cost_r
+        , mm_road_co2e_kg     = excluded.mm_road_co2e_kg
+        , sea_km              = excluded.sea_km
+        , sea_fuel_kg         = excluded.sea_fuel_kg
+        , sea_fuel_cost_r     = excluded.sea_fuel_cost_r
+        , sea_co2e_kg         = excluded.sea_co2e_kg
+        , total_fuel_kg       = excluded.total_fuel_kg
+        , total_fuel_cost_r   = excluded.total_fuel_cost_r
+        , total_co2e_kg       = excluded.total_co2e_kg
+        , delta_cost_r        = excluded.delta_cost_r
+        , delta_co2e_kg       = excluded.delta_co2e_kg
+    ;
+    """.strip()
+
+    def _row_to_params(
+        r: Mapping[str, Any]
+    ) -> Tuple[Any, ...]:
+        return (
+              r["origin_name"]
+            , r["destiny_name"]
+            , _to_float_or_none(r.get("cargo_t"))
+            , _to_float_or_none(r.get("road_distance_km"))
+            , _to_float_or_none(r.get("road_fuel_liters"))
+            , _to_float_or_none(r.get("road_fuel_kg"))
+            , _to_float_or_none(r.get("road_fuel_cost_r"))
+            , _to_float_or_none(r.get("road_co2e_kg"))
+            , _to_float_or_none(r.get("mm_road_fuel_liters"))
+            , _to_float_or_none(r.get("mm_road_fuel_kg"))
+            , _to_float_or_none(r.get("mm_road_fuel_cost_r"))
+            , _to_float_or_none(r.get("mm_road_co2e_kg"))
+            , _to_float_or_none(r.get("sea_km"))
+            , _to_float_or_none(r.get("sea_fuel_kg"))
+            , _to_float_or_none(r.get("sea_fuel_cost_r"))
+            , _to_float_or_none(r.get("sea_co2e_kg"))
+            , _to_float_or_none(r.get("total_fuel_kg"))
+            , _to_float_or_none(r.get("total_fuel_cost_r"))
+            , _to_float_or_none(r.get("total_co2e_kg"))
+            , _to_float_or_none(r.get("delta_cost_r"))
+            , _to_float_or_none(r.get("delta_co2e_kg"))
+        )
+
+    params = [_row_to_params(r) for r in rows]
+    if not params:
+        return 0
+
+    conn.executemany(sql, params)
+    return len(params)
+
+
+def list_multimodal_results(
+    conn: sqlite3.Connection
+    , *
+    , table_name: str
+    , limit: Optional[int] = None
+) -> List[Mapping[str, Any]]:
+    """
+    List rows from a multimodal results table.
+
+    Used primarily for sanity checks and for `--resume` logic in bulk scripts.
+    """
+    ensure_multimodal_results_table(conn, table_name=table_name)
+
+    lim = f" LIMIT {int(limit)}" if (limit is not None and limit > 0) else ""
+
+    sql = f"""
+    SELECT
+          origin_name
+        , destiny_name
+        , cargo_t
+        , road_distance_km
+        , road_fuel_liters
+        , road_fuel_kg
+        , road_fuel_cost_r
+        , road_co2e_kg
+        , mm_road_fuel_liters
+        , mm_road_fuel_kg
+        , mm_road_fuel_cost_r
+        , mm_road_co2e_kg
+        , sea_km
+        , sea_fuel_kg
+        , sea_fuel_cost_r
+        , sea_co2e_kg
+        , total_fuel_kg
+        , total_fuel_cost_r
+        , total_co2e_kg
+        , delta_cost_r
+        , delta_co2e_kg
+        , insertion_timestamp
+    FROM {table_name}
+    ORDER BY destiny_name
+    {lim};
+    """.strip()
+
+    out: List[Mapping[str, Any]] = []
+    for row in conn.execute(sql).fetchall():
+        out.append({
+              "origin_name": row[0]
+            , "destiny_name": row[1]
+            , "cargo_t": _to_float_or_none(row[2])
+            , "road_distance_km": _to_float_or_none(row[3])
+            , "road_fuel_liters": _to_float_or_none(row[4])
+            , "road_fuel_kg": _to_float_or_none(row[5])
+            , "road_fuel_cost_r": _to_float_or_none(row[6])
+            , "road_co2e_kg": _to_float_or_none(row[7])
+            , "mm_road_fuel_liters": _to_float_or_none(row[8])
+            , "mm_road_fuel_kg": _to_float_or_none(row[9])
+            , "mm_road_fuel_cost_r": _to_float_or_none(row[10])
+            , "mm_road_co2e_kg": _to_float_or_none(row[11])
+            , "sea_km": _to_float_or_none(row[12])
+            , "sea_fuel_kg": _to_float_or_none(row[13])
+            , "sea_fuel_cost_r": _to_float_or_none(row[14])
+            , "sea_co2e_kg": _to_float_or_none(row[15])
+            , "total_fuel_kg": _to_float_or_none(row[16])
+            , "total_fuel_cost_r": _to_float_or_none(row[17])
+            , "total_co2e_kg": _to_float_or_none(row[18])
+            , "delta_cost_r": _to_float_or_none(row[19])
+            , "delta_co2e_kg": _to_float_or_none(row[20])
+            , "insertion_timestamp": row[21]
+        })
+    return out
+
+
+def delete_multimodal_result(
+    conn: sqlite3.Connection
+    , *
+    , destiny_name: str
+    , table_name: str
+) -> int:
+    """
+    Delete a single multimodal result row by destiny_name.
+
+    Returns affected row count.
+    """
+    ensure_multimodal_results_table(conn, table_name=table_name)
+
+    sql = f"""
+    DELETE FROM {table_name}
+    WHERE destiny_name = ?;
+    """.strip()
+
+    cur = conn.execute(sql, (destiny_name,))
+    return cur.rowcount
+
+
+# ────────────────────────────────────────────────────────────────────────────────
 # CLI smoke (optional)
 # ────────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+
+    # Small smoke test: create main routes table and one multimodal table
     with db_session() as _conn:
+        # Road cache
         ensure_main_table(_conn)
         upsert_run(
               _conn
@@ -622,4 +1050,34 @@ if __name__ == "__main__":
             , distance_km=90.5919
             , is_hgv=True
         )
-        log.info("Rows (limit 3): %s", list_runs(_conn, limit=3))
+        log.info("Routes (limit 3): %s", list_runs(_conn, limit=3))
+
+        # Multimodal test table
+        mm_table = "SmokeTest__26tons"
+        ensure_multimodal_results_table(_conn, table_name=mm_table)
+        upsert_multimodal_result(
+              _conn
+            , origin_name="São Paulo, SP"
+            , destiny_name="Curitiba, PR"
+            , cargo_t=26.0
+            , road_distance_km=405.5
+            , road_fuel_liters=271.0
+            , road_fuel_kg=227.64
+            , road_fuel_cost_r=1627.0
+            , road_co2e_kg=726.9
+            , mm_road_fuel_liters=231.0
+            , mm_road_fuel_kg=194.0
+            , mm_road_fuel_cost_r=1029.0
+            , mm_road_co2e_kg=619.9
+            , sea_km=330.0
+            , sea_fuel_kg=80.0
+            , sea_fuel_cost_r=500.0
+            , sea_co2e_kg=250.0
+            , total_fuel_kg=274.0
+            , total_fuel_cost_r=1529.0
+            , total_co2e_kg=869.9
+            , delta_cost_r=-98.0
+            , delta_co2e_kg=143.0
+            , table_name=mm_table
+        )
+        log.info("Multimodal rows (%s): %s", mm_table, list_multimodal_results(_conn, table_name=mm_table))
