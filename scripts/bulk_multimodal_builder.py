@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# scripts/bulk_routes_generator.py
+# scripts/bulk_multimodal_builder.py
 # -*- coding: utf-8 -*-
 
 """
-Bulk runner for routes_generator.py
+Bulk runner for multimodal_builder.py
+=====================================
 
 Given:
   - a single origin
@@ -12,10 +13,11 @@ Given:
 This script will:
 
   1. Loop over all destinies in the file (ignoring blanks and '#' comments).
-  2. For each destiny, call routes_generator.main([...]) with the proper argv.
-  3. Stop cleanly if an ORS 429 rate limit (RateLimited) is raised.
-  4. Be safe to re-run, because routes_generator.py itself skips
-     already-ingested rows unless --overwrite is explicitly passed.
+  2. For each destiny, call scripts.multimodal_builder.main([...]) with the proper argv.
+  3. Stop cleanly if the child script raises SystemExit (e.g. ORS quota / fatal error).
+  4. Be safe to re-run, because multimodal_builder.py itself:
+       - skips cached legs unless --overwrite is passed
+       - overwrites legs properly when --overwrite=True.
 """
 
 from __future__ import annotations
@@ -36,8 +38,6 @@ from types import ModuleType
 from typing import Any, List
 
 from modules.infra.logging import init_logging
-from modules.road.ors_common import RateLimited
-
 
 log = logging.getLogger(__name__)
 
@@ -45,31 +45,31 @@ log = logging.getLogger(__name__)
 # ───────────────────────────────── parser / CLI ────────────────────────────
 def _build_parser() -> argparse.ArgumentParser:
     """
-    Build the CLI argument parser for the bulk routes generator.
+    Build the CLI argument parser for the bulk multimodal builder.
     """
     parser = argparse.ArgumentParser(
         description=(
-            "Loop over many destinations and call routes_generator.py for each.\n"
-            "Stops when ORS rate limit (429) is hit. Safe to re-run: already-ingested\n"
-            "rows are skipped inside routes_generator."
+            "Loop over many destinations and call multimodal_builder.py for each.\n"
+            "Stops when the child exits with a non-zero status (e.g. ORS quota exceeded).\n"
+            "Safe to re-run: cached legs are handled inside multimodal_builder."
         )
     )
 
     parser.add_argument(
-        "--origin"
+          "--origin"
         , required=True
         , help="Origin (address/city/CEP/'lat,lon')."
     )
 
     parser.add_argument(
-        "--dests-file"
+          "--dests-file"
         , type=Path
         , required=True
         , help="Text file with one destination per line (e.g. 'City, UF')."
     )
 
     parser.add_argument(
-        "--ors-profile"
+          "--ors-profile"
         , default="driving-hgv"
         , choices=["driving-hgv", "driving-car"]
         , help="Primary ORS routing profile for all calls. Default: driving-hgv."
@@ -81,45 +81,49 @@ def _build_parser() -> argparse.ArgumentParser:
         from argparse import BooleanOptionalAction
 
         parser.add_argument(
-            "--fallback-to-car"
+              "--fallback-to-car"
             , default=True
             , action=BooleanOptionalAction
             , help="Retry with driving-car if primary fails. Default: True."
         )
         parser.add_argument(
-            "--overwrite"
+              "--overwrite"
             , default=False
             , action=BooleanOptionalAction
-            , help="If True, force recompute in DB even if row exists."
+            , help="If True, force recompute in DB even if legs exist."
         )
-
     except Exception:
-        # Backwards-compatible way for older argparse without BooleanOptionalAction
         parser.add_argument(
-            "--fallback-to-car"
+              "--fallback-to-car"
             , dest="fallback_to_car"
             , action="store_true"
             , default=True
         )
         parser.add_argument(
-            "--no-fallback-to-car"
+              "--no-fallback-to-car"
             , dest="fallback_to_car"
             , action="store_false"
         )
         parser.add_argument(
-            "--overwrite"
+              "--overwrite"
             , dest="overwrite"
             , action="store_true"
             , default=False
         )
         parser.add_argument(
-            "--no-overwrite"
+              "--no-overwrite"
             , dest="overwrite"
             , action="store_false"
         )
 
     parser.add_argument(
-        "--log-level"
+          "--pretty"
+        , action="store_true"
+        , help="Pretty-print child JSON output (mostly for debugging / small batches)."
+    )
+
+    parser.add_argument(
+          "--log-level"
         , default="INFO"
         , choices=["DEBUG", "INFO", "WARNING", "ERROR"]
         , help="Logging level for this bulk script and inner runs."
@@ -129,7 +133,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 # ───────────────────────────────── file helpers ────────────────────────────
-def _load_destinations(path: Path) -> List[str]:
+def _load_destinations(
+    path: Path
+) -> List[str]:
     """
     Load destinations from a text file, skipping:
       - empty lines
@@ -150,22 +156,22 @@ def _load_destinations(path: Path) -> List[str]:
     return dests
 
 
-def _load_routes_generator_module() -> ModuleType:
+def _load_multimodal_builder_module() -> ModuleType:
     """
-    Load scripts/routes_generator.py as a Python module via its file path.
+    Load scripts/multimodal_builder.py as a Python module via its file path.
 
     Returns
     -------
     ModuleType
         The loaded module object, expected to expose a `main(argv: list[str]) -> int`.
     """
-    script_path = ROOT / "scripts" / "routes_generator.py"
+    script_path = ROOT / "scripts" / "multimodal_builder.py"
     if not script_path.is_file():
-        raise FileNotFoundError(f"routes_generator.py not found at {script_path}")
+        raise FileNotFoundError(f"multimodal_builder.py not found at {script_path}")
 
-    spec = importlib.util.spec_from_file_location("routes_generator_mod", script_path)
+    spec = importlib.util.spec_from_file_location("multimodal_builder_mod", script_path)
     if spec is None or spec.loader is None:
-        raise RuntimeError("Unable to load routes_generator module spec")
+        raise RuntimeError("Unable to load multimodal_builder module spec")
 
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[arg-type]
@@ -173,9 +179,12 @@ def _load_routes_generator_module() -> ModuleType:
 
 
 # ───────────────────────────── child argv builder ──────────────────────────
-def _build_child_argv(args: Any, destiny: str) -> list[str]:
+def _build_child_argv(
+    args: Any
+    , destiny: str
+) -> list[str]:
     """
-    Build argv for a single call to routes_generator.main().
+    Build argv for a single call to multimodal_builder.main().
 
     Parameters
     ----------
@@ -187,10 +196,10 @@ def _build_child_argv(args: Any, destiny: str) -> list[str]:
     Returns
     -------
     list[str]
-        Argument vector to be passed to routes_generator.main().
+        Argument vector to be passed to multimodal_builder.main().
     """
     child: list[str] = [
-        "--origin"
+          "--origin"
         , args.origin
         , "--destiny"
         , destiny
@@ -212,13 +221,19 @@ def _build_child_argv(args: Any, destiny: str) -> list[str]:
     else:
         child.append("--no-overwrite")
 
+    # Pretty-print JSON from child
+    if args.pretty:
+        child.append("--pretty")
+
     return child
 
 
 # ─────────────────────────────────── main logic ────────────────────────────
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None
+) -> int:
     """
-    Entrypoint for the bulk routes generator.
+    Entrypoint for the bulk multimodal builder.
 
     Parameters
     ----------
@@ -234,78 +249,85 @@ def main(argv: list[str] | None = None) -> int:
 
     # Initialize logging for this script and inner runs
     init_logging(
-        level=args.log_level
+          level=args.log_level
         , force=True
         , write_output=False
     )
 
     log.info(
-        "Bulk routes generator starting for origin=%r, dests_file=%s",
-        args.origin,
-        args.dests_file,
+          "Bulk multimodal builder starting for origin=%r, dests_file=%s"
+        , args.origin
+        , args.dests_file
     )
 
     dests = _load_destinations(args.dests_file)
     if not dests:
         log.warning(
-            "No destinations found in %s (after filtering). Nothing to do.",
-            args.dests_file,
+              "No destinations found in %s (after filtering). Nothing to do."
+            , args.dests_file
         )
         return 0
 
-    log.info("Loaded %d destinations from %s", len(dests), args.dests_file)
+    log.info(
+          "Loaded %d destinations from %s"
+        , len(dests)
+        , args.dests_file
+    )
 
-    rg = _load_routes_generator_module()
+    mb = _load_multimodal_builder_module()
 
     processed = 0
     failures = 0
 
     for idx, destiny in enumerate(dests):
-
         log.info(
-            "[%d/%d] idx=%d → destiny=%r — starting routes_generator.main()",
-            processed + 1,
-            len(dests),
-            idx,
-            destiny,
+              "[%d/%d] idx=%d → destiny=%r — starting multimodal_builder.main()"
+            , processed + 1
+            , len(dests)
+            , idx
+            , destiny
         )
 
         child_argv = _build_child_argv(args, destiny)
 
         try:
-            rc = rg.main(child_argv)  # type: ignore[call-arg]
-        except RateLimited as e:
+            # multimodal_builder.main() returns an int on success,
+            # but may raise SystemExit(1) on fatal conditions (e.g. ORS quota).
+            rc = mb.main(child_argv)  # type: ignore[call-arg]
+        except SystemExit as e:  # e.code may carry the exit status
+            code = e.code if isinstance(e.code, int) else 1
+            failures += 1 if code != 0 else 0
             log.warning(
-                "ORS rate limit hit while processing idx=%d destiny=%r. "
-                "Stopping bulk run. Details: %s",
-                idx,
-                destiny,
-                e,
+                  "multimodal_builder exited via SystemExit(code=%s) for idx=%d destiny=%r. "
+                  "Stopping bulk run."
+                , code
+                , idx
+                , destiny
             )
             break
         except Exception:
             log.exception(
-                "Unexpected error while processing idx=%d destiny=%r. Aborting.",
-                idx,
-                destiny,
+                  "Unexpected error while processing idx=%d destiny=%r. Aborting."
+                , idx
+                , destiny
             )
             raise
 
         if rc != 0:
             failures += 1
             log.warning(
-                "routes_generator.main() returned non-zero exit code %d for idx=%d destiny=%r",
-                rc,
-                idx,
-                destiny,
+                  "multimodal_builder.main() returned non-zero exit code %d for idx=%d destiny=%r"
+                , rc
+                , idx
+                , destiny
             )
 
         processed += 1
 
     log.info(
-        "Bulk routes generator finished. Processed %d destinations (failures=%d).",
-        processed,
-        failures,
+          "Bulk multimodal builder finished. Processed %d destinations (failures=%d)."
+        , processed
+        , failures
     )
     return 0
 
