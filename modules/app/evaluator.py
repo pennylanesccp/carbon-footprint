@@ -22,8 +22,8 @@ from modules.road.ors_common import ORSConfig
 from modules.road.ors_client import ORSClient
 
 from modules.addressing.resolver    import resolve_point
-from modules.port.ports_index   import load_ports
-from modules.port.ports_nearest import find_nearest_port
+from modules.ports.ports_index   import load_ports
+from modules.ports.ports_nearest import find_nearest_port
 from modules.cabotage.sea_matrix    import SeaMatrix
 from modules.cabotage               import accounting as acc
 

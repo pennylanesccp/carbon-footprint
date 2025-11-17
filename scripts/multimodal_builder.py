@@ -117,8 +117,8 @@ log = logging.getLogger(__name__)
 # ────────────────────────────────────────────────────────────────────────────────
 # Defaults for data files
 # ────────────────────────────────────────────────────────────────────────────────
-DEFAULT_PORTS_JSON      = ROOT / "data" / "cabotage_data" / "ports_br.json"
-DEFAULT_SEA_MATRIX_JSON = ROOT / "data" / "cabotage_data" / "sea_matrix.json"
+DEFAULT_PORTS_JSON      = ROOT / "data" / "processed" / "cabotage_data" / "ports_br.json"
+DEFAULT_SEA_MATRIX_JSON = ROOT / "data" / "processed" / "cabotage_data" / "sea_matrix.json"
 
 
 # ────────────────────────────────────────────────────────────────────────────────

@@ -135,7 +135,7 @@ class SeaMatrix:
         # 4) Log summary
         n_labels = len(self._canon)
         n_pairs = sum(len(v) for v in self.matrix.values())
-        _log.info(
+        _log.debug(
               "SeaMatrix: initialized with %d labels, %d directed edges (symmetric), "
               "coastline_factor=%.3f"
             , n_labels
@@ -186,7 +186,7 @@ class SeaMatrix:
         p = Path(path)
         with p.open("r", encoding="utf-8") as f:
             payload = json.load(f)
-        _log.info("SeaMatrix.from_json_path: loaded JSON from '%s'.", p)
+        _log.debug("SeaMatrix.from_json_path: loaded JSON from '%s'.", p)
         return cls.from_json_dict(payload)
 
     # ---------- queries ----------
@@ -273,7 +273,7 @@ class SeaMatrix:
 
         km = self.get(a_label, b_label)
         if km is not None:
-            _log.info(
+            _log.debug(
                   "SeaMatrix.km_with_source: using MATRIX for %r → %r → %.3f km"
                 , a_label
                 , b_label

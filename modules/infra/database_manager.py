@@ -52,7 +52,7 @@ from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
 # Defaults & logger
 # ────────────────────────────────────────────────────────────────────────────────
 
-DEFAULT_DB_PATH = Path("data/database/carbon_footprint.sqlite")
+DEFAULT_DB_PATH = Path("data/processed/database/carbon_footprint.sqlite")
 DEFAULT_TABLE   = "routes"
 
 log = logging.getLogger(__name__)

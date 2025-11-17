@@ -210,14 +210,14 @@ def load_ports(
         if not isinstance(raw_loaded, list):
             raise ValueError(f"ports JSON at '{path}' must be a list of records.")
         raw = raw_loaded  # type: ignore[assignment]
-        _log.info("load_ports: loaded %d raw records from '%s'.", len(raw), path)
+        _log.debug("load_ports: loaded %d raw records from '%s'.", len(raw), path)
     else:
         if fallback is None:
             raise ValueError("No JSON path provided and no fallback data.")
         if not isinstance(fallback, list):
             raise ValueError("fallback must be a list of records.")
         raw = fallback
-        _log.info("load_ports: using fallback with %d raw records.", len(raw))
+        _log.debug("load_ports: using fallback with %d raw records.", len(raw))
 
     # Normalize
     out: List[Dict[str, Any]] = []
@@ -235,7 +235,7 @@ def load_ports(
 
     # Some quick stats
     with_gates = sum(1 for it in out if it.get("gates"))
-    _log.info(
+    _log.debug(
         "load_ports: normalized %d records (invalid skipped=%d, with_gates=%d).",
         len(out),
         invalid,
