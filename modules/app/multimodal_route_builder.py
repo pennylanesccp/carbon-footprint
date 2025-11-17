@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# scripts/multimodal_builder.py
+# app/multimodal_route_builder.py
 # -*- coding: utf-8 -*-
 
 """
@@ -47,7 +47,7 @@ For each road leg (origin_label, destiny_label):
 
 CLI usage
 ---------
-python -m scripts.multimodal_builder ^
+python -m app.multimodal_route_builder ^
     --origin  "Avenida Professor Luciano Gualberto, São Paulo" ^
     --destiny "Fortaleza, CE" ^
     --overwrite ^
@@ -69,12 +69,12 @@ Options:
 from __future__ import annotations
 
 # ────────────────────────────────────────────────────────────────────────────────
-# Path bootstrap (scripts → modules)
+# Path bootstrap (app → modules)
 # ────────────────────────────────────────────────────────────────────────────────
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /scripts)
+ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /app)
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

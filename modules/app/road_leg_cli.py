@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# scripts/road_leg_cli.py
+# app/road_leg_cli.py
 # -*- coding: utf-8 -*-
 
 """
@@ -19,7 +19,7 @@ Usage
 -----
 Exactly the same CLI as ``python -m modules.road.router``. For example:
 
-    python scripts/road_leg_cli.py \
+    python app/road_leg_cli.py \
         --origin  "Avenida Professor Luciano Gualberto, São Paulo" \
         --destiny "Fortaleza, CE" \
         --ors-profile driving-hgv \
@@ -43,7 +43,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /scripts)
+ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /app)
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# scripts/bulk_multimodal_builder.py
+# app/bulk_multimodal_route_builder.py
 # -*- coding: utf-8 -*-
 
 """
-Bulk runner for multimodal_builder.py
+Bulk runner for multimodal_route_builder.py
 =====================================
 
 Given:
@@ -13,9 +13,9 @@ Given:
 This script will:
 
   1. Loop over all destinies in the file (ignoring blanks and '#' comments).
-  2. For each destiny, call scripts.multimodal_builder.main([...]) with the proper argv.
+  2. For each destiny, call app.multimodal_route_builder.main([...]) with the proper argv.
   3. Stop cleanly if the child script raises SystemExit (e.g. ORS quota / fatal error).
-  4. Be safe to re-run, because multimodal_builder.py itself:
+  4. Be safe to re-run, because multimodal_route_builder.py itself:
        - skips cached legs unless --overwrite is passed
        - overwrites legs properly when --overwrite=True.
 """
@@ -49,9 +49,9 @@ def _build_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         description=(
-            "Loop over many destinations and call multimodal_builder.py for each.\n"
+            "Loop over many destinations and call multimodal_route_builder.py for each.\n"
             "Stops when the child exits with a non-zero status (e.g. ORS quota exceeded).\n"
-            "Safe to re-run: cached legs are handled inside multimodal_builder."
+            "Safe to re-run: cached legs are handled inside multimodal_route_builder."
         )
     )
 
@@ -156,22 +156,22 @@ def _load_destinations(
     return dests
 
 
-def _load_multimodal_builder_module() -> ModuleType:
+def _load_multimodal_route_builder_module() -> ModuleType:
     """
-    Load scripts/multimodal_builder.py as a Python module via its file path.
+    Load app/multimodal_route_builder.py as a Python module via its file path.
 
     Returns
     -------
     ModuleType
         The loaded module object, expected to expose a `main(argv: list[str]) -> int`.
     """
-    script_path = ROOT / "scripts" / "multimodal_builder.py"
+    script_path = ROOT / "modules" / "app" / "multimodal_route_builder.py"
     if not script_path.is_file():
-        raise FileNotFoundError(f"multimodal_builder.py not found at {script_path}")
+        raise FileNotFoundError(f"multimodal_route_builder.py not found at {script_path}")
 
-    spec = importlib.util.spec_from_file_location("multimodal_builder_mod", script_path)
+    spec = importlib.util.spec_from_file_location("multimodal_route_builder_mod", script_path)
     if spec is None or spec.loader is None:
-        raise RuntimeError("Unable to load multimodal_builder module spec")
+        raise RuntimeError("Unable to load multimodal_route_builder module spec")
 
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[arg-type]
@@ -184,7 +184,7 @@ def _build_child_argv(
     , destiny: str
 ) -> list[str]:
     """
-    Build argv for a single call to multimodal_builder.main().
+    Build argv for a single call to multimodal_route_builder.main().
 
     Parameters
     ----------
@@ -196,7 +196,7 @@ def _build_child_argv(
     Returns
     -------
     list[str]
-        Argument vector to be passed to multimodal_builder.main().
+        Argument vector to be passed to multimodal_route_builder.main().
     """
     child: list[str] = [
           "--origin"
@@ -274,14 +274,14 @@ def main(
         , args.dests_file
     )
 
-    mb = _load_multimodal_builder_module()
+    mb = _load_multimodal_route_builder_module()
 
     processed = 0
     failures = 0
 
     for idx, destiny in enumerate(dests):
         log.info(
-              "[%d/%d] idx=%d → destiny=%r — starting multimodal_builder.main()"
+              "[%d/%d] idx=%d → destiny=%r — starting multimodal_route_builder.main()"
             , processed + 1
             , len(dests)
             , idx
@@ -291,14 +291,14 @@ def main(
         child_argv = _build_child_argv(args, destiny)
 
         try:
-            # multimodal_builder.main() returns an int on success,
+            # multimodal_route_builder.main() returns an int on success,
             # but may raise SystemExit(1) on fatal conditions (e.g. ORS quota).
             rc = mb.main(child_argv)  # type: ignore[call-arg]
         except SystemExit as e:  # e.code may carry the exit status
             code = e.code if isinstance(e.code, int) else 1
             failures += 1 if code != 0 else 0
             log.warning(
-                  "multimodal_builder exited via SystemExit(code=%s) for idx=%d destiny=%r. "
+                  "multimodal_route_builder exited via SystemExit(code=%s) for idx=%d destiny=%r. "
                   "Stopping bulk run."
                 , code
                 , idx
@@ -316,7 +316,7 @@ def main(
         if rc != 0:
             failures += 1
             log.warning(
-                  "multimodal_builder.main() returned non-zero exit code %d for idx=%d destiny=%r"
+                  "multimodal_route_builder.main() returned non-zero exit code %d for idx=%d destiny=%r"
                 , rc
                 , idx
                 , destiny

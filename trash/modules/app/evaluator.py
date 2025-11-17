@@ -25,7 +25,7 @@ from modules.addressing.resolver    import resolve_point
 from modules.ports.ports_index   import load_ports
 from modules.ports.ports_nearest import find_nearest_port
 from modules.cabotage.sea_matrix    import SeaMatrix
-from modules.fuel               import accounting as acc
+from modules.fuel               import cabotage_fuel_service as acc
 
 from modules.emissions.emissions   import estimate_road_trip
 from modules.fuel.truck_specs import get_truck_spec
