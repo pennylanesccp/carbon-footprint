@@ -2,3 +2,4 @@ requests
 sqlite3
 pandas
 openpyxl
+CurrencyConverter
