@@ -1,0 +1,608 @@
+Cruzeiro do Sul, AC
+Rio Branco, AC
+Arapiraca, AL
+Campo Alegre, AL
+Coruripe, AL
+Maceió, AL
+Palmeira Dos Índios, AL
+Penedo, AL
+Rio Largo, AL
+São Miguel Dos Campos, AL
+União Dos Palmares, AL
+Coari, AM
+Itacoatiara, AM
+Manacapuru, AM
+Manaus, AM
+Maués, AM
+Parintins, AM
+Tabatinga, AM
+Tefé, AM
+Macapá, AP
+Santana, AP
+Alagoinhas, BA
+Araci, BA
+Barreiras, BA
+Bom Jesus da Lapa, BA
+Brumado, BA
+Camaçari, BA
+Campo Formoso, BA
+Candeias, BA
+Casa Nova, BA
+Catu, BA
+Conceição do Coité, BA
+Cruz Das Almas, BA
+Dias D'ávila, BA
+Euclides da Cunha, BA
+Eunápolis, BA
+Feira de Santana, BA
+Guanambi, BA
+Ilhéus, BA
+Ipirá, BA
+Irecê, BA
+Itaberaba, BA
+Itabuna, BA
+Itamaraju, BA
+Itapetinga, BA
+Jacobina, BA
+Jaguaquara, BA
+Jequié, BA
+Juazeiro, BA
+Lauro de Freitas, BA
+Luís Eduardo Magalhães, BA
+Monte Santo, BA
+Paulo Afonso, BA
+Porto Seguro, BA
+Salvador, BA
+Santo Amaro, BA
+Santo Antônio de Jesus, BA
+Senhor do Bonfim, BA
+Serrinha, BA
+Simões Filho, BA
+Teixeira de Freitas, BA
+Tucano, BA
+Valença, BA
+Vitória da Conquista, BA
+Acaraú, CE
+Acopiara, CE
+Aquiraz, CE
+Aracati, CE
+Barbalha, CE
+Boa Viagem, CE
+Camocim, CE
+Canindé, CE
+Cascavel, CE
+Caucaia, CE
+Crateús, CE
+Crato, CE
+Fortaleza, CE
+Granja, CE
+Horizonte, CE
+Icó, CE
+Iguatu, CE
+Itapipoca, CE
+Juazeiro do Norte, CE
+Limoeiro do Norte, CE
+Maracanaú, CE
+Maranguape, CE
+Morada Nova, CE
+Pacajus, CE
+Pacatuba, CE
+Quixadá, CE
+Quixeramobim, CE
+Russas, CE
+Sobral, CE
+Tauá, CE
+Tianguá, CE
+Trairi, CE
+Viçosa do Ceará, CE
+Brasília, DF
+Aracruz, ES
+Cachoeiro de Itapemirim, ES
+Cariacica, ES
+Colatina, ES
+Guarapari, ES
+Linhares, ES
+Serra, ES
+São Mateus, ES
+Viana, ES
+Vila Velha, ES
+Vitória, ES
+Anápolis, GO
+Aparecida de Goiânia, GO
+Caldas Novas, GO
+Catalão, GO
+Cidade Ocidental, GO
+Formosa, GO
+Goianésia, GO
+Goiânia, GO
+Itumbiara, GO
+Jataí, GO
+Luziânia, GO
+Mineiros, GO
+Novo Gama, GO
+Planaltina, GO
+Rio Verde, GO
+Santo Antônio do Descoberto, GO
+Senador Canedo, GO
+Trindade, GO
+Valparaíso de Goiás, GO
+Águas Lindas de Goiás, GO
+Açailândia, MA
+Bacabal, MA
+Balsas, MA
+Barra do Corda, MA
+Barreirinhas, MA
+Buriticupu, MA
+Caxias, MA
+Chapadinha, MA
+Codó, MA
+Coroatá, MA
+Grajaú, MA
+Imperatriz, MA
+Itapecuru Mirim, MA
+Paço do Lumiar, MA
+Pinheiro, MA
+Santa Inês, MA
+Santa Luzia, MA
+São José de Ribamar, MA
+São Luís, MA
+Timon, MA
+Tutóia, MA
+zé Doca, MA
+Alfenas, MG
+Araguari, MG
+Araxá, MG
+Barbacena, MG
+Belo Horizonte, MG
+Betim, MG
+Campo Belo, MG
+Caratinga, MG
+Cataguases, MG
+Conselheiro Lafaiete, MG
+Contagem, MG
+Coronel Fabriciano, MG
+Curvelo, MG
+Divinópolis, MG
+Esmeraldas, MG
+Formiga, MG
+Frutal, MG
+Governador Valadares, MG
+Ibirité, MG
+Ipatinga, MG
+Itabira, MG
+Itajubá, MG
+Itaúna, MG
+Ituiutaba, MG
+Janaúba, MG
+Januária, MG
+João Monlevade, MG
+Juiz de Fora, MG
+Lagoa Santa, MG
+Lavras, MG
+Leopoldina, MG
+Manhuaçu, MG
+Mariana, MG
+Montes Claros, MG
+Muriaé, MG
+Nova Lima, MG
+Nova Serrana, MG
+Ouro Preto, MG
+Paracatu, MG
+Pará de Minas, MG
+Passos, MG
+Patos de Minas, MG
+Patrocínio, MG
+Pedro Leopoldo, MG
+Pirapora, MG
+Ponte Nova, MG
+Pouso Alegre, MG
+Poços de Caldas, MG
+Ribeirão Das Neves, MG
+Sabará, MG
+Santa Luzia, MG
+Sete Lagoas, MG
+São Francisco, MG
+São João Del Rei, MG
+São Sebastião do Paraíso, MG
+Teófilo Otoni, MG
+Timóteo, MG
+Três Corações, MG
+Três Pontas, MG
+Uberaba, MG
+Uberlândia, MG
+Ubá, MG
+Unaí, MG
+Varginha, MG
+Vespasiano, MG
+Viçosa, MG
+Campo Grande, MS
+Corumbá, MS
+Dourados, MS
+Ponta Porã, MS
+Três Lagoas, MS
+Barra do Garças, MT
+Cuiabá, MT
+Cáceres, MT
+Primavera do Leste, MT
+Rondonópolis, MT
+Sinop, MT
+Sorriso, MT
+Tangará da Serra, MT
+Várzea Grande, MT
+Abaetetuba, PA
+Acará, PA
+Alenquer, PA
+Altamira, PA
+Ananindeua, PA
+Barcarena, PA
+Belém, PA
+Benevides, PA
+Bragança, PA
+Breu Branco, PA
+Breves, PA
+Cametá, PA
+Capanema, PA
+Capitão Poço, PA
+Castanhal, PA
+Dom Eliseu, PA
+Igarapé-miri, PA
+Ipixuna do Pará, PA
+Itaituba, PA
+Itupiranga, PA
+Jacundá, PA
+Marabá, PA
+Marituba, PA
+Moju, PA
+Monte Alegre, PA
+Novo Repartimento, PA
+Oriximiná, PA
+Paragominas, PA
+Parauapebas, PA
+Portel, PA
+Redenção, PA
+Santa Isabel do Pará, PA
+Santana do Araguaia, PA
+Santarém, PA
+São Félix do Xingu, PA
+São Miguel do Guamá, PA
+Tailândia, PA
+Tomé-açu, PA
+Tucuruí, PA
+Viseu, PA
+Bayeux, PB
+Cabedelo, PB
+Cajazeiras, PB
+Campina Grande, PB
+Guarabira, PB
+João Pessoa, PB
+Patos, PB
+Santa Rita, PB
+Sapé, PB
+Sousa, PB
+Abreu e Lima, PE
+Araripina, PE
+Arcoverde, PE
+Belo Jardim, PE
+Bezerros, PE
+Buíque, PE
+Cabo de Santo Agostinho, PE
+Camaragibe, PE
+Carpina, PE
+Caruaru, PE
+Escada, PE
+Garanhuns, PE
+Goiana, PE
+Gravatá, PE
+Igarassu, PE
+Ipojuca, PE
+Jaboatão Dos Guararapes, PE
+Limoeiro, PE
+Moreno, PE
+Olinda, PE
+Ouricuri, PE
+Palmares, PE
+Paudalho, PE
+Paulista, PE
+Pesqueira, PE
+Petrolina, PE
+Recife, PE
+Salgueiro, PE
+Santa Cruz do Capibaribe, PE
+Serra Talhada, PE
+Surubim, PE
+São Bento do Una, PE
+São Lourenço da Mata, PE
+Timbaúba, PE
+Vitória de Santo Antão, PE
+Floriano, PI
+Parnaíba, PI
+Picos, PI
+Piripiri, PI
+Teresina, PI
+Almirante Tamandaré, PR
+Apucarana, PR
+Arapongas, PR
+Araucária, PR
+Cambé, PR
+Campo Largo, PR
+Campo Mourão, PR
+Cascavel, PR
+Castro, PR
+Cianorte, PR
+Colombo, PR
+Curitiba, PR
+Fazenda Rio Grande, PR
+Foz do Iguaçu, PR
+Francisco Beltrão, PR
+Guarapuava, PR
+Irati, PR
+Londrina, PR
+Maringá, PR
+Paranaguá, PR
+Paranavaí, PR
+Pato Branco, PR
+Pinhais, PR
+Piraquara, PR
+Ponta Grossa, PR
+Rolândia, PR
+Sarandi, PR
+São José Dos Pinhais, PR
+Telêmaco Borba, PR
+Toledo, PR
+Umuarama, PR
+União da Vitória, PR
+Angra Dos Reis, RJ
+Araruama, RJ
+Barra Mansa, RJ
+Barra do Piraí, RJ
+Belford Roxo, RJ
+Cabo Frio, RJ
+Cachoeiras de Macacu, RJ
+Campos Dos Goytacazes, RJ
+Duque de Caxias, RJ
+Guapimirim, RJ
+Itaboraí, RJ
+Itaguaí, RJ
+Itaperuna, RJ
+Japeri, RJ
+Macaé, RJ
+Magé, RJ
+Maricá, RJ
+Mesquita, RJ
+Nilópolis, RJ
+Niterói, RJ
+Nova Friburgo, RJ
+Nova Iguaçu, RJ
+Petrópolis, RJ
+Queimados, RJ
+Resende, RJ
+Rio Bonito, RJ
+Rio Das Ostras, RJ
+Rio de Janeiro, RJ
+Saquarema, RJ
+Seropédica, RJ
+São Gonçalo, RJ
+São João de Meriti, RJ
+São Pedro da Aldeia, RJ
+Teresópolis, RJ
+Três Rios, RJ
+Valença, RJ
+Volta Redonda, RJ
+Açu, RN
+Caicó, RN
+Ceará-mirim, RN
+Macaíba, RN
+Mossoró, RN
+Natal, RN
+Parnamirim, RN
+São Gonçalo do Amarante, RN
+Ariquemes, RO
+Cacoal, RO
+Jaru, RO
+Ji-paraná, RO
+Porto Velho, RO
+Rolim de Moura, RO
+Vilhena, RO
+Boa Vista, RR
+Alegrete, RS
+Alvorada, RS
+Bagé, RS
+Bento Gonçalves, RS
+Cachoeira do Sul, RS
+Cachoeirinha, RS
+Camaquã, RS
+Campo Bom, RS
+Canguçu, RS
+Canoas, RS
+Carazinho, RS
+Caxias do Sul, RS
+Cruz Alta, RS
+Erechim, RS
+Esteio, RS
+Farroupilha, RS
+Gravataí, RS
+Guaíba, RS
+Ijuí, RS
+Lajeado, RS
+Montenegro, RS
+Novo Hamburgo, RS
+Parobé, RS
+Passo Fundo, RS
+Pelotas, RS
+Porto Alegre, RS
+Rio Grande, RS
+Santa Cruz do Sul, RS
+Santa Maria, RS
+Santa Rosa, RS
+Santana do Livramento, RS
+Santo Ângelo, RS
+Sapiranga, RS
+Sapucaia do Sul, RS
+São Borja, RS
+São Gabriel, RS
+São Leopoldo, RS
+Taquara, RS
+Uruguaiana, RS
+Vacaria, RS
+Venâncio Aires, RS
+Viamão, RS
+Araranguá, SC
+Balneário Camboriú, SC
+Biguaçu, SC
+Blumenau, SC
+Brusque, SC
+Camboriú, SC
+Canoinhas, SC
+Caçador, SC
+Chapecó, SC
+Concórdia, SC
+Criciúma, SC
+Florianópolis, SC
+Gaspar, SC
+Indaial, SC
+Itajaí, SC
+Içara, SC
+Jaraguá do Sul, SC
+Joinville, SC
+Lages, SC
+Laguna, SC
+Mafra, SC
+Navegantes, SC
+Palhoça, SC
+Rio do Sul, SC
+São Bento do Sul, SC
+São José, SC
+Tubarão, SC
+Aracaju, SE
+Estância, SE
+Itabaiana, SE
+Lagarto, SE
+Nossa Senhora do Socorro, SE
+São Cristóvão, SE
+Americana, SP
+Amparo, SP
+Andradina, SP
+Araraquara, SP
+Araras, SP
+Araçatuba, SP
+Arujá, SP
+Assis, SP
+Atibaia, SP
+Avaré, SP
+Barretos, SP
+Barueri, SP
+Batatais, SP
+Bauru, SP
+Bebedouro, SP
+Birigui, SP
+Botucatu, SP
+Bragança Paulista, SP
+Caieiras, SP
+Cajamar, SP
+Campinas, SP
+Campo Limpo Paulista, SP
+Caraguatatuba, SP
+Carapicuíba, SP
+Catanduva, SP
+Caçapava, SP
+Cosmópolis, SP
+Cotia, SP
+Cruzeiro, SP
+Cubatão, SP
+Diadema, SP
+Embu, SP
+Embu-guaçu, SP
+Fernandópolis, SP
+Ferraz de Vasconcelos, SP
+Franca, SP
+Francisco Morato, SP
+Franco da Rocha, SP
+Guaratinguetá, SP
+Guarujá, SP
+Guarulhos, SP
+Hortolândia, SP
+Ibitinga, SP
+Ibiúna, SP
+Indaiatuba, SP
+Itanhaém, SP
+Itapecerica da Serra, SP
+Itapetininga, SP
+Itapeva, SP
+Itapevi, SP
+Itapira, SP
+Itaquaquecetuba, SP
+Itatiba, SP
+Itu, SP
+Jaboticabal, SP
+Jacareí, SP
+Jandira, SP
+Jaú, SP
+Jundiaí, SP
+Leme, SP
+Lençóis Paulista, SP
+Limeira, SP
+Lins, SP
+Lorena, SP
+Mairiporã, SP
+Marília, SP
+Matão, SP
+Mauá, SP
+Mirassol, SP
+Mococa, SP
+Mogi Guaçu, SP
+Moji Das Cruzes, SP
+Moji-mirim, SP
+Nova Odessa, SP
+Olímpia, SP
+Osasco, SP
+Ourinhos, SP
+Paulínia, SP
+Penápolis, SP
+Peruíbe, SP
+Piedade, SP
+Pindamonhangaba, SP
+Piracicaba, SP
+Pirassununga, SP
+Porto Ferreira, SP
+Poá, SP
+Praia Grande, SP
+Presidente Prudente, SP
+Registro, SP
+Ribeirão Pires, SP
+Ribeirão Preto, SP
+Rio Claro, SP
+Salto, SP
+Santa Bárbara D'oeste, SP
+Santa Isabel, SP
+Santana de Parnaíba, SP
+Santo André, SP
+Santos, SP
+Sertãozinho, SP
+Sorocaba, SP
+Sumaré, SP
+Suzano, SP
+São Bernardo do Campo, SP
+São Caetano do Sul, SP
+São Carlos, SP
+São José Dos Campos, SP
+São José do Rio Pardo, SP
+São José do Rio Preto, SP
+São João da Boa Vista, SP
+São Paulo, SP
+São Roque, SP
+São Sebastião, SP
+São Vicente, SP
+Taboão da Serra, SP
+Taquaritinga, SP
+Tatuí, SP
+Taubaté, SP
+Tupã, SP
+Ubatuba, SP
+Valinhos, SP
+Vinhedo, SP
+Votorantim, SP
+Votuporanga, SP
+Várzea Paulista, SP
+Araguaína, TO
+Gurupi, TO
+Palmas, TO
