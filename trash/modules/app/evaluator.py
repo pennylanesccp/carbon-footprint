@@ -27,7 +27,7 @@ from modules.ports.ports_nearest import find_nearest_port
 from modules.cabotage.sea_matrix    import SeaMatrix
 from modules.fuel               import cabotage_fuel_service as acc
 
-from modules.emissions.emissions   import estimate_road_trip
+from modules.fuel.emissions   import estimate_road_trip
 from modules.fuel.truck_specs import get_truck_spec
 from modules.costs.diesel_prices import load_latest_diesel_price, avg_price_for_ufs
 
