@@ -1,4 +1,4 @@
-# modules/fuel/diesel_price_updater.py
+# modules/costs/diesel_price_updater.py
 # -*- coding: utf-8 -*-
 
 """

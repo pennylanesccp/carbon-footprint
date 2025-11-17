@@ -1,4 +1,4 @@
-# modules/fuel/diesel_prices.py
+# modules/costs/diesel_prices.py
 # -*- coding: utf-8 -*-
 """
 Diesel price helpers

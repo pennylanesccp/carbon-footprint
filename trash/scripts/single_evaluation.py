@@ -26,7 +26,7 @@ from modules.app.evaluator import (
     , DEFAULT_MGO_PRICE_BRL_PER_T
 )
 from modules.fuel.truck_specs import TRUCK_SPECS
-from modules.fuel.diesel_prices import DEFAULT_DIESEL_PRICES_CSV
+from modules.costs.diesel_prices import DEFAULT_DIESEL_PRICES_CSV
 
 # DB utils
 from modules.infra.database_manager import (
