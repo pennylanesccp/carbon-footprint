@@ -232,7 +232,7 @@ def evaluate(
 ) -> Dict[str, Any]:
     # axle strategy
     if truck_key in ("auto", "auto_by_weight"):
-        from modules.fuel.fuel_model import infer_axles_for_payload
+        from modules.fuel.road_fuel_model import infer_axles_for_payload
         axles_eff = infer_axles_for_payload(cargo_t)
         _log.info("Axles resolved via payload=%.3f t → %d (truck_key='%s').", cargo_t, axles_eff, truck_key)
     else:

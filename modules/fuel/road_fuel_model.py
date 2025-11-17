@@ -1,4 +1,4 @@
-# modules/road/fuel_model.py
+# modules/fuel/road_fuel_model.py
 # -*- coding: utf-8 -*-
 """
 Road fuel model (axle-based, ANTT-informed)
@@ -15,7 +15,7 @@ Deterministically estimate **diesel consumption (L)** for a road leg, given:
 
 Design notes
 ------------
-- **Baselines (km/L) by axle** come from `modules.road.truck_specs.ANTT_KM_PER_L_BY_AXLES`
+- **Baselines (km/L) by axle** come from `modules.fuel.truck_specs.ANTT_KM_PER_L_BY_AXLES`
   (and, if present, `baseline_km_per_l_from_axles`). A conservative floor is applied for ≥9 axles.
 - **Weight effect**: simple linear sensitivity around `ref_weight_t` (km/L ↓ when heavier).
 - **Empty backhaul**: improves efficiency by `empty_efficiency_gain` on the empty fraction.
@@ -38,22 +38,22 @@ Uses the project-standard logger. Each function logs inputs/outputs at DEBUG and
 from __future__ import annotations
 
 import math
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 
 from modules.infra.logging import get_logger
 
 # Prefer the centralized truth from truck_specs; fall back gracefully if helpers are missing.
 try:
     from modules.fuel.truck_specs import (  # type: ignore
-        ANTT_KM_PER_L_BY_AXLES as _ANTT_KM_PER_L_BY_AXLES,
-        guess_axles_from_payload as _guess_axles_from_payload,
-        baseline_km_per_l_from_axles as _baseline_km_per_l_from_axles,
+          ANTT_KM_PER_L_BY_AXLES as _ANTT_KM_PER_L_BY_AXLES
+        , guess_axles_from_payload as _guess_axles_from_payload
+        , baseline_km_per_l_from_axles as _baseline_km_per_l_from_axles
     )
     _HAS_BASELINE_FN = True
 except Exception:  # pragma: no cover - defensive import
     from modules.fuel.truck_specs import (  # type: ignore
-        ANTT_KM_PER_L_BY_AXLES as _ANTT_KM_PER_L_BY_AXLES,
-        guess_axles_from_payload as _guess_axles_from_payload,
+          ANTT_KM_PER_L_BY_AXLES as _ANTT_KM_PER_L_BY_AXLES
+        , guess_axles_from_payload as _guess_axles_from_payload
     )
     _baseline_km_per_l_from_axles = None  # type: ignore
     _HAS_BASELINE_FN = False
@@ -68,9 +68,18 @@ _MIN_KM_PER_L_AFTER_ADJUST = 0.6
 _MAX_KM_PER_L_AFTER_ADJUST = 8.0
 
 
+__all__ = [
+      "get_km_l_baseline"
+    , "infer_axles_for_payload"
+    , "adjust_km_per_liter"
+    , "estimate_leg_liters"
+]
+
+
 # ────────────────────────────────────────────────────────────────────────────────
 # Baseline mapping (axles → km/L)
 # ────────────────────────────────────────────────────────────────────────────────
+
 def get_km_l_baseline(axles: int) -> float:
     """
     Return the ANTT-informed baseline km/L for a given axle count.
@@ -97,28 +106,38 @@ def get_km_l_baseline(axles: int) -> float:
     axles = int(axles)
     if _HAS_BASELINE_FN and callable(_baseline_km_per_l_from_axles):  # type: ignore
         km_l = float(_baseline_km_per_l_from_axles(axles))  # delegate to truck_specs
-        _log.debug(f"get_km_l_baseline(axles={axles}) → {km_l:.4f} (via truck_specs helper)")
+        _log.debug(
+            "get_km_l_baseline(axles=%s) → %.4f (via truck_specs helper)",
+            axles,
+            km_l,
+        )
         return km_l
 
     if axles >= 9:
         _log.debug(
             "get_km_l_baseline: axles ≥ 9 → using conservative floor "
-            f"{_CONSERVATIVE_FLOOR_KM_PER_L_FOR_9_PLUS:.2f} km/L."
+            "%.2f km/L.",
+            _CONSERVATIVE_FLOOR_KM_PER_L_FOR_9_PLUS,
         )
         return _CONSERVATIVE_FLOOR_KM_PER_L_FOR_9_PLUS
 
     try:
         km_l = float(_ANTT_KM_PER_L_BY_AXLES[axles])
-        _log.debug(f"get_km_l_baseline(axles={axles}) → {km_l:.4f} (table fallback)")
+        _log.debug(
+            "get_km_l_baseline(axles=%s) → %.4f (table fallback)",
+            axles,
+            km_l,
+        )
         return km_l
     except KeyError as e:
-        _log.error(f"No baseline km/L configured for {axles} axles.")
+        _log.error("No baseline km/L configured for %s axles.", axles)
         raise e
 
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Axle inference
 # ────────────────────────────────────────────────────────────────────────────────
+
 def infer_axles_for_payload(payload_t: float) -> int:
     """
     Proxy retained for backward-compatibility. Delegates to `truck_specs.guess_axles_from_payload`.
@@ -138,13 +157,14 @@ def infer_axles_for_payload(payload_t: float) -> int:
     This is a *payload-based* heuristic (carga útil), not PBTC. It’s intentionally conservative.
     """
     ax = int(_guess_axles_from_payload(float(payload_t)))
-    _log.debug(f"infer_axles_for_payload(payload_t={payload_t}) → {ax} axles")
+    _log.debug("infer_axles_for_payload(payload_t=%s) → %s axles", payload_t, ax)
     return ax
 
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Weight sensitivity
 # ────────────────────────────────────────────────────────────────────────────────
+
 def _clamp(value: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, value))
 
@@ -183,11 +203,16 @@ def adjust_km_per_liter(
         ref_weight_t = float(ref_weight_t)
         elasticity = float(elasticity)
     except Exception as e:  # pragma: no cover - defensive
-        _log.warning(f"adjust_km_per_liter: type coercion failed; passthrough baseline. err={e}")
+        _log.warning(
+            "adjust_km_per_liter: type coercion failed; passthrough baseline. err=%s",
+            e,
+        )
         return km_l_baseline
 
     if ref_weight_t <= 0:
-        _log.debug("adjust_km_per_liter: ref_weight_t ≤ 0 → returning baseline (no adjustment).")
+        _log.debug(
+            "adjust_km_per_liter: ref_weight_t ≤ 0 → returning baseline (no adjustment).",
+        )
         return km_l_baseline
 
     delta = (cargo_weight_t - ref_weight_t) / ref_weight_t
@@ -195,9 +220,14 @@ def adjust_km_per_liter(
 
     km_l_clamped = _clamp(km_l, _MIN_KM_PER_L_AFTER_ADJUST, _MAX_KM_PER_L_AFTER_ADJUST)
     _log.debug(
-        "adjust_km_per_liter: "
-        f"baseline={km_l_baseline:.4f}, cargo={cargo_weight_t:.3f} t, ref={ref_weight_t:.3f} t, "
-        f"elasticity={elasticity:.3f} → kmL_loaded={km_l:.4f}, clamped={km_l_clamped:.4f}"
+        "adjust_km_per_liter: baseline=%.4f, cargo=%.3f t, ref=%.3f t, "
+        "elasticity=%.3f → kmL_loaded=%.4f, clamped=%.4f",
+        km_l_baseline,
+        cargo_weight_t,
+        ref_weight_t,
+        elasticity,
+        km_l,
+        km_l_clamped,
     )
     return km_l_clamped
 
@@ -205,6 +235,7 @@ def adjust_km_per_liter(
 # ────────────────────────────────────────────────────────────────────────────────
 # Main estimator
 # ────────────────────────────────────────────────────────────────────────────────
+
 def estimate_leg_liters(
     *,
     distance_km: float,
@@ -244,20 +275,27 @@ def estimate_leg_liters(
     -----
     - A distance of 0 km or cargo_t ≤ 0 short-circuits to zeros with trips=0.
     - `empty_backhaul_share` is clamped to [0, 1] for safety.
-    - This function does *not* price fuel or compute emissions; see `modules.road.emissions`.
+    - This function does *not* price fuel or compute emissions; see your emissions layer.
     """
     # ── Coerce & validate inputs
     try:
         distance_km = float(distance_km)
         cargo_t = float(cargo_t)
     except Exception as e:  # pragma: no cover - defensive
-        _log.error(f"estimate_leg_liters: non-numeric inputs: distance_km={distance_km}, cargo_t={cargo_t}; err={e}")
+        _log.error(
+            "estimate_leg_liters: non-numeric inputs: distance_km=%s, cargo_t=%s; err=%s",
+            distance_km,
+            cargo_t,
+            e,
+        )
         raise
 
     if distance_km <= 0.0 or cargo_t <= 0.0:
         _log.info(
             "estimate_leg_liters: non-positive distance or cargo. "
-            f"distance_km={distance_km}, cargo_t={cargo_t} → returning zeros."
+            "distance_km=%.3f, cargo_t=%.3f → returning zeros.",
+            distance_km,
+            cargo_t,
         )
         return (0.0, 0.0, 0.0, 0, 0.0, 0.0)
 
@@ -272,7 +310,10 @@ def estimate_leg_liters(
     if axles is None:
         axles = infer_axles_for_payload(payload_t)
         _log.info(
-            f"estimate_leg_liters: axles not provided in spec → inferred {axles} axles from payload_t={payload_t} t."
+            "estimate_leg_liters: axles not provided in spec → inferred %s axles "
+            "from payload_t=%.3f t.",
+            axles,
+            payload_t,
         )
     axles = int(axles)
 
@@ -285,10 +326,10 @@ def estimate_leg_liters(
     # ── Baseline and adjustments
     kmL_base = get_km_l_baseline(axles)
     kmL_loaded = adjust_km_per_liter(
-        km_l_baseline=kmL_base,
-        cargo_weight_t=payload_t,   # sensitivity around declared payload capacity
-        ref_weight_t=ref_weight_t,
-        elasticity=elasticity,
+          km_l_baseline=kmL_base
+        , cargo_weight_t=payload_t   # sensitivity around declared payload capacity
+        , ref_weight_t=ref_weight_t
+        , elasticity=elasticity
     )
     kmL_empty = kmL_loaded * (1.0 + empty_eff_gain)
 
@@ -299,15 +340,29 @@ def estimate_leg_liters(
 
     # ── Logs (inputs → outputs)
     _log.debug(
-        "estimate_leg_liters.inputs: "
-        f"label='{label}', axles={axles}, distance_km={distance_km:.3f}, cargo_t={cargo_t:.3f}, "
-        f"payload_t={payload_t:.3f}, ref_weight_t={ref_weight_t:.3f}, empty_eff_gain={empty_eff_gain:.3f}, "
-        f"empty_backhaul_share={empty_backhaul_share:.3f}, elasticity={elasticity:.3f}"
+        "estimate_leg_liters.inputs: label='%s', axles=%s, distance_km=%.3f, "
+        "cargo_t=%.3f, payload_t=%.3f, ref_weight_t=%.3f, empty_eff_gain=%.3f, "
+        "empty_backhaul_share=%.3f, elasticity=%.3f",
+        label,
+        axles,
+        distance_km,
+        cargo_t,
+        payload_t,
+        ref_weight_t,
+        empty_eff_gain,
+        empty_backhaul_share,
+        elasticity,
     )
     _log.info(
-        "estimate_leg_liters.result: "
-        f"trips={trips}, kmL_base={kmL_base:.4f}, kmL_loaded={kmL_loaded:.4f}, kmL_empty={kmL_empty:.4f}, "
-        f"liters_loaded={liters_loaded:.4f}, liters_empty={liters_empty:.4f}, liters_total={liters_total:.4f}"
+        "estimate_leg_liters.result: trips=%s, kmL_base=%.4f, kmL_loaded=%.4f, "
+        "kmL_empty=%.4f, liters_loaded=%.4f, liters_empty=%.4f, liters_total=%.4f",
+        trips,
+        kmL_base,
+        kmL_loaded,
+        kmL_empty,
+        liters_loaded,
+        liters_empty,
+        liters_total,
     )
 
     return (
@@ -320,13 +375,116 @@ def estimate_leg_liters(
     )
 
 
-"""
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging; `
-from modules.road.fuel_model import estimate_leg_liters; `
-init_logging(level='INFO', force=True, write_output=False); `
-spec = {'label':'carreta 5e','payload_t':27.0,'axles':5,'ref_weight_t':20.0,'empty_efficiency_gain':0.18}; `
-out = estimate_leg_liters(distance_km=120.0, cargo_t=40.0, spec=spec, empty_backhaul_share=0.5); `
-print('OUT =', out); "
-"""
+# ────────────────────────────────────────────────────────────────────────────────
+# CLI / smoke test
+# ────────────────────────────────────────────────────────────────────────────────
+
+def main(argv: List[str] | None = None) -> int:
+    """
+    Small CLI / smoke test for the road fuel model.
+
+    Examples
+    --------
+    python -m modules.fuel.road_fuel_model
+    python -m modules.fuel.road_fuel_model --truck-key bitrain_7ax_36t --distance-km 800 --cargo-t 50
+    """
+    import argparse
+    import json
+
+    from modules.infra.logging import init_logging
+    from modules.fuel.truck_specs import get_truck_spec, list_truck_keys
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Road fuel model (axle-based, ANTT-informed). "
+            "Estimate liters for a single road leg."
+        )
+    )
+    parser.add_argument(
+          "--truck-key"
+        , default="semi_27t"
+        , choices=list_truck_keys()
+        , help="Truck preset key."
+    )
+    parser.add_argument(
+          "--distance-km"
+        , type=float
+        , default=120.0
+        , help="One-way distance in km (default: 120.0)."
+    )
+    parser.add_argument(
+          "--cargo-t"
+        , type=float
+        , default=40.0
+        , help="Total cargo mass to move (t) (default: 40.0)."
+    )
+    parser.add_argument(
+          "--empty-backhaul-share"
+        , type=float
+        , default=0.5
+        , help="Fraction of trips returning empty (0–1, default: 0.5)."
+    )
+    parser.add_argument(
+          "--elasticity"
+        , type=float
+        , default=1.0
+        , help="Weight sensitivity multiplier (default: 1.0)."
+    )
+    parser.add_argument(
+          "--log-level"
+        , default="INFO"
+        , choices=["DEBUG", "INFO", "WARNING", "ERROR"]
+        , help="Logging level for this smoke test."
+    )
+
+    args = parser.parse_args(argv)
+
+    init_logging(
+          level=args.log_level
+        , force=True
+        , write_output=False
+    )
+
+    spec = get_truck_spec(args.truck_key)
+
+    liters_total, liters_loaded, liters_empty, trips, kmL_loaded, kmL_empty = (
+        estimate_leg_liters(
+              distance_km=args.distance_km
+            , cargo_t=args.cargo_t
+            , spec=spec
+            , empty_backhaul_share=args.empty_backhaul_share
+            , elasticity=args.elasticity
+        )
+    )
+
+    payload = {
+          "inputs": {
+              "truck_key": args.truck_key
+            , "distance_km": args.distance_km
+            , "cargo_t": args.cargo_t
+            , "empty_backhaul_share": args.empty_backhaul_share
+            , "elasticity": args.elasticity
+          }
+        , "spec": {
+              "label": spec.get("label")
+            , "axles": spec.get("axles")
+            , "payload_t": spec.get("payload_t")
+            , "ref_weight_t": spec.get("ref_weight_t")
+            , "empty_efficiency_gain": spec.get("empty_efficiency_gain")
+          }
+        , "outputs": {
+              "liters_total": liters_total
+            , "liters_loaded": liters_loaded
+            , "liters_empty": liters_empty
+            , "trips": trips
+            , "kmL_loaded": kmL_loaded
+            , "kmL_empty": kmL_empty
+          }
+    }
+
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

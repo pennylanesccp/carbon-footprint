@@ -1,4 +1,4 @@
-# modules/road/truck_specs.py
+# modules/fuel/truck_specs.py
 # -*- coding: utf-8 -*-
 """
 Truck presets for Brazil — payload, axle count, and reference weight for fuel calc.
@@ -11,7 +11,7 @@ This module centralizes *engineering presets* that your model uses to:
 
 Notes
 -----
-• Legal limits (PBTC/CMT) vary by configuration and road class — **do not** treat
+• Legal limits (PBTC/CMT) vary by configuration and fuel class — **do not** treat
   these presets as compliance validation. Keep regulatory checks elsewhere.
 • The 'auto_by_weight' option is resolved at runtime by your fuel layer; helpers
   here expose default heuristics you can reuse if needed.
@@ -44,7 +44,7 @@ ANTT_KM_PER_L_BY_AXLES: Dict[int, float] = {
 # Presets
 # ────────────────────────────────────────────────────────────────────────────────
 TRUCK_SPECS: Dict[str, Dict[str, Any]] = {
-    # Common container road-haul presets (keys kept compatible with repo)
+    # Common container fuel-haul presets (keys kept compatible with repo)
     "semi_27t": {
         "label": "Carreta (5 eixos) ~27 t payload",
         "axles": 5,                    # used for ANTT baseline km/L
@@ -113,7 +113,11 @@ def get_truck_spec(truck_key: str) -> Dict[str, Any]:
         _log.error("truck_specs: unknown truck_key=%s", truck_key)
         raise KeyError(f"Unknown truck preset: {truck_key}")
     spec = deepcopy(TRUCK_SPECS[truck_key])
-    _log.debug("truck_specs: get %s -> %s", truck_key, {k: spec[k] for k in ['label','axles','payload_t','ref_weight_t']})
+    _log.debug(
+        "truck_specs: get %s -> %s",
+        truck_key,
+        {k: spec[k] for k in ["label", "axles", "payload_t", "ref_weight_t"]},
+    )
     return spec
 
 
@@ -159,16 +163,92 @@ def baseline_km_per_l_from_axles(axles: int) -> float:
     return float(kmpl)
 
 
-"""
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging; `
-from modules.road.truck_specs import ( `
-    list_truck_keys, get_truck_spec, guess_axles_from_payload, baseline_km_per_l_from_axles `
-); `
-init_logging(level='INFO', force=True, write_output=False); `
-print('keys =', list_truck_keys()); `
-spec = get_truck_spec('semi_27t'); print('semi_27t =', {k: spec[k] for k in ['label','axles','payload_t','ref_weight_t']}); `
-ax = guess_axles_from_payload(26.0); print('axles@26t =', ax, 'km/L =', baseline_km_per_l_from_axles(ax)); `
-ax = guess_axles_from_payload(36.0); print('axles@36t =', ax, 'km/L =', baseline_km_per_l_from_axles(ax)); "
-"""
+# ────────────────────────────────────────────────────────────────────────────────
+# CLI / smoke test
+# ────────────────────────────────────────────────────────────────────────────────
+
+def main(argv: List[str] | None = None) -> int:
+    """
+    Small CLI / smoke test for truck presets and axle/efficiency helpers.
+
+    Examples
+    --------
+    python -m modules.fuel.truck_specs
+    python -m modules.fuel.truck_specs --truck-key bitrain_7ax_36t
+    python -m modules.fuel.truck_specs --truck-key auto_by_weight --payload-t 34
+    """
+    import argparse
+    import json
+
+    from modules.infra.logging import init_logging
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Truck presets (BR) — inspect a preset and derived axle / km/L."
+        )
+    )
+    parser.add_argument(
+          "--truck-key"
+        , default="semi_27t"
+        , choices=list_truck_keys()
+        , help="Truck preset key to inspect."
+    )
+    parser.add_argument(
+          "--payload-t"
+        , type=float
+        , default=None
+        , help="Override payload_t (t). If omitted, uses preset payload_t."
+    )
+    parser.add_argument(
+          "--axles"
+        , type=int
+        , default=None
+        , help="Override axle count. If omitted, inferred from payload."
+    )
+    parser.add_argument(
+          "--log-level"
+        , default="INFO"
+        , choices=["DEBUG", "INFO", "WARNING", "ERROR"]
+        , help="Logging level for this smoke test."
+    )
+
+    args = parser.parse_args(argv)
+
+    init_logging(
+          level=args.log_level
+        , force=True
+        , write_output=False
+    )
+
+    spec = get_truck_spec(args.truck_key)
+
+    effective_payload = (
+        float(args.payload_t)
+        if args.payload_t is not None
+        else float(spec["payload_t"])
+    )
+    effective_axles = (
+        int(args.axles)
+        if args.axles is not None
+        else guess_axles_from_payload(effective_payload)
+    )
+    baseline_kmpl = baseline_km_per_l_from_axles(effective_axles)
+
+    payload = {
+          "truck_key": args.truck_key
+        , "label": spec["label"]
+        , "preset_axles": spec["axles"]
+        , "preset_payload_t": spec["payload_t"]
+        , "preset_ref_weight_t": spec["ref_weight_t"]
+        , "preset_empty_efficiency_gain": spec["empty_efficiency_gain"]
+        , "effective_payload_t": effective_payload
+        , "effective_axles": effective_axles
+        , "baseline_km_per_l": baseline_kmpl
+    }
+
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

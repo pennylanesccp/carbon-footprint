@@ -25,7 +25,12 @@ from modules.infra.logging import get_logger
 _log = get_logger(__name__)
 
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_DIESEL_PRICES_CSV = os.path.join("data", "road_data", "latest_diesel_prices.csv")
+DEFAULT_DIESEL_PRICES_CSV = os.path.join(
+      "data"
+    , "processed"
+    , "road_data"
+    , "latest_diesel_prices.csv"
+)
 
 
 def load_latest_diesel_price(csv_path: str | None = None) -> pd.DataFrame:
@@ -35,7 +40,7 @@ def load_latest_diesel_price(csv_path: str | None = None) -> pd.DataFrame:
     Parameters
     ----------
     csv_path : Optional[str]
-        Explicit path. If None, defaults to data/road_data/latest_diesel_prices.csv
+        Explicit path. If None, defaults to data/processed/road_data/latest_diesel_prices.csv
 
     Returns
     -------
@@ -44,7 +49,10 @@ def load_latest_diesel_price(csv_path: str | None = None) -> pd.DataFrame:
     """
     path = csv_path or DEFAULT_DIESEL_PRICES_CSV
     if not os.path.exists(path):
-        _log.warning(f"load_latest_diesel_price: CSV not found at '{path}'. Returning empty DataFrame.")
+        _log.warning(
+            "load_latest_diesel_price: CSV not found at '%s'. Returning empty DataFrame.",
+            path,
+        )
         return pd.DataFrame(columns=["UF", "price_brl_l"])
 
     df_raw = pd.read_csv(path)
@@ -66,7 +74,7 @@ def load_latest_diesel_price(csv_path: str | None = None) -> pd.DataFrame:
         }
     ).dropna(subset=["price_brl_l"])
 
-    _log.info(f"load_latest_diesel_price: loaded {len(df)} rows from '{path}'.")
+    _log.info("load_latest_diesel_price: loaded %d rows from '%s'.", len(df), path)
     return df
 
 
@@ -127,19 +135,85 @@ def avg_price_for_ufs(
     }
 
     _log.info(
-        f"avg_price_for_ufs: uf_o={uf_o}, uf_d={uf_d} → price_o={ctx['price_origin']}, "
-        f"price_d={ctx['price_destiny']}, avg={avg:.4f}, fallback_used={fallback_used}"
+        "avg_price_for_ufs: uf_o=%s, uf_d=%s → price_o=%s, price_d=%s, avg=%.4f, fallback_used=%s",
+        uf_o,
+        uf_d,
+        ctx["price_origin"],
+        ctx["price_destiny"],
+        avg,
+        fallback_used,
     )
     return float(avg), ctx
 
 
-"""
-Quick logging smoke test (PowerShell)
-python -c `
-"from modules.functions.logging import init_logging; `
-from modules.road.diesel_prices import load_latest_diesel_price, avg_price_for_ufs; `
-init_logging(level='INFO', force=True, write_output=False); `
-tbl = load_latest_diesel_price(); `
-avg, ctx = avg_price_for_ufs('SP','RJ', tbl); `
-print('avg=', avg); print('ctx=', ctx); "
-"""
+# ────────────────────────────────────────────────────────────────────────────────
+# CLI smoke test
+# ────────────────────────────────────────────────────────────────────────────────
+
+def main(argv: list[str] | None = None) -> int:
+    """
+    Small CLI / smoke test for diesel price helpers.
+
+    Examples
+    --------
+    python -m modules.fuel.diesel_prices
+    python -m modules.fuel.diesel_prices --uf-origin SP --uf-destiny RJ
+    """
+    import argparse
+    import json
+    from modules.infra.logging import init_logging
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Diesel price helpers smoke test: load CSV and compute "
+            "average price between two UFs."
+        )
+    )
+    parser.add_argument(
+          "--uf-origin"
+        , default="SP"
+        , help="Origin UF code (default: SP)."
+    )
+    parser.add_argument(
+          "--uf-destiny"
+        , default="RJ"
+        , help="Destiny UF code (default: RJ)."
+    )
+    parser.add_argument(
+          "--csv-path"
+        , default=DEFAULT_DIESEL_PRICES_CSV
+        , help=f"Diesel prices CSV path (default: {DEFAULT_DIESEL_PRICES_CSV})."
+    )
+    parser.add_argument(
+          "--log-level"
+        , default="INFO"
+        , choices=["DEBUG", "INFO", "WARNING", "ERROR"]
+        , help="Logging level for this smoke test."
+    )
+
+    args = parser.parse_args(argv)
+
+    init_logging(
+          level=args.log_level
+        , force=True
+        , write_output=False
+    )
+
+    table = load_latest_diesel_price(csv_path=args.csv_path)
+    avg, ctx = avg_price_for_ufs(
+          args.uf_origin
+        , args.uf_destiny
+        , table
+        , source_csv=args.csv_path
+    )
+
+    payload = {
+          "avg_price_brl_l": avg
+        , "context": ctx
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
