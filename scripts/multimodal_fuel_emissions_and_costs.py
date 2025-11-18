@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-# scripts/multimodal_fuel_emissions.py
+# scripts/multimodal_fuel_emissions_and_costs.py
 # -*- coding: utf-8 -*-
 """
-Multimodal fuel + emissions comparer (road-only vs cabotage)
-============================================================
+Multimodal fuel + emissions + costs comparer (road-only vs cabotage)
+====================================================================
 
 Given:
-  - origin (string address / CEP / "lat,lon")
-  - destiny (same)
+  - origin  (string address / CEP / "lat,lon")
+  - destiny (string address / CEP / "lat,lon")
   - cargo mass (t)
 
 This script will:
@@ -19,13 +19,13 @@ This script will:
        - port → destiny road leg
        - cabotage leg (sea + ops + hotel)
 
-  2) Use modules.fuel.emissions.estimate_fuel_emissions(...) to compute CO2e:
+  2) Use modules.fuel.emissions.estimate_fuel_emissions(...) to compute CO₂e:
        - road-only (diesel)
        - multimodal road part (diesel)
-       - sea leg (VLSFO / MFO)
+       - sea leg (VLSFO / MGO / MFO)
 
   3) Fetch ship fuel prices for Santos (VLSFO, MGO) from Ship & Bunker and
-     convert them to BRL using the helper in modules.costs.ship_fuel_prices.
+     convert them to BRL using modules.costs.ship_fuel_prices.apply_fx_brl.
      From that it estimates the sea fuel cost (R$).
 
   4) Emit a JSON payload summarising:
@@ -51,7 +51,7 @@ This script will:
 Example (PowerShell)
 --------------------
 
-python -m scripts.multimodal_fuel_emissions `
+python -m scripts.multimodal_fuel_emissions_and_costs `
     --origin "São Paulo, SP" `
     --destiny "Salvador, BA" `
     --cargo-t 30 `
@@ -64,7 +64,7 @@ from dataclasses import asdict
 from pathlib import Path
 import json
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 # ───────────────────── path bootstrap (scripts → repo root) ────────────────────
 ROOT = Path(__file__).resolve().parents[1]  # repo root (one level above /scripts)
@@ -86,13 +86,13 @@ from modules.fuel.emissions import (
 )
 
 from modules.costs.ship_fuel_prices import (
-      fetch_santos_vlsfo_mgo_prices
+      fetch_santos_prices
     , apply_fx_brl
 )
 
 from modules.infra.database_manager import (
       DEFAULT_DB_PATH
-    , DEFAULT_TABLE
+    , DEFAULT_TABLE as DEFAULT_DISTANCE_TABLE
 )
 
 from modules.fuel.cabotage_fuel_service import (
@@ -112,12 +112,17 @@ log = get_logger(__name__)
 # ────────────────────────────────────────────────────────────────────────────────
 
 def _safe_float(value: Any) -> Optional[float]:
+    """
+    Convert to float, preserving None.
+    """
     if value is None:
         return None
     return float(value)
 
 
-def _compute_road_only_block(profile: MultimodalFuelProfile) -> Dict[str, Any]:
+def _compute_road_only_block(
+    profile: MultimodalFuelProfile
+) -> Dict[str, Any]:
     """
     Build the 'road_only' scenario block.
 
@@ -135,7 +140,7 @@ def _compute_road_only_block(profile: MultimodalFuelProfile) -> Dict[str, Any]:
 
     distance_km = _safe_float(road_only.distance_km)
     fuel_liters = _safe_float(road_only.fuel_liters)
-    fuel_kg = _safe_float(road_only.fuel_kg)
+    fuel_kg     = _safe_float(road_only.fuel_kg)
     fuel_cost_r = _safe_float(road_only.fuel_cost_r)
 
     co2e_kg: Optional[float] = None
@@ -155,7 +160,9 @@ def _compute_road_only_block(profile: MultimodalFuelProfile) -> Dict[str, Any]:
     }
 
 
-def _compute_multimodal_blocks(profile: MultimodalFuelProfile) -> Dict[str, Any]:
+def _compute_multimodal_blocks(
+    profile: MultimodalFuelProfile
+) -> Dict[str, Any]:
     """
     Build the 'multimodal' block (road + sea + totals), *without* sea cost.
 
@@ -163,11 +170,11 @@ def _compute_multimodal_blocks(profile: MultimodalFuelProfile) -> Dict[str, Any]
       - road part: diesel
       - sea part: profile.cabotage.fuel_type (e.g. "vlsfo")
     """
-    totals = dict(profile.totals or {})
+    totals_dict: Dict[str, Any] = dict(profile.totals or {})
 
-    road_fuel_liters = _safe_float(totals.get("multimodal_road_liters"))
-    road_fuel_kg = _safe_float(totals.get("multimodal_road_kg"))
-    road_fuel_cost_r = _safe_float(totals.get("multimodal_road_cost_r"))
+    road_fuel_liters = _safe_float(totals_dict.get("multimodal_road_liters"))
+    road_fuel_kg     = _safe_float(totals_dict.get("multimodal_road_kg"))
+    road_fuel_cost_r = _safe_float(totals_dict.get("multimodal_road_cost_r"))
 
     co2e_road_kg: Optional[float] = None
     if road_fuel_kg is not None:
@@ -184,9 +191,7 @@ def _compute_multimodal_blocks(profile: MultimodalFuelProfile) -> Dict[str, Any]
     )
     co2e_sea_kg = float(em_sea["co2e_kg"])
 
-    multimodal_total_fuel_kg: Optional[float] = None
-    multimodal_total_co2e_kg: Optional[float] = None
-
+    # multimodal totals
     if road_fuel_kg is not None:
         multimodal_total_fuel_kg = road_fuel_kg + sea_fuel_kg
         if co2e_road_kg is not None:
@@ -237,7 +242,7 @@ def _attach_ship_fuel_cost(
     Returns a dict describing the ship fuel pricing source to be placed under
     payload["pricing_sources"]["ship_fuel"].
     """
-    sea_block = multimodal_block["sea"]
+    sea_block    = multimodal_block["sea"]
     totals_block = multimodal_block["totals"]
 
     sea_fuel_kg = _safe_float(sea_block.get("fuel_kg"))
@@ -252,20 +257,21 @@ def _attach_ship_fuel_cost(
 
     try:
         # 1) Fetch Santos bunker prices in USD/mt
-        prices_usd = fetch_santos_vlsfo_mgo_prices()
+        prices_usd = fetch_santos_prices()
 
-        # 2) Apply FX using the helper's *built-in* converter (BCB/ECB etc.)
-        #    NOTE: do NOT pass usd_brl_rate here; apply_fx_brl expects:
-        #          apply_fx_brl(prices, *, converter=None)
+        # 2) Apply FX using the helper's built-in converter
+        #    (it will call the BCB/ECB helper internally).
+        #    IMPORTANT: do NOT pass usd_brl_rate here; signature is:
+        #        apply_fx_brl(prices: Dict[str, Any], converter=None) -> Dict[str, Any]
         prices_brl = apply_fx_brl(prices_usd)
 
         # 3) Select BRL/mt for the fuel type in use.
         #    Ship & Bunker gives us VLSFO + MGO; when using "mfo", we
-        #    approximate with VLSFO price (documented planning-level choice).
+        #    approximate with VLSFO price (planning-level simplification).
         key_map = {
               "vlsfo": "vlsfo_brl_per_mt"
-            , "mgo": "mgo_brl_per_mt"
-            , "mfo": "vlsfo_brl_per_mt"
+            , "mgo":   "mgo_brl_per_mt"
+            , "mfo":   "vlsfo_brl_per_mt"
         }
         price_key = key_map.get(fuel_type)
 
@@ -276,15 +282,15 @@ def _attach_ship_fuel_cost(
                 , fuel_type
                 , price_key
             )
-            return {
-                  "status": "ok"
-                , "note": "prices_fetched_but_no_matching_key"
-                , **prices_brl
-            }
+            # still return all pricing info we have
+            data = dict(prices_brl)
+            data["status"] = "ok"
+            data["note"] = "prices_fetched_but_no_matching_key"
+            return data
 
         price_brl_per_mt = float(prices_brl[price_key])
-        fuel_mt = sea_fuel_kg / 1000.0
-        sea_cost_r = fuel_mt * price_brl_per_mt
+        fuel_mt          = sea_fuel_kg / 1000.0
+        sea_cost_r       = fuel_mt * price_brl_per_mt
 
         sea_block["fuel_cost_r"] = sea_cost_r
 
@@ -294,10 +300,9 @@ def _attach_ship_fuel_cost(
             None if road_cost_r is None else road_cost_r + sea_cost_r
         )
 
-        return {
-              "status": "ok"
-            , **prices_brl
-        }
+        data = dict(prices_brl)
+        data["status"] = "ok"
+        return data
 
     except Exception as exc:  # pragma: no cover - network/runtime failures
         log.error(
@@ -311,12 +316,14 @@ def _attach_ship_fuel_cost(
         }
 
 
-def _build_payload(profile: MultimodalFuelProfile) -> Dict[str, Any]:
+def _build_payload(
+    profile: MultimodalFuelProfile
+) -> Dict[str, Any]:
     """
     Build final JSON-serialisable payload from MultimodalFuelProfile.
     """
-    road_only_block = _compute_road_only_block(profile)
-    multimodal_block = _compute_multimodal_blocks(profile)
+    road_only_block   = _compute_road_only_block(profile)
+    multimodal_block  = _compute_multimodal_blocks(profile)
 
     # Attach ship fuel cost and pricing sources
     ship_pricing = _attach_ship_fuel_cost(
@@ -324,14 +331,13 @@ def _build_payload(profile: MultimodalFuelProfile) -> Dict[str, Any]:
         , profile=profile
     )
 
-    # Deltas vs road-only (only if both sides have CO2 and cost)
+    # Deltas vs road-only (only if both sides have CO₂ and cost)
     road_only_co2e_kg = _safe_float(road_only_block.get("co2e_kg"))
-    road_only_cost_r = _safe_float(road_only_block.get("fuel_cost_r"))
+    road_only_cost_r  = _safe_float(road_only_block.get("fuel_cost_r"))
 
-    totals_block = multimodal_block["totals"]
-
-    multi_co2e_kg = _safe_float(totals_block.get("co2e_kg"))
-    multi_cost_r = _safe_float(totals_block.get("fuel_cost_r"))
+    totals_block      = multimodal_block["totals"]
+    multi_co2e_kg     = _safe_float(totals_block.get("co2e_kg"))
+    multi_cost_r      = _safe_float(totals_block.get("fuel_cost_r"))
 
     if road_only_co2e_kg is not None and multi_co2e_kg is not None:
         totals_block["delta_co2e_vs_road_only_kg"] = (
@@ -383,12 +389,12 @@ def _build_payload(profile: MultimodalFuelProfile) -> Dict[str, Any]:
 # CLI
 # ────────────────────────────────────────────────────────────────────────────────
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: Optional[List[str]] = None) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(
         description=(
-            "Compute multimodal fuel usage *and emissions* "
+            "Compute multimodal fuel usage, emissions and costs "
             "(road-only vs cabotage) for a single O→D pair."
         )
     )
@@ -434,6 +440,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         , help="Primary ORS routing profile. Default: driving-hgv."
     )
 
+    # Boolean flags (Python 3.9+ has BooleanOptionalAction; keep fallback)
     try:
         from argparse import BooleanOptionalAction
 
@@ -498,9 +505,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         , help=f"SQLite path. Default: {DEFAULT_DB_PATH}"
     )
     parser.add_argument(
-          "--table"
-        , default=DEFAULT_TABLE
-        , help=f"Routes table name. Default: {DEFAULT_TABLE}"
+          "--distance-table"
+        , default=DEFAULT_DISTANCE_TABLE
+        , help=f"Road legs cache table name. Default: {DEFAULT_DISTANCE_TABLE}"
     )
     parser.add_argument(
           "--ports-json"
@@ -540,7 +547,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
 
     log.info(
-          "CLI multimodal fuel+emissions: origin=%r destiny=%r cargo_t=%.3f truck_key=%s"
+          "CLI multimodal fuel+emissions+costs: origin=%r destiny=%r cargo_t=%.3f truck_key=%s"
         , args.origin
         , args.destiny
         , args.cargo_t
@@ -559,7 +566,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         , fallback_to_car=args.fallback_to_car
         , overwrite=args.overwrite
         , db_path=args.db_path
-        , table_name=args.table
+        , table_name=args.distance_table
         , ports_json=args.ports_json
         , sea_matrix_json=args.sea_matrix_json
         , hotel_json=args.hotel_json

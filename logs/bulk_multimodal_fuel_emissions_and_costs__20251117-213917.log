@@ -1,0 +1,445 @@
+[2025-11-17 21:39:17][INFO][modules.infra.logging] Logging configured
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] Starting bulk multimodal fuel/emissions/costs | origin=Avenida Professor Luciano Gualberto, São Paulo | cargo=30.000 t
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] Log file → C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\logs\bulk_multimodal_fuel_emissions_and_costs__20251117-213917.log
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] Destinations loaded: 608 (from data\processed\destinies\city_dests_over50k.txt)
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] Multimodal results table → Avenida_Professor_Luciano_Gualberto_Sao_Paulo__30tons (db=data\processed\database\carbon_footprint.sqlite)
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ORS timeouts/retries: ORS_ESCALATE_ON_TIMEOUT=1
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [1/608] Cruzeiro do Sul, AC
+[2025-11-17 21:39:17][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:19][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Cruzeiro do Sul, AC' (code=1)
+[2025-11-17 21:39:19][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Cruzeiro do Sul, AC' after 1.26s due to error: multimodal_fuel_emissions_and_costs failed for 'Cruzeiro do Sul, AC' (code=1)
+[2025-11-17 21:39:19][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:19][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [2/608] Rio Branco, AC
+[2025-11-17 21:39:19][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:20][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Rio Branco, AC' (code=1)
+[2025-11-17 21:39:20][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Rio Branco, AC' after 0.90s due to error: multimodal_fuel_emissions_and_costs failed for 'Rio Branco, AC' (code=1)
+[2025-11-17 21:39:20][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:20][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [3/608] Arapiraca, AL
+[2025-11-17 21:39:20][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:20][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Arapiraca, AL' (code=1)
+[2025-11-17 21:39:20][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Arapiraca, AL' after 0.90s due to error: multimodal_fuel_emissions_and_costs failed for 'Arapiraca, AL' (code=1)
+[2025-11-17 21:39:20][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:20][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [4/608] Campo Alegre, AL
+[2025-11-17 21:39:20][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:21][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Campo Alegre, AL' (code=1)
+[2025-11-17 21:39:21][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Campo Alegre, AL' after 0.90s due to error: multimodal_fuel_emissions_and_costs failed for 'Campo Alegre, AL' (code=1)
+[2025-11-17 21:39:21][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:21][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [5/608] Coruripe, AL
+[2025-11-17 21:39:21][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:22][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Coruripe, AL' (code=1)
+[2025-11-17 21:39:22][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Coruripe, AL' after 0.96s due to error: multimodal_fuel_emissions_and_costs failed for 'Coruripe, AL' (code=1)
+[2025-11-17 21:39:22][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:22][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [6/608] Maceió, AL
+[2025-11-17 21:39:22][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:23][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Maceió, AL' (code=1)
+[2025-11-17 21:39:23][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Maceió, AL' after 0.90s due to error: multimodal_fuel_emissions_and_costs failed for 'Maceió, AL' (code=1)
+[2025-11-17 21:39:23][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:23][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [7/608] Palmeira Dos Índios, AL
+[2025-11-17 21:39:23][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:24][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Palmeira Dos Índios, AL' (code=1)
+[2025-11-17 21:39:24][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Palmeira Dos Índios, AL' after 0.93s due to error: multimodal_fuel_emissions_and_costs failed for 'Palmeira Dos Índios, AL' (code=1)
+[2025-11-17 21:39:24][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:24][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [8/608] Penedo, AL
+[2025-11-17 21:39:24][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:25][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Penedo, AL' (code=1)
+[2025-11-17 21:39:25][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Penedo, AL' after 0.85s due to error: multimodal_fuel_emissions_and_costs failed for 'Penedo, AL' (code=1)
+[2025-11-17 21:39:25][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:25][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [9/608] Rio Largo, AL
+[2025-11-17 21:39:25][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:26][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Rio Largo, AL' (code=1)
+[2025-11-17 21:39:26][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Rio Largo, AL' after 0.86s due to error: multimodal_fuel_emissions_and_costs failed for 'Rio Largo, AL' (code=1)
+[2025-11-17 21:39:26][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:26][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [10/608] São Miguel Dos Campos, AL
+[2025-11-17 21:39:26][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:27][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'São Miguel Dos Campos, AL' (code=1)
+[2025-11-17 21:39:27][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'São Miguel Dos Campos, AL' after 0.88s due to error: multimodal_fuel_emissions_and_costs failed for 'São Miguel Dos Campos, AL' (code=1)
+[2025-11-17 21:39:27][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:27][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [11/608] União Dos Palmares, AL
+[2025-11-17 21:39:27][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:28][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'União Dos Palmares, AL' (code=1)
+[2025-11-17 21:39:28][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'União Dos Palmares, AL' after 0.87s due to error: multimodal_fuel_emissions_and_costs failed for 'União Dos Palmares, AL' (code=1)
+[2025-11-17 21:39:28][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:28][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [12/608] Coari, AM
+[2025-11-17 21:39:28][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:29][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Coari, AM' (code=1)
+[2025-11-17 21:39:29][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Coari, AM' after 0.92s due to error: multimodal_fuel_emissions_and_costs failed for 'Coari, AM' (code=1)
+[2025-11-17 21:39:29][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:29][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [13/608] Itacoatiara, AM
+[2025-11-17 21:39:29][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:30][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Itacoatiara, AM' (code=1)
+[2025-11-17 21:39:30][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Itacoatiara, AM' after 0.92s due to error: multimodal_fuel_emissions_and_costs failed for 'Itacoatiara, AM' (code=1)
+[2025-11-17 21:39:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [14/608] Manacapuru, AM
+[2025-11-17 21:39:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:30][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Manacapuru, AM' (code=1)
+[2025-11-17 21:39:30][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Manacapuru, AM' after 0.88s due to error: multimodal_fuel_emissions_and_costs failed for 'Manacapuru, AM' (code=1)
+[2025-11-17 21:39:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [15/608] Manaus, AM
+[2025-11-17 21:39:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:31][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Manaus, AM' (code=1)
+[2025-11-17 21:39:31][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Manaus, AM' after 0.90s due to error: multimodal_fuel_emissions_and_costs failed for 'Manaus, AM' (code=1)
+[2025-11-17 21:39:31][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:31][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [16/608] Maués, AM
+[2025-11-17 21:39:31][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:32][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Maués, AM' (code=1)
+[2025-11-17 21:39:32][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Maués, AM' after 1.02s due to error: multimodal_fuel_emissions_and_costs failed for 'Maués, AM' (code=1)
+[2025-11-17 21:39:32][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:32][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [17/608] Parintins, AM
+[2025-11-17 21:39:32][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:33][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Parintins, AM' (code=1)
+[2025-11-17 21:39:33][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Parintins, AM' after 0.95s due to error: multimodal_fuel_emissions_and_costs failed for 'Parintins, AM' (code=1)
+[2025-11-17 21:39:33][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:33][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [18/608] Tabatinga, AM
+[2025-11-17 21:39:33][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:34][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Tabatinga, AM' (code=1)
+[2025-11-17 21:39:34][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Tabatinga, AM' after 0.91s due to error: multimodal_fuel_emissions_and_costs failed for 'Tabatinga, AM' (code=1)
+[2025-11-17 21:39:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [19/608] Tefé, AM
+[2025-11-17 21:39:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:35][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Tefé, AM' (code=1)
+[2025-11-17 21:39:35][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Tefé, AM' after 0.97s due to error: multimodal_fuel_emissions_and_costs failed for 'Tefé, AM' (code=1)
+[2025-11-17 21:39:35][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:35][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [20/608] Macapá, AP
+[2025-11-17 21:39:35][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:36][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Macapá, AP' (code=1)
+[2025-11-17 21:39:36][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Macapá, AP' after 1.30s due to error: multimodal_fuel_emissions_and_costs failed for 'Macapá, AP' (code=1)
+[2025-11-17 21:39:36][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:36][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [21/608] Santana, AP
+[2025-11-17 21:39:36][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:38][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Santana, AP' (code=1)
+[2025-11-17 21:39:38][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Santana, AP' after 1.19s due to error: multimodal_fuel_emissions_and_costs failed for 'Santana, AP' (code=1)
+[2025-11-17 21:39:38][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:38][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [22/608] Alagoinhas, BA
+[2025-11-17 21:39:38][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:39][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Alagoinhas, BA' (code=1)
+[2025-11-17 21:39:39][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Alagoinhas, BA' after 1.26s due to error: multimodal_fuel_emissions_and_costs failed for 'Alagoinhas, BA' (code=1)
+[2025-11-17 21:39:39][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:39][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [23/608] Araci, BA
+[2025-11-17 21:39:39][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:40][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Araci, BA' (code=1)
+[2025-11-17 21:39:40][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Araci, BA' after 1.25s due to error: multimodal_fuel_emissions_and_costs failed for 'Araci, BA' (code=1)
+[2025-11-17 21:39:40][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:40][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [24/608] Barreiras, BA
+[2025-11-17 21:39:40][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:41][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Barreiras, BA' (code=1)
+[2025-11-17 21:39:41][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Barreiras, BA' after 1.24s due to error: multimodal_fuel_emissions_and_costs failed for 'Barreiras, BA' (code=1)
+[2025-11-17 21:39:41][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:41][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [25/608] Bom Jesus da Lapa, BA
+[2025-11-17 21:39:41][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:43][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Bom Jesus da Lapa, BA' (code=1)
+[2025-11-17 21:39:43][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Bom Jesus da Lapa, BA' after 1.31s due to error: multimodal_fuel_emissions_and_costs failed for 'Bom Jesus da Lapa, BA' (code=1)
+[2025-11-17 21:39:43][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:43][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [26/608] Brumado, BA
+[2025-11-17 21:39:43][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:44][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Brumado, BA' (code=1)
+[2025-11-17 21:39:44][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Brumado, BA' after 1.16s due to error: multimodal_fuel_emissions_and_costs failed for 'Brumado, BA' (code=1)
+[2025-11-17 21:39:44][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:44][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [27/608] Camaçari, BA
+[2025-11-17 21:39:44][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:45][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Camaçari, BA' (code=1)
+[2025-11-17 21:39:45][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Camaçari, BA' after 1.40s due to error: multimodal_fuel_emissions_and_costs failed for 'Camaçari, BA' (code=1)
+[2025-11-17 21:39:45][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:45][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [28/608] Campo Formoso, BA
+[2025-11-17 21:39:45][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:46][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Campo Formoso, BA' (code=1)
+[2025-11-17 21:39:46][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Campo Formoso, BA' after 0.91s due to error: multimodal_fuel_emissions_and_costs failed for 'Campo Formoso, BA' (code=1)
+[2025-11-17 21:39:46][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:46][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [29/608] Candeias, BA
+[2025-11-17 21:39:46][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:47][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Candeias, BA' (code=1)
+[2025-11-17 21:39:47][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Candeias, BA' after 1.19s due to error: multimodal_fuel_emissions_and_costs failed for 'Candeias, BA' (code=1)
+[2025-11-17 21:39:47][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:47][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [30/608] Casa Nova, BA
+[2025-11-17 21:39:47][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:49][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Casa Nova, BA' (code=1)
+[2025-11-17 21:39:49][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Casa Nova, BA' after 1.14s due to error: multimodal_fuel_emissions_and_costs failed for 'Casa Nova, BA' (code=1)
+[2025-11-17 21:39:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [31/608] Catu, BA
+[2025-11-17 21:39:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:49][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Catu, BA' (code=1)
+[2025-11-17 21:39:49][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Catu, BA' after 0.88s due to error: multimodal_fuel_emissions_and_costs failed for 'Catu, BA' (code=1)
+[2025-11-17 21:39:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [32/608] Conceição do Coité, BA
+[2025-11-17 21:39:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:50][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Conceição do Coité, BA' (code=1)
+[2025-11-17 21:39:50][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Conceição do Coité, BA' after 0.94s due to error: multimodal_fuel_emissions_and_costs failed for 'Conceição do Coité, BA' (code=1)
+[2025-11-17 21:39:50][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:50][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [33/608] Cruz Das Almas, BA
+[2025-11-17 21:39:50][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:51][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Cruz Das Almas, BA' (code=1)
+[2025-11-17 21:39:51][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Cruz Das Almas, BA' after 0.87s due to error: multimodal_fuel_emissions_and_costs failed for 'Cruz Das Almas, BA' (code=1)
+[2025-11-17 21:39:51][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:51][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [34/608] Dias D'ávila, BA
+[2025-11-17 21:39:51][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:52][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Dias D'ávila, BA' (code=1)
+[2025-11-17 21:39:52][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Dias D'ávila, BA' after 0.89s due to error: multimodal_fuel_emissions_and_costs failed for 'Dias D'ávila, BA' (code=1)
+[2025-11-17 21:39:52][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:52][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [35/608] Euclides da Cunha, BA
+[2025-11-17 21:39:52][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:53][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Euclides da Cunha, BA' (code=1)
+[2025-11-17 21:39:53][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Euclides da Cunha, BA' after 0.86s due to error: multimodal_fuel_emissions_and_costs failed for 'Euclides da Cunha, BA' (code=1)
+[2025-11-17 21:39:53][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:53][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [36/608] Eunápolis, BA
+[2025-11-17 21:39:53][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:54][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Eunápolis, BA' (code=1)
+[2025-11-17 21:39:54][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Eunápolis, BA' after 0.88s due to error: multimodal_fuel_emissions_and_costs failed for 'Eunápolis, BA' (code=1)
+[2025-11-17 21:39:54][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:54][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [37/608] Feira de Santana, BA
+[2025-11-17 21:39:54][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:55][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Feira de Santana, BA' (code=1)
+[2025-11-17 21:39:55][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Feira de Santana, BA' after 0.93s due to error: multimodal_fuel_emissions_and_costs failed for 'Feira de Santana, BA' (code=1)
+[2025-11-17 21:39:55][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:55][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [38/608] Guanambi, BA
+[2025-11-17 21:39:55][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:56][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Guanambi, BA' (code=1)
+[2025-11-17 21:39:56][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Guanambi, BA' after 0.88s due to error: multimodal_fuel_emissions_and_costs failed for 'Guanambi, BA' (code=1)
+[2025-11-17 21:39:56][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:56][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [39/608] Ilhéus, BA
+[2025-11-17 21:39:56][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:57][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Ilhéus, BA' (code=1)
+[2025-11-17 21:39:57][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Ilhéus, BA' after 0.89s due to error: multimodal_fuel_emissions_and_costs failed for 'Ilhéus, BA' (code=1)
+[2025-11-17 21:39:57][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:57][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [40/608] Ipirá, BA
+[2025-11-17 21:39:57][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:58][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Ipirá, BA' (code=1)
+[2025-11-17 21:39:58][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Ipirá, BA' after 0.92s due to error: multimodal_fuel_emissions_and_costs failed for 'Ipirá, BA' (code=1)
+[2025-11-17 21:39:58][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:58][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [41/608] Irecê, BA
+[2025-11-17 21:39:58][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:58][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Irecê, BA' (code=1)
+[2025-11-17 21:39:58][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Irecê, BA' after 0.97s due to error: multimodal_fuel_emissions_and_costs failed for 'Irecê, BA' (code=1)
+[2025-11-17 21:39:58][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:39:58][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [42/608] Itaberaba, BA
+[2025-11-17 21:39:58][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:00][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Itaberaba, BA' (code=1)
+[2025-11-17 21:40:00][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Itaberaba, BA' after 1.27s due to error: multimodal_fuel_emissions_and_costs failed for 'Itaberaba, BA' (code=1)
+[2025-11-17 21:40:00][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:00][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [43/608] Itabuna, BA
+[2025-11-17 21:40:00][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:01][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Itabuna, BA' (code=1)
+[2025-11-17 21:40:01][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Itabuna, BA' after 1.27s due to error: multimodal_fuel_emissions_and_costs failed for 'Itabuna, BA' (code=1)
+[2025-11-17 21:40:01][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:01][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [44/608] Itamaraju, BA
+[2025-11-17 21:40:01][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:02][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Itamaraju, BA' (code=1)
+[2025-11-17 21:40:02][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Itamaraju, BA' after 1.26s due to error: multimodal_fuel_emissions_and_costs failed for 'Itamaraju, BA' (code=1)
+[2025-11-17 21:40:02][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:02][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [45/608] Itapetinga, BA
+[2025-11-17 21:40:02][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:04][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Itapetinga, BA' (code=1)
+[2025-11-17 21:40:04][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Itapetinga, BA' after 1.22s due to error: multimodal_fuel_emissions_and_costs failed for 'Itapetinga, BA' (code=1)
+[2025-11-17 21:40:04][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:04][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [46/608] Jacobina, BA
+[2025-11-17 21:40:04][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:05][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Jacobina, BA' (code=1)
+[2025-11-17 21:40:05][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Jacobina, BA' after 1.20s due to error: multimodal_fuel_emissions_and_costs failed for 'Jacobina, BA' (code=1)
+[2025-11-17 21:40:05][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:05][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [47/608] Jaguaquara, BA
+[2025-11-17 21:40:05][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:06][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Jaguaquara, BA' (code=1)
+[2025-11-17 21:40:06][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Jaguaquara, BA' after 1.21s due to error: multimodal_fuel_emissions_and_costs failed for 'Jaguaquara, BA' (code=1)
+[2025-11-17 21:40:06][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:06][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [48/608] Jequié, BA
+[2025-11-17 21:40:06][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:07][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Jequié, BA' (code=1)
+[2025-11-17 21:40:07][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Jequié, BA' after 1.24s due to error: multimodal_fuel_emissions_and_costs failed for 'Jequié, BA' (code=1)
+[2025-11-17 21:40:07][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:07][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [49/608] Juazeiro, BA
+[2025-11-17 21:40:07][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:08][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Juazeiro, BA' (code=1)
+[2025-11-17 21:40:08][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Juazeiro, BA' after 1.30s due to error: multimodal_fuel_emissions_and_costs failed for 'Juazeiro, BA' (code=1)
+[2025-11-17 21:40:08][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:08][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [50/608] Lauro de Freitas, BA
+[2025-11-17 21:40:08][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:10][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Lauro de Freitas, BA' (code=1)
+[2025-11-17 21:40:10][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Lauro de Freitas, BA' after 1.27s due to error: multimodal_fuel_emissions_and_costs failed for 'Lauro de Freitas, BA' (code=1)
+[2025-11-17 21:40:10][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:10][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [51/608] Luís Eduardo Magalhães, BA
+[2025-11-17 21:40:10][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:11][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Luís Eduardo Magalhães, BA' (code=1)
+[2025-11-17 21:40:11][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Luís Eduardo Magalhães, BA' after 1.35s due to error: multimodal_fuel_emissions_and_costs failed for 'Luís Eduardo Magalhães, BA' (code=1)
+[2025-11-17 21:40:11][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:11][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [52/608] Monte Santo, BA
+[2025-11-17 21:40:11][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:12][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Monte Santo, BA' (code=1)
+[2025-11-17 21:40:12][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Monte Santo, BA' after 1.36s due to error: multimodal_fuel_emissions_and_costs failed for 'Monte Santo, BA' (code=1)
+[2025-11-17 21:40:12][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:12][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [53/608] Paulo Afonso, BA
+[2025-11-17 21:40:12][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:14][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Paulo Afonso, BA' (code=1)
+[2025-11-17 21:40:14][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Paulo Afonso, BA' after 1.30s due to error: multimodal_fuel_emissions_and_costs failed for 'Paulo Afonso, BA' (code=1)
+[2025-11-17 21:40:14][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:14][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [54/608] Porto Seguro, BA
+[2025-11-17 21:40:14][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:15][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Porto Seguro, BA' (code=1)
+[2025-11-17 21:40:15][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Porto Seguro, BA' after 1.28s due to error: multimodal_fuel_emissions_and_costs failed for 'Porto Seguro, BA' (code=1)
+[2025-11-17 21:40:15][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:15][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [55/608] Salvador, BA
+[2025-11-17 21:40:15][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:16][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Salvador, BA' (code=1)
+[2025-11-17 21:40:16][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Salvador, BA' after 1.31s due to error: multimodal_fuel_emissions_and_costs failed for 'Salvador, BA' (code=1)
+[2025-11-17 21:40:16][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:16][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [56/608] Santo Amaro, BA
+[2025-11-17 21:40:16][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:18][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Santo Amaro, BA' (code=1)
+[2025-11-17 21:40:18][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Santo Amaro, BA' after 1.37s due to error: multimodal_fuel_emissions_and_costs failed for 'Santo Amaro, BA' (code=1)
+[2025-11-17 21:40:18][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:18][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [57/608] Santo Antônio de Jesus, BA
+[2025-11-17 21:40:18][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:19][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Santo Antônio de Jesus, BA' (code=1)
+[2025-11-17 21:40:19][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Santo Antônio de Jesus, BA' after 1.39s due to error: multimodal_fuel_emissions_and_costs failed for 'Santo Antônio de Jesus, BA' (code=1)
+[2025-11-17 21:40:19][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:19][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [58/608] Senhor do Bonfim, BA
+[2025-11-17 21:40:19][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:21][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Senhor do Bonfim, BA' (code=1)
+[2025-11-17 21:40:21][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Senhor do Bonfim, BA' after 1.39s due to error: multimodal_fuel_emissions_and_costs failed for 'Senhor do Bonfim, BA' (code=1)
+[2025-11-17 21:40:21][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:21][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [59/608] Serrinha, BA
+[2025-11-17 21:40:21][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:22][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Serrinha, BA' (code=1)
+[2025-11-17 21:40:22][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Serrinha, BA' after 1.29s due to error: multimodal_fuel_emissions_and_costs failed for 'Serrinha, BA' (code=1)
+[2025-11-17 21:40:22][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:22][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [60/608] Simões Filho, BA
+[2025-11-17 21:40:22][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:23][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Simões Filho, BA' (code=1)
+[2025-11-17 21:40:23][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Simões Filho, BA' after 1.31s due to error: multimodal_fuel_emissions_and_costs failed for 'Simões Filho, BA' (code=1)
+[2025-11-17 21:40:23][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:23][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [61/608] Teixeira de Freitas, BA
+[2025-11-17 21:40:23][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:24][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Teixeira de Freitas, BA' (code=1)
+[2025-11-17 21:40:24][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Teixeira de Freitas, BA' after 1.26s due to error: multimodal_fuel_emissions_and_costs failed for 'Teixeira de Freitas, BA' (code=1)
+[2025-11-17 21:40:24][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:24][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [62/608] Tucano, BA
+[2025-11-17 21:40:24][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:26][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Tucano, BA' (code=1)
+[2025-11-17 21:40:26][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Tucano, BA' after 1.20s due to error: multimodal_fuel_emissions_and_costs failed for 'Tucano, BA' (code=1)
+[2025-11-17 21:40:26][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:26][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [63/608] Valença, BA
+[2025-11-17 21:40:26][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:27][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Valença, BA' (code=1)
+[2025-11-17 21:40:27][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Valença, BA' after 1.28s due to error: multimodal_fuel_emissions_and_costs failed for 'Valença, BA' (code=1)
+[2025-11-17 21:40:27][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:27][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [64/608] Vitória da Conquista, BA
+[2025-11-17 21:40:27][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:28][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Vitória da Conquista, BA' (code=1)
+[2025-11-17 21:40:28][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Vitória da Conquista, BA' after 1.29s due to error: multimodal_fuel_emissions_and_costs failed for 'Vitória da Conquista, BA' (code=1)
+[2025-11-17 21:40:28][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:28][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [65/608] Acaraú, CE
+[2025-11-17 21:40:28][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:30][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Acaraú, CE' (code=1)
+[2025-11-17 21:40:30][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Acaraú, CE' after 1.28s due to error: multimodal_fuel_emissions_and_costs failed for 'Acaraú, CE' (code=1)
+[2025-11-17 21:40:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [66/608] Acopiara, CE
+[2025-11-17 21:40:30][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:31][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Acopiara, CE' (code=1)
+[2025-11-17 21:40:31][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Acopiara, CE' after 1.22s due to error: multimodal_fuel_emissions_and_costs failed for 'Acopiara, CE' (code=1)
+[2025-11-17 21:40:31][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:31][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [67/608] Aquiraz, CE
+[2025-11-17 21:40:31][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:32][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Aquiraz, CE' (code=1)
+[2025-11-17 21:40:32][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Aquiraz, CE' after 0.93s due to error: multimodal_fuel_emissions_and_costs failed for 'Aquiraz, CE' (code=1)
+[2025-11-17 21:40:32][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:32][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [68/608] Aracati, CE
+[2025-11-17 21:40:32][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:33][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Aracati, CE' (code=1)
+[2025-11-17 21:40:33][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Aracati, CE' after 0.97s due to error: multimodal_fuel_emissions_and_costs failed for 'Aracati, CE' (code=1)
+[2025-11-17 21:40:33][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:33][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [69/608] Barbalha, CE
+[2025-11-17 21:40:33][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:34][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Barbalha, CE' (code=1)
+[2025-11-17 21:40:34][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Barbalha, CE' after 0.93s due to error: multimodal_fuel_emissions_and_costs failed for 'Barbalha, CE' (code=1)
+[2025-11-17 21:40:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [70/608] Boa Viagem, CE
+[2025-11-17 21:40:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:34][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Boa Viagem, CE' (code=1)
+[2025-11-17 21:40:34][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Boa Viagem, CE' after 0.93s due to error: multimodal_fuel_emissions_and_costs failed for 'Boa Viagem, CE' (code=1)
+[2025-11-17 21:40:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [71/608] Camocim, CE
+[2025-11-17 21:40:34][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:35][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Camocim, CE' (code=1)
+[2025-11-17 21:40:35][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Camocim, CE' after 0.95s due to error: multimodal_fuel_emissions_and_costs failed for 'Camocim, CE' (code=1)
+[2025-11-17 21:40:35][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:35][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [72/608] Canindé, CE
+[2025-11-17 21:40:35][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:36][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Canindé, CE' (code=1)
+[2025-11-17 21:40:36][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Canindé, CE' after 0.92s due to error: multimodal_fuel_emissions_and_costs failed for 'Canindé, CE' (code=1)
+[2025-11-17 21:40:36][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:36][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [73/608] Cascavel, CE
+[2025-11-17 21:40:36][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:38][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Cascavel, CE' (code=1)
+[2025-11-17 21:40:38][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Cascavel, CE' after 1.13s due to error: multimodal_fuel_emissions_and_costs failed for 'Cascavel, CE' (code=1)
+[2025-11-17 21:40:38][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:38][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [74/608] Caucaia, CE
+[2025-11-17 21:40:38][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:39][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Caucaia, CE' (code=1)
+[2025-11-17 21:40:39][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Caucaia, CE' after 1.23s due to error: multimodal_fuel_emissions_and_costs failed for 'Caucaia, CE' (code=1)
+[2025-11-17 21:40:39][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:39][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [75/608] Crateús, CE
+[2025-11-17 21:40:39][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:40][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Crateús, CE' (code=1)
+[2025-11-17 21:40:40][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Crateús, CE' after 1.20s due to error: multimodal_fuel_emissions_and_costs failed for 'Crateús, CE' (code=1)
+[2025-11-17 21:40:40][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:40][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [76/608] Crato, CE
+[2025-11-17 21:40:40][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:41][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Crato, CE' (code=1)
+[2025-11-17 21:40:41][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Crato, CE' after 1.31s due to error: multimodal_fuel_emissions_and_costs failed for 'Crato, CE' (code=1)
+[2025-11-17 21:40:41][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:41][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [77/608] Fortaleza, CE
+[2025-11-17 21:40:41][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:43][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Fortaleza, CE' (code=1)
+[2025-11-17 21:40:43][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Fortaleza, CE' after 1.24s due to error: multimodal_fuel_emissions_and_costs failed for 'Fortaleza, CE' (code=1)
+[2025-11-17 21:40:43][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:43][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [78/608] Granja, CE
+[2025-11-17 21:40:43][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:44][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Granja, CE' (code=1)
+[2025-11-17 21:40:44][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Granja, CE' after 1.23s due to error: multimodal_fuel_emissions_and_costs failed for 'Granja, CE' (code=1)
+[2025-11-17 21:40:44][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:44][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [79/608] Horizonte, CE
+[2025-11-17 21:40:44][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:45][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Horizonte, CE' (code=1)
+[2025-11-17 21:40:45][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Horizonte, CE' after 1.25s due to error: multimodal_fuel_emissions_and_costs failed for 'Horizonte, CE' (code=1)
+[2025-11-17 21:40:45][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:45][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [80/608] Icó, CE
+[2025-11-17 21:40:45][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:46][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Icó, CE' (code=1)
+[2025-11-17 21:40:46][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Icó, CE' after 1.25s due to error: multimodal_fuel_emissions_and_costs failed for 'Icó, CE' (code=1)
+[2025-11-17 21:40:46][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:46][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [81/608] Iguatu, CE
+[2025-11-17 21:40:46][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:48][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Iguatu, CE' (code=1)
+[2025-11-17 21:40:48][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Iguatu, CE' after 1.52s due to error: multimodal_fuel_emissions_and_costs failed for 'Iguatu, CE' (code=1)
+[2025-11-17 21:40:48][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:48][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [82/608] Itapipoca, CE
+[2025-11-17 21:40:48][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:49][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Itapipoca, CE' (code=1)
+[2025-11-17 21:40:49][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Itapipoca, CE' after 1.43s due to error: multimodal_fuel_emissions_and_costs failed for 'Itapipoca, CE' (code=1)
+[2025-11-17 21:40:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [83/608] Juazeiro do Norte, CE
+[2025-11-17 21:40:49][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:50][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Juazeiro do Norte, CE' (code=1)
+[2025-11-17 21:40:50][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Juazeiro do Norte, CE' after 1.24s due to error: multimodal_fuel_emissions_and_costs failed for 'Juazeiro do Norte, CE' (code=1)
+[2025-11-17 21:40:50][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:50][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [84/608] Limoeiro do Norte, CE
+[2025-11-17 21:40:50][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:52][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Limoeiro do Norte, CE' (code=1)
+[2025-11-17 21:40:52][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Limoeiro do Norte, CE' after 1.25s due to error: multimodal_fuel_emissions_and_costs failed for 'Limoeiro do Norte, CE' (code=1)
+[2025-11-17 21:40:52][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:52][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [85/608] Maracanaú, CE
+[2025-11-17 21:40:52][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:53][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Maracanaú, CE' (code=1)
+[2025-11-17 21:40:53][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Maracanaú, CE' after 1.32s due to error: multimodal_fuel_emissions_and_costs failed for 'Maracanaú, CE' (code=1)
+[2025-11-17 21:40:53][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:53][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [86/608] Maranguape, CE
+[2025-11-17 21:40:53][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:54][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Maranguape, CE' (code=1)
+[2025-11-17 21:40:54][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Maranguape, CE' after 1.15s due to error: multimodal_fuel_emissions_and_costs failed for 'Maranguape, CE' (code=1)
+[2025-11-17 21:40:54][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:54][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [87/608] Morada Nova, CE
+[2025-11-17 21:40:54][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:55][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] multimodal_fuel_emissions_and_costs failed for 'Morada Nova, CE' (code=1)
+[2025-11-17 21:40:55][WARNING][scripts.bulk_multimodal_fuel_emissions_and_costs] Failed (not stored) 'Morada Nova, CE' after 1.00s due to error: multimodal_fuel_emissions_and_costs failed for 'Morada Nova, CE' (code=1)
+[2025-11-17 21:40:55][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:55][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] → [88/608] Pacajus, CE
+[2025-11-17 21:40:55][INFO][scripts.bulk_multimodal_fuel_emissions_and_costs] ======================================================================
+[2025-11-17 21:40:56][ERROR][scripts.bulk_multimodal_fuel_emissions_and_costs] Interrupted by user after 98.5s. Partial DB kept at data\processed\database\carbon_footprint.sqlite (table=Avenida_Professor_Luciano_Gualberto_Sao_Paulo__30tons, processed=0, failed=87)
