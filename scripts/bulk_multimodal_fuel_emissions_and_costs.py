@@ -13,10 +13,10 @@ Given:
 
 This script will:
 
-  1. Loop over all destinies in the file (ignoring blanks and '#' comments).
+  1. Load all destinies from the file (ignoring blanks and '#' comments).
   2. For each destiny, call scripts.multimodal_fuel_emissions_and_costs.main([...])
      with the proper argv.
-  3. Stop cleanly if the child script raises SystemExit with non-zero code
+  3. Stop cleanly if the child script raises SystemExit with a non-zero code
      (e.g. ORS quota / fatal error).
   4. Be safe to re-run, because multimodal_fuel_emissions_and_costs.py itself
      should handle caching / overwrites for routing and results.
@@ -27,7 +27,7 @@ Notes
     - building multimodal routes
     - computing fuel, emissions and costs
     - persisting anything to SQLite (if implemented there) and/or printing JSON.
-• This bulk script just orchestrates the repetition and logging.
+• This bulk script just orchestrates repetition and logging.
 """
 
 from __future__ import annotations
@@ -42,21 +42,21 @@ if str(ROOT) not in sys.path:
 # ──────────────────────────────────────────────────────────────────────────
 
 import argparse
-import logging
 import importlib.util
 from types import ModuleType
 from typing import Any, List, Optional
 
-from modules.infra.logging import init_logging
+from modules.infra.logging import init_logging, get_logger
 from modules.infra.database_manager import (
       DEFAULT_DB_PATH
     , DEFAULT_TABLE as DEFAULT_DISTANCE_TABLE
 )
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 # ───────────────────────────────── parser / CLI ────────────────────────────
+
 def _build_parser() -> argparse.ArgumentParser:
     """
     Build the CLI argument parser for the bulk multimodal fuel/emissions/costs runner.
@@ -144,7 +144,7 @@ def _build_parser() -> argparse.ArgumentParser:
             , action=BooleanOptionalAction
             , help="Include port ops + hotel fuel in cabotage leg. Default: True."
         )
-    except Exception:
+    except Exception:  # pragma: no cover - very old Python
         parser.add_argument(
               "--fallback-to-car"
             , dest="fallback_to_car"
@@ -232,9 +232,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 # ───────────────────────────────── file helpers ────────────────────────────
-def _load_destinations(
-    path: Path
-) -> List[str]:
+
+def _load_destinations(path: Path) -> List[str]:
     """
     Load destinations from a text file, skipping:
       - empty lines
@@ -266,14 +265,18 @@ def _load_multimodal_fuel_module() -> ModuleType:
     """
     script_path = ROOT / "scripts" / "multimodal_fuel_emissions_and_costs.py"
     if not script_path.is_file():
-        raise FileNotFoundError(f"multimodal_fuel_emissions_and_costs.py not found at {script_path}")
+        raise FileNotFoundError(
+            f"multimodal_fuel_emissions_and_costs.py not found at {script_path}"
+        )
 
     spec = importlib.util.spec_from_file_location(
           "multimodal_fuel_emissions_and_costs_mod"
         , script_path
     )
     if spec is None or spec.loader is None:
-        raise RuntimeError("Unable to load multimodal_fuel_emissions_and_costs module spec")
+        raise RuntimeError(
+            "Unable to load multimodal_fuel_emissions_and_costs module spec"
+        )
 
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[arg-type]
@@ -281,10 +284,11 @@ def _load_multimodal_fuel_module() -> ModuleType:
 
 
 # ───────────────────────────── child argv builder ──────────────────────────
+
 def _build_child_argv(
     args: Any
     , destiny: str
-) -> list[str]:
+) -> List[str]:
     """
     Build argv for a single call to multimodal_fuel_emissions_and_costs.main().
 
@@ -300,7 +304,7 @@ def _build_child_argv(
     list[str]
         Argument vector to be passed to multimodal_fuel_emissions_and_costs.main().
     """
-    child: list[str] = [
+    child: List[str] = [
           "--origin"
         , args.origin
         , "--destiny"
@@ -373,6 +377,7 @@ def _build_child_argv(
 
 
 # ─────────────────────────────────── main logic ────────────────────────────
+
 def main(
     argv: Optional[List[str]] = None
 ) -> int:
@@ -444,15 +449,24 @@ def main(
             code = e.code if isinstance(e.code, int) else 1
             if code != 0:
                 failures += 1
-            log.warning(
-                  "multimodal_fuel_emissions_and_costs exited via SystemExit(code=%s) "
-                  "for idx=%d destiny=%r. Stopping bulk run."
-                , code
-                , idx
-                , destiny
-            )
-            break
-        except Exception:
+                log.warning(
+                      "multimodal_fuel_emissions_and_costs exited via SystemExit(code=%s) "
+                      "for idx=%d destiny=%r. Stopping bulk run."
+                    , code
+                    , idx
+                    , destiny
+                )
+                break
+            else:
+                log.info(
+                      "multimodal_fuel_emissions_and_costs exited via SystemExit(code=0) "
+                      "for idx=%d destiny=%r. Continuing."
+                    , idx
+                    , destiny
+                )
+                processed += 1
+                continue
+        except Exception:  # pragma: no cover - unexpected crash
             log.exception(
                   "Unexpected error while processing idx=%d destiny=%r. Aborting."
                 , idx
@@ -469,8 +483,8 @@ def main(
                 , idx
                 , destiny
             )
-
-        processed += 1
+        else:
+            processed += 1
 
     log.info(
           "Bulk multimodal fuel/emissions/costs finished. "
