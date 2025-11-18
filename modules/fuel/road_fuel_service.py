@@ -64,23 +64,9 @@ from modules.fuel.truck_specs import (
     , guess_axles_from_payload
     , baseline_km_per_l_from_axles
 )
+from modules.costs.diesel_prices import get_average_price
 
 _log = get_logger(__name__)
-
-# Optional diesel price helper
-try:  # pragma: no cover - defensive import
-    from modules.costs.road_diesel_prices import (  # type: ignore
-          get_average_price as _get_average_price_helper
-    )
-    _HAS_PRICE_HELPER = True
-except Exception:  # pragma: no cover - defensive import
-    _get_average_price_helper = None  # type: ignore
-    _HAS_PRICE_HELPER = False
-
-#: Fallback value used only when no explicit price is provided and no helper exists.
-#: Adjust once you plug real ANP / model-based values.
-_FALLBACK_DIESEL_PRICE_R_PER_L: float = 6.00
-
 
 @dataclass(frozen=True)
 class RoadFuelProfile:
@@ -178,91 +164,14 @@ def _resolve_truck_and_kmL(
     return kmL, truck_key, axles
 
 
-def _resolve_diesel_price(
-      origin: str
-    , destiny: str
-    , diesel_price_override_r_per_l: Optional[float] = None
-) -> tuple[float, str, Dict[str, Any]]:
-    """
-    Decide which diesel price to use for this O→D pair.
-
-    Resolution order
-    ----------------
-    1) If caller passed an explicit override → use it and mark source as
-       "explicit_override".
-    2) Else, if `modules.costs.road_diesel_prices.get_average_price` is
-       available → delegate to it and mark source as
-       "road_diesel_prices_helper".
-    3) Else → return the fallback constant and log a warning once, with
-       source "fallback_constant".
-
-    Returns
-    -------
-    (diesel_price_r_per_liter, price_source, extra)
-      - `extra` is a free-form dict; we pass through any metadata we get
-        from the helper (if it returns a dict) or leave it empty.
-    """
-    origin = (origin or "").strip()
-    destiny = (destiny or "").strip()
-
-    # 1) Explicit override wins.
-    if diesel_price_override_r_per_l is not None:
-        value = float(diesel_price_override_r_per_l)
-        _log.debug(
-            "Using explicit diesel price override: origin=%r destiny=%r price=%.4f R$/L",
-            origin,
-            destiny,
-            value,
-        )
-        return value, "explicit_override", {}
-
-    # 2) Delegate to helper if available.
-    if _HAS_PRICE_HELPER and callable(_get_average_price_helper):  # type: ignore
-        try:
-            result = _get_average_price_helper(origin=origin, destiny=destiny)  # type: ignore[arg-type]
-        except Exception as exc:  # pragma: no cover - defensive
-            _log.warning(
-                "road_diesel_prices helper raised; falling back to constant. "
-                "origin=%r destiny=%r err=%s",
-                origin,
-                destiny,
-                exc,
-            )
-        else:
-            # Helper can return either a bare float or a dict payload with `price_r_per_l`.
-            if isinstance(result, dict):
-                price = float(result.get("price_r_per_l", _FALLBACK_DIESEL_PRICE_R_PER_L))
-                meta: Dict[str, Any] = {k: v for k, v in result.items() if k != "price_r_per_l"}
-            else:
-                price = float(result)
-                meta = {}
-
-            _log.debug(
-                "Using diesel price from road_diesel_prices helper: origin=%r destiny=%r price=%.4f R$/L",
-                origin,
-                destiny,
-                price,
-            )
-            return price, "road_diesel_prices_helper", meta
-
-    # 3) Fallback constant.
-    _log.warning(
-        "No diesel price helper found; using fallback constant. "
-        "origin=%r destiny=%r fallback_price=%.4f R$/L",
-        origin,
-        destiny,
-        _FALLBACK_DIESEL_PRICE_R_PER_L,
-    )
-    return _FALLBACK_DIESEL_PRICE_R_PER_L, "fallback_constant", {}
-
-
 def get_road_fuel_profile(
       cargo_t: float
     , origin: str
     , destiny: str
+    , uf_o: str
+    , uf_d: str
     , *
     , truck_key: str = "auto_by_weight"
-    , diesel_price_override_r_per_l: Optional[float] = None
 ) -> RoadFuelProfile:
     """
     High-level entry point: weight + O/D → km/L + diesel price.
@@ -291,10 +200,9 @@ def get_road_fuel_profile(
         , truck_key=truck_key
     )
 
-    price, price_source, extra = _resolve_diesel_price(
-          origin
-        , destiny
-        , diesel_price_override_r_per_l=diesel_price_override_r_per_l
+    price, price_source, extra = get_average_price(
+          uf_o=uf_o
+        , uf_d=uf_d
     )
 
     profile = RoadFuelProfile(
