@@ -1,0 +1,11 @@
+[2025-11-18 11:25:03][INFO][modules.infra.logging] Logging configured
+[2025-11-18 11:25:03][INFO][modules.road.ors_common] ORSConfig init: base_url=https://api.openrouteservice.org timeouts=(8.0,30.0)s retries=3 backoff=0.90s cache=C:\Users\felipeproenca\Documents\workspaces\personal\carbon-footprint\.cache\ors_cache.sqlite ttl=2592000s country=BR profile=driving-hgv snap_404=True radius_m=2500 ua=Cabosupernet-ORSClient/4.0
+[2025-11-18 11:25:03][INFO][modules.road.ors_mixins] GEOCODE text="avenida luciano gualberto, 380" country=BR size=1
+[2025-11-18 11:25:03][INFO][modules.road.ors_mixins] GEOCODE structured params={"country": "BR", "postalcode": "01310200", "size": 1}
+[2025-11-18 11:25:05][INFO][modules.road.ors_client] HTTP GET /geocode/search/structured — 200 (1373 ms, 1047 B, attempt 1, rt=2.0s)
+[2025-11-18 11:25:05][INFO][modules.road.ors_mixins] GEOCODE structured params={"country": "BR", "postalcode": "01310-200", "size": 1}
+[2025-11-18 11:25:05][INFO][modules.road.ors_client] HTTP GET /geocode/search/structured — 200 (260 ms, 1048 B, attempt 1, rt=2.0s)
+[2025-11-18 11:25:05][INFO][modules.road.ors_mixins] GEOCODE text="01310-200" country=BR size=1
+[2025-11-18 11:25:05][INFO][modules.road.ors_client] HTTP GET /geocode/search — 200 (360 ms, 1834 B, attempt 1, rt=2.0s)
+[2025-11-18 11:25:08][INFO][modules.road.ors_mixins] GEOCODE text="Avenida Paulista, Bela Vista, São Paulo, SP" country=BR size=1
+[2025-11-18 11:25:08][INFO][modules.road.ors_client] HTTP GET /geocode/search — 200 (322 ms, 2215 B, attempt 1, rt=2.0s)

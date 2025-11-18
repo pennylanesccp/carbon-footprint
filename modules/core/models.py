@@ -45,6 +45,7 @@ class GeoPoint:
 
     lat: float
     lon: float
+    uf: Optional[str]
     label: str
 
 

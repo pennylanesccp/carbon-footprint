@@ -45,7 +45,7 @@ This script will:
            }
          },
          "pricing_sources": {...},
-         "raw": {...}  # original multimodal_fuel_service payload
+         "raw": {...}  # original MultimodalFuelProfile payload
        }
 
 Example (PowerShell)
@@ -81,9 +81,7 @@ from modules.fuel.multimodal_fuel_service import (
     , MultimodalFuelProfile
 )
 
-from modules.fuel.emissions import (
-      estimate_fuel_emissions
-)
+from modules.fuel.emissions import estimate_fuel_emissions
 
 from modules.costs.ship_fuel_prices import (
       fetch_santos_prices
@@ -117,12 +115,13 @@ def _safe_float(value: Any) -> Optional[float]:
     """
     if value is None:
         return None
-    return float(value)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
-def _compute_road_only_block(
-    profile: MultimodalFuelProfile
-) -> Dict[str, Any]:
+def _compute_road_only_block(profile: MultimodalFuelProfile) -> Dict[str, Any]:
     """
     Build the 'road_only' scenario block.
 
@@ -160,9 +159,7 @@ def _compute_road_only_block(
     }
 
 
-def _compute_multimodal_blocks(
-    profile: MultimodalFuelProfile
-) -> Dict[str, Any]:
+def _compute_multimodal_blocks(profile: MultimodalFuelProfile) -> Dict[str, Any]:
     """
     Build the 'multimodal' block (road + sea + totals), *without* sea cost.
 
@@ -260,9 +257,6 @@ def _attach_ship_fuel_cost(
         prices_usd = fetch_santos_prices()
 
         # 2) Apply FX using the helper's built-in converter
-        #    (it will call the BCB/ECB helper internally).
-        #    IMPORTANT: do NOT pass usd_brl_rate here; signature is:
-        #        apply_fx_brl(prices: Dict[str, Any], converter=None) -> Dict[str, Any]
         prices_brl = apply_fx_brl(prices_usd)
 
         # 3) Select BRL/mt for the fuel type in use.
@@ -278,11 +272,10 @@ def _attach_ship_fuel_cost(
         if not price_key or prices_brl.get(price_key) is None:
             log.warning(
                   "No matching BRL price key for fuel_type=%r (price_key=%r); "
-                  "sea fuel cost will remain NULL."
-                , fuel_type
-                , price_key
+                  "sea fuel cost will remain NULL.",
+                fuel_type,
+                price_key,
             )
-            # still return all pricing info we have
             data = dict(prices_brl)
             data["status"] = "ok"
             data["note"] = "prices_fetched_but_no_matching_key"
@@ -307,8 +300,8 @@ def _attach_ship_fuel_cost(
     except Exception as exc:  # pragma: no cover - network/runtime failures
         log.error(
               "Failed to fetch/apply ship fuel prices for cost calculation; "
-              "cabotage cost will be NULL. err=%s"
-            , exc
+              "cabotage cost will be NULL. err=%s",
+            exc,
         )
         return {
               "status": "error"
@@ -316,9 +309,7 @@ def _attach_ship_fuel_cost(
         }
 
 
-def _build_payload(
-    profile: MultimodalFuelProfile
-) -> Dict[str, Any]:
+def _build_payload(profile: MultimodalFuelProfile) -> Dict[str, Any]:
     """
     Build final JSON-serialisable payload from MultimodalFuelProfile.
     """
@@ -349,14 +340,23 @@ def _build_payload(
             multi_cost_r - road_only_cost_r
         )
 
-    # Pricing sources
+    # Pricing sources (road diesel uses UF-based helper under the hood)
     road_only_leg = profile.road_legs.get("road_only")
     road_diesel_price = None
+    road_diesel_detail: Optional[Dict[str, Any]] = None
+
     if road_only_leg is not None:
         road_diesel_price = _safe_float(road_only_leg.diesel_price_r_per_liter)
+        meta = getattr(road_only_leg, "meta", {}) or {}
+        road_diesel_detail = {
+              "price_r_per_liter": road_diesel_price
+            , "price_source": meta.get("price_source")
+            , "extra": meta.get("extra", {})
+        }
 
     pricing_sources: Dict[str, Any] = {
           "road_diesel_price_r_per_liter": road_diesel_price
+        , "road_diesel": road_diesel_detail
         , "ship_fuel": ship_pricing
     }
 

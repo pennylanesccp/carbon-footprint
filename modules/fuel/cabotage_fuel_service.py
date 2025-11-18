@@ -20,7 +20,9 @@ The service returns a small `CabotageFuelProfile` with:
   - fuel for sea leg (kg),
   - optional port operations + hotel fuel (kg),
   - total fuel used (kg),
-  - some metadata.
+  - some metadata, including:
+      • origin_port.city / origin_port.uf
+      • destiny_port.city / destiny_port.uf
 
 Notes
 -----
@@ -98,7 +100,13 @@ class CabotageFuelProfile:
     fuel_total_kg : float
         Total fuel used (sea + ops/hotel).
     meta : Dict[str, Any]
-        Free-form metadata: port cities, hotel factors, paths, etc.
+        Free-form metadata: port cities, UFs, hotel factors, paths, etc.
+
+        Important UF fields exposed here:
+          - meta["origin_port"]["uf"]
+          - meta["destiny_port"]["uf"]
+          - meta["origin_uf"]
+          - meta["destiny_uf"]
     """
 
     origin_port_name: str
@@ -383,6 +391,9 @@ def _ops_and_hotel_fuel_kg(
 
     city_o = _norm_city(p_o.get("city") or "")
     city_d = _norm_city(p_d.get("city") or "")
+    uf_o = (p_o.get("state") or "").strip()
+    uf_d = (p_d.get("state") or "").strip()
+
     k_o = float(idx.get(city_o, default_hotel_kg_per_t))
     k_d = float(idx.get(city_d, default_hotel_kg_per_t))
 
@@ -408,6 +419,8 @@ def _ops_and_hotel_fuel_kg(
     meta = {
           "origin_city": city_o
         , "destiny_city": city_d
+        , "origin_uf": uf_o
+        , "destiny_uf": uf_d
         , "port_fuel_total_kg": fuel_port_total_kg
         , "hotel_fuel_total_kg": fuel_hotel_total_kg
         , "hotel_factor_origin_kg_per_t": k_o
@@ -516,6 +529,11 @@ def get_cabotage_fuel_profile(
 
     fuel_total_kg = fuel_sea_kg + fuel_ops_hotel_kg
 
+    origin_state = (p_o.get("state") or "").strip()
+    destiny_state = (p_d.get("state") or "").strip()
+    origin_uf = origin_state  # ports_br.json already uses UF codes in "state"
+    destiny_uf = destiny_state
+
     meta: Dict[str, Any] = {
           "K_source": K_source
         , "ports_json": str(ports_json_path)
@@ -526,17 +544,21 @@ def get_cabotage_fuel_profile(
         , "origin_port": {
               "name": p_o.get("name")
             , "city": p_o.get("city")
-            , "state": p_o.get("state")
+            , "state": origin_state   # keep for backwards compatibility
+            , "uf": origin_uf         # explicit UF for downstream consumers
             , "lat": float(p_o["lat"])
             , "lon": float(p_o["lon"])
         }
         , "destiny_port": {
               "name": p_d.get("name")
             , "city": p_d.get("city")
-            , "state": p_d.get("state")
+            , "state": destiny_state  # keep for backwards compatibility
+            , "uf": destiny_uf        # explicit UF for downstream consumers
             , "lat": float(p_d["lat"])
             , "lon": float(p_d["lon"])
         }
+        , "origin_uf": origin_uf
+        , "destiny_uf": destiny_uf
     }
     meta.update(ops_meta)
 
@@ -555,7 +577,7 @@ def get_cabotage_fuel_profile(
 
     _log.info(
         "Cabotage fuel profile: origin=%r destiny=%r cargo_t=%.3f fuel_type=%s "
-        "sea_km=%.3f fuel_sea=%.3f kg ops_hotel=%.3f kg total=%.3f kg (K=%.6f, source=%s)",
+        "sea_km=%.3f fuel_sea=%.3f kg ops_hotel=%.3f kg total=%.3f kg (K=%.6f, source=%s, origin_uf=%s, destiny_uf=%s)",
         profile.origin_port_name,
         profile.destiny_port_name,
         profile.cargo_t,
@@ -566,6 +588,8 @@ def get_cabotage_fuel_profile(
         profile.fuel_total_kg,
         profile.K_kg_per_tkm,
         profile.meta.get("K_source"),
+        profile.meta.get("origin_uf"),
+        profile.meta.get("destiny_uf"),
     )
 
     return profile

@@ -172,16 +172,36 @@ def _road_leg_fuel_from_dict(
     , cargo_t: float
     , truck_key: str
     , diesel_price_override_r_per_l: Optional[float]
+    , uf_o: str
+    , uf_d: str
 ) -> RoadLegFuel:
     """
     Convert a DB leg dict + fuel presets into a RoadLegFuel.
 
-    leg is the dict returned by app.multimodal_route_builder._ensure_road_leg().
+    Parameters
+    ----------
+    kind : str
+        Leg kind ("road_only", "origin_to_port", "port_to_destiny").
+    leg : dict
+        Dict returned by app.multimodal_route_builder._ensure_road_leg().
+    cargo_t : float
+        Cargo mass (t).
+    truck_key : str
+        Truck preset key (or 'auto_by_weight').
+    diesel_price_override_r_per_l : float, optional
+        Explicit diesel price override (R$/L) for this leg.
+    uf_o : str
+        Origin UF code for this leg (e.g. 'SP').
+    uf_d : str
+        Destiny UF code for this leg (e.g. 'CE').
     """
     distance_km = leg.get("distance_km")
     origin_label = str(leg.get("origin_name") or leg.get("origin") or "")
     destiny_label = str(leg.get("destiny_name") or leg.get("destiny") or "")
     cached = bool(leg.get("cached"))
+
+    uf_o = (uf_o or "").upper().strip()
+    uf_d = (uf_d or "").upper().strip()
 
     if distance_km is None:
         log.warning(
@@ -205,6 +225,8 @@ def _road_leg_fuel_from_dict(
             , meta={
                   "is_hgv": leg.get("is_hgv")
                 , "profile_used": leg.get("profile_used")
+                , "uf_origin": uf_o
+                , "uf_destiny": uf_d
             }
         )
 
@@ -213,6 +235,8 @@ def _road_leg_fuel_from_dict(
           cargo_t=cargo_t
         , origin=origin_label
         , destiny=destiny_label
+        , uf_o=uf_o
+        , uf_d=uf_d
         , truck_key=truck_key
         , diesel_price_override_r_per_l=diesel_price_override_r_per_l
     )
@@ -242,6 +266,8 @@ def _road_leg_fuel_from_dict(
         , "axles": profile.axles
         , "price_source": profile.price_source
         , "extra": profile.extra
+        , "uf_origin": uf_o
+        , "uf_destiny": uf_d
     }
 
     return RoadLegFuel(
@@ -407,7 +433,7 @@ def get_multimodal_fuel_profile(
             , meta=meta
         )
 
-    # Normal path: we have coordinates + labels
+    # Normal path: we have coordinates + labels + UFs
     origin_label = str(origin_pt.label or origin)
     destiny_label = str(destiny_pt.label or destiny)
     origin_lat = float(origin_pt.lat)
@@ -415,9 +441,15 @@ def get_multimodal_fuel_profile(
     destiny_lat = float(destiny_pt.lat)
     destiny_lon = float(destiny_pt.lon)
 
+    origin_uf = str(getattr(origin_pt, "uf", "") or "").upper()
+    destiny_uf = str(getattr(destiny_pt, "uf", "") or "").upper()
+
     # 2) Nearest ports
     origin_port = find_nearest_port(origin_lat, origin_lon, ports)
     destiny_port = find_nearest_port(destiny_lat, destiny_lon, ports)
+
+    origin_port_uf = str(origin_port.get("state") or "").upper()
+    destiny_port_uf = str(destiny_port.get("state") or "").upper()
 
     oport_lat, oport_lon = _port_anchor(origin_port)
     dport_lat, dport_lon = _port_anchor(destiny_port)
@@ -482,13 +514,15 @@ def get_multimodal_fuel_profile(
         , overwrite=overwrite
     )
 
-    # 5) Road fuel per leg
+    # 5) Road fuel per leg (with UFs)
     road_only = _road_leg_fuel_from_dict(
           "road_only"
         , road_only_dict
         , cargo_t=cargo_t
         , truck_key=truck_key
         , diesel_price_override_r_per_l=diesel_price_override_r_per_l
+        , uf_o=origin_uf
+        , uf_d=destiny_uf
     )
     origin_to_port = _road_leg_fuel_from_dict(
           "origin_to_port"
@@ -496,6 +530,8 @@ def get_multimodal_fuel_profile(
         , cargo_t=cargo_t
         , truck_key=truck_key
         , diesel_price_override_r_per_l=diesel_price_override_r_per_l
+        , uf_o=origin_uf
+        , uf_d=origin_port_uf
     )
     port_to_destiny = _road_leg_fuel_from_dict(
           "port_to_destiny"
@@ -503,6 +539,8 @@ def get_multimodal_fuel_profile(
         , cargo_t=cargo_t
         , truck_key=truck_key
         , diesel_price_override_r_per_l=diesel_price_override_r_per_l
+        , uf_o=destiny_port_uf
+        , uf_d=destiny_uf
     )
 
     road_legs: Dict[str, RoadLegFuel] = {
@@ -573,13 +611,20 @@ def get_multimodal_fuel_profile(
         , "sea_distance_source": sea_source
         , "origin_port": origin_port
         , "destiny_port": destiny_port
+        , "origin_uf": origin_uf
+        , "destiny_uf": destiny_uf
+        , "origin_port_uf": origin_port_uf
+        , "destiny_port_uf": destiny_port_uf
         , "status": "ok"
     }
 
     log.info(
-          "Multimodal fuel completed for (%s → %s): road_only_l=%s, multimodal_road_l=%s, cabotage_kg=%.3f"
+          "Multimodal fuel completed for (%s → %s) [origin_uf=%s, destiny_uf=%s]: "
+          "road_only_l=%s, multimodal_road_l=%s, cabotage_kg=%.3f"
         , origin_label
         , destiny_label
+        , origin_uf
+        , destiny_uf
         , "NULL" if road_only_l is None else f"{road_only_l:.3f}"
         , "NULL" if multimodal_road_l is None else f"{multimodal_road_l:.3f}"
         , cabotage_kg
