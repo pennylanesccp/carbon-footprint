@@ -77,6 +77,7 @@ Style
 from __future__ import annotations
 
 import logging
+import json
 import sqlite3
 from contextlib import contextmanager
 from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, List
@@ -167,30 +168,69 @@ def connect(
 
 
 @contextmanager
-def db_session(
-    db_path: Path | str = DEFAULT_DB_PATH
-):
-    """
-    Context-managed connection with commit/rollback.
-
-    Example
-    -------
-        with db_session() as conn:
-            ensure_main_table(conn)
-            upsert_run(conn, origin=..., destiny=..., ...)
-
-    Any exception will rollback and re-raise.
-    """
-    conn = connect(db_path)
+def db_session(db_path: Path | str):
+    db_path = Path(db_path)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path))
     try:
         yield conn
         conn.commit()
     except Exception:
+        log.error("SQLite transaction rolled back due to an error.", exc_info=True)
         conn.rollback()
-        log.exception("SQLite transaction rolled back due to an error.")
         raise
     finally:
         conn.close()
+
+def upsert_multimodal_payload(
+      db_path: Path | str
+    , origin_raw: str
+    , destiny_raw: str
+    , cargo_t: float
+    , payload: Mapping[str, Any]
+    , table_name: str = "multimodal_results"
+) -> None:
+    """
+    Store the full multimodal JSON payload into a dedicated results table.
+
+    Important:
+      • This does NOT touch the road-legs cache table (usually 'routes').
+      • The table is keyed by (origin_raw, destiny_raw, cargo_t).
+    """
+
+    create_sql = f"""
+    CREATE TABLE IF NOT EXISTS {table_name} (
+          origin_raw    TEXT NOT NULL
+        , destiny_raw   TEXT NOT NULL
+        , cargo_t       REAL NOT NULL
+        , payload_json  TEXT NOT NULL
+        , inserted_at   TEXT NOT NULL DEFAULT (datetime('now'))
+        , UNIQUE(origin_raw, destiny_raw, cargo_t)
+    );
+    """
+
+    upsert_sql = f"""
+    INSERT INTO {table_name} (
+          origin_raw
+        , destiny_raw
+        , cargo_t
+        , payload_json
+    )
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(origin_raw, destiny_raw, cargo_t)
+    DO UPDATE SET
+          payload_json = excluded.payload_json
+        , inserted_at  = datetime('now');
+    """
+
+    payload_json = json.dumps(payload, ensure_ascii=False)
+
+    with db_session(db_path) as conn:
+        conn.execute(create_sql)
+        conn.execute(
+              upsert_sql
+            , (origin_raw, destiny_raw, float(cargo_t), payload_json)
+        )
 
 
 # ────────────────────────────────────────────────────────────────────────────────

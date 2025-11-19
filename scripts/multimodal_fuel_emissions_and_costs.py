@@ -37,7 +37,8 @@ This script will:
      convert them to BRL using modules.costs.ship_fuel_prices.apply_fx_brl.
      From that it estimates the sea fuel cost (R$).
 
-  4) Emit a JSON payload summarising:
+  4) Persist the full JSON payload in SQLite (upsert by
+     (origin_raw, destiny_raw, cargo_t)) **and** emit it to stdout:
 
        {
          "origin_raw": ...,
@@ -60,12 +61,12 @@ This script will:
 Example (PowerShell)
 --------------------
 
-python scripts\multimodal_fuel_emissions_and_costs.py `
-	--origin "Avenida Professor Luciano Gualberto, São Paulo" `
-	--destiny "Campinas, SP" `
-	--cargo-t 30 `
-	--log-level DEBUG `
-	--pretty
+python scripts\\multimodal_fuel_emissions_and_costs.py `
+    --origin "Avenida Professor Luciano Gualberto, São Paulo" `
+    --destiny "Campinas, SP" `
+    --cargo-t 30 `
+    --log-level DEBUG `
+    --pretty
 
 """
 
@@ -103,6 +104,7 @@ from modules.costs.ship_fuel_prices import (
 from modules.infra.database_manager import (
       DEFAULT_DB_PATH
     , DEFAULT_TABLE as DEFAULT_DISTANCE_TABLE
+    , upsert_multimodal_payload
 )
 
 from modules.fuel.cabotage_fuel_service import (
@@ -121,7 +123,9 @@ log = get_logger(__name__)
 # Internal helpers
 # ────────────────────────────────────────────────────────────────────────────────
 
-def _safe_float(value: Any) -> Optional[float]:
+def _safe_float(
+    value: Any
+) -> Optional[float]:
     """
     Convert to float, preserving None.
     """
@@ -133,7 +137,9 @@ def _safe_float(value: Any) -> Optional[float]:
         return None
 
 
-def _compute_road_only_block(profile: MultimodalFuelProfile) -> Dict[str, Any]:
+def _compute_road_only_block(
+    profile: MultimodalFuelProfile
+) -> Dict[str, Any]:
     """
     Build the 'road_only' scenario block.
 
@@ -171,7 +177,9 @@ def _compute_road_only_block(profile: MultimodalFuelProfile) -> Dict[str, Any]:
     }
 
 
-def _compute_multimodal_blocks(profile: MultimodalFuelProfile) -> Dict[str, Any]:
+def _compute_multimodal_blocks(
+    profile: MultimodalFuelProfile
+) -> Dict[str, Any]:
     """
     Build the 'multimodal' block (road + sea + totals), *without* sea cost.
 
@@ -321,7 +329,9 @@ def _attach_ship_fuel_cost(
         }
 
 
-def _build_payload(profile: MultimodalFuelProfile) -> Dict[str, Any]:
+def _build_payload(
+    profile: MultimodalFuelProfile
+) -> Dict[str, Any]:
     """
     Build final JSON-serialisable payload from MultimodalFuelProfile.
     """
@@ -401,7 +411,9 @@ def _build_payload(profile: MultimodalFuelProfile) -> Dict[str, Any]:
 # CLI
 # ────────────────────────────────────────────────────────────────────────────────
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(
+    argv: Optional[List[str]] = None
+) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -507,7 +519,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         , default=DEFAULT_DISTANCE_TABLE
         , help=(
             "Road-legs cache table name used by the routing layer "
-            "(e.g. heatmap_runs). This script **never** drops this table."
+            "(e.g. routes / heatmap_runs). This script **never** drops this table."
         )
     )
     parser.add_argument(
@@ -550,6 +562,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     args = parser.parse_args(argv)
 
+    # ───────────────────────────── logging ──────────────────────────────────────
     init_logging(
           level=args.log_level
         , force=True
@@ -583,6 +596,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         , args.truck_key
     )
 
+    # ─────────────────── compute profile via service layer ─────────────────────
     profile = get_multimodal_fuel_profile(
           origin=args.origin
         , destiny=args.destiny
@@ -600,8 +614,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         , hotel_json=args.hotel_json
     )
 
+    # ───────────────────────── build + persist payload ─────────────────────────
     payload = _build_payload(profile)
 
+    # Persist full JSON payload in a dedicated multimodal results table
+    upsert_multimodal_payload(
+          db_path=args.db_path
+        , origin_raw=args.origin
+        , destiny_raw=args.destiny
+        , cargo_t=args.cargo_t
+        , payload=payload
+        # , table_name="multimodal_results"  # opcional, se quiser outro nome
+    )
+
+    # ───────────────────────────── JSON output ─────────────────────────────────
     if args.pretty:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
