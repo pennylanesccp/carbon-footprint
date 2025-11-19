@@ -124,13 +124,17 @@ DEFAULT_SEA_MATRIX_JSON = ROOT / "data" / "processed" / "cabotage_data" / "sea_m
 # ────────────────────────────────────────────────────────────────────────────────
 def _route_distance_km(
       ors: ORSClient
-    , origin_name: str
-    , destiny_name: str
+    , origin_input: Any
+    , destiny_input: Any
     , primary_profile: str
     , fallback_to_car: bool
 ) -> Tuple[Optional[str], Optional[float]]:
     """
-    Call ORS /v2/directions for origin→destiny **using string labels**.
+    Call ORS /v2/directions for origin→destiny.
+
+    The inputs (origin_input, destiny_input) can be:
+      - Strings (which ORS will geocode)
+      - Dicts with {"lat":..., "lon":..., "label":...} (which ORS uses directly)
 
     Tries:
       1) primary_profile
@@ -147,15 +151,27 @@ def _route_distance_km(
 
     last_exc: Optional[Exception] = None
 
+    # Helper for safe label extraction in logs
+    def _get_label(x: Any) -> str:
+        if isinstance(x, dict):
+            return str(x.get("label", str(x)))
+        return str(x)
+
+    o_lbl = _get_label(origin_input)
+    d_lbl = _get_label(destiny_input)
+
     for prof in profiles:
         try:
-            # IMPORTANT: pass strings, not GeoPoint
-            res = ors.route_road(origin_name, destiny_name, profile=prof)
+            # IMPORTANT: We pass the raw input (which might be a coord dict)
+            # ORSClient.route_road handles resolving/unwrapping it.
+            res = ors.route_road(origin_input, destiny_input, profile=prof)
             dist_m = res.get("distance_m")
             km = None if dist_m is None else float(dist_m) / 1000.0
 
             log.info(
-                  "ROUTE origin→dest using %s: distance=%s km"
+                  "ROUTE %s → %s using %s: distance=%s km"
+                , o_lbl
+                , d_lbl
                 , prof
                 , "NULL" if km is None else f"{km:.3f}"
             )
@@ -170,8 +186,8 @@ def _route_distance_km(
                   "NoRoute for profile=%s origin=%r destination=%r: %s "
                   "→ storing NULL distance for this leg."
                 , prof
-                , origin_name
-                , destiny_name
+                , o_lbl
+                , d_lbl
                 , exc
             )
             last_exc = exc
@@ -183,8 +199,8 @@ def _route_distance_km(
                 log.error(
                       "Quota exceeded while routing (profile=%s origin=%r destination=%r): %s"
                     , prof
-                    , origin_name
-                    , destiny_name
+                    , o_lbl
+                    , d_lbl
                     , exc
                 )
                 raise RateLimited(exc)  # re-wrap so caller handles uniformly
@@ -193,8 +209,8 @@ def _route_distance_km(
                   "Route failed for profile=%s origin=%r destination=%r: %s "
                   "→ storing NULL distance for this leg."
                 , prof
-                , origin_name
-                , destiny_name
+                , o_lbl
+                , d_lbl
                 , exc
             )
             last_exc = exc
@@ -203,8 +219,8 @@ def _route_distance_km(
         log.warning(
               "All route attempts failed for origin=%r destination=%r (profiles_tried=%r). "
               "Distance will be NULL."
-            , origin_name
-            , destiny_name
+            , o_lbl
+            , d_lbl
             , profiles
         )
 
@@ -239,7 +255,7 @@ def _ensure_road_leg(
 
     2) If overwrite is True:
          - Delete *all* rows for (origin_name, destiny_name), regardless of is_hgv.
-         - Recompute via ORS and upsert a single fresh row.
+         - Recompute via ORS (using COORDINATES) and upsert a single fresh row.
 
     Returns
     -------
@@ -296,12 +312,24 @@ def _ensure_road_leg(
                 , table_name=table_name
             )
 
-    # Not cached (or we deleted it) → call ORS using the labels
+    # Not cached (or we deleted it) → call ORS using the COORDINATES
+    # This prevents re-geocoding string labels and ensures port gates are respected.
+    origin_obj = {
+        "lat": float(origin_lat),
+        "lon": float(origin_lon),
+        "label": origin_name
+    }
+    destiny_obj = {
+        "lat": float(destiny_lat),
+        "lon": float(destiny_lon),
+        "label": destiny_name
+    }
+
     try:
         profile_used, distance_km = _route_distance_km(
               ors=ors
-            , origin_name=origin_name
-            , destiny_name=destiny_name
+            , origin_input=origin_obj
+            , destiny_input=destiny_obj
             , primary_profile=primary_profile
             , fallback_to_car=fallback_to_car
         )
