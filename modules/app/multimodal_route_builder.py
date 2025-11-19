@@ -95,7 +95,7 @@ from modules.infra.database_manager import (
     , ensure_main_table
     , list_runs
     , upsert_run
-    , delete_key            # ← add this
+    , delete_key
     , DEFAULT_DB_PATH
     , DEFAULT_TABLE
 )
@@ -103,9 +103,7 @@ from modules.infra.database_manager import (
 from modules.road.ors_common import ORSConfig, RateLimited, NoRoute
 from modules.road.ors_client import ORSClient
 
-from modules.addressing.resolver import (
-      resolve_point_null_safe as geo_resolve
-)
+from modules.addressing.resolver import resolve_point_null_safe
 
 from modules.ports.ports_index import load_ports
 from modules.ports.ports_nearest import find_nearest_port
@@ -500,12 +498,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     sea_matrix = SeaMatrix.from_json_path(args.sea_matrix_json)
 
     # 1) Geocode origin/destiny
-    origin_pt = geo_resolve(
+    origin_pt = resolve_point_null_safe(
           value=args.origin
         , ors=ors
         , log=log
     )
-    destiny_pt = geo_resolve(
+    destiny_pt = resolve_point_null_safe(
           value=args.destiny
         , ors=ors
         , log=log

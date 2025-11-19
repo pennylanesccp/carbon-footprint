@@ -19,6 +19,15 @@ This script will:
        - port → destiny road leg
        - cabotage leg (sea + ops + hotel)
 
+     **Important:** Optionally, before computing the profile, this script can:
+       - open the SQLite database (--db-path),
+       - DROP TABLE IF EXISTS <data-table> (if --data-table is provided),
+       - letting a *separate* aggregation pipeline recreate the "all data"
+         table for this scenario.
+
+     The *road-legs cache* table (distance table) is **never** dropped here;
+     it is reused across runs.
+
   2) Use modules.fuel.emissions.estimate_fuel_emissions(...) to compute CO₂e:
        - road-only (diesel)
        - multimodal road part (diesel)
@@ -51,11 +60,13 @@ This script will:
 Example (PowerShell)
 --------------------
 
-python -m scripts.multimodal_fuel_emissions_and_costs `
-    --origin "São Paulo, SP" `
-    --destiny "Salvador, BA" `
-    --cargo-t 30 `
-    --pretty
+python scripts\multimodal_fuel_emissions_and_costs.py `
+	--origin "Avenida Professor Luciano Gualberto, São Paulo" `
+	--destiny "Campinas, SP" `
+	--cargo-t 30 `
+	--log-level DEBUG `
+	--pretty
+
 """
 
 from __future__ import annotations
@@ -63,6 +74,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 import json
+import sqlite3
 import sys
 from typing import Any, Dict, Optional, List
 
@@ -395,7 +407,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Compute multimodal fuel usage, emissions and costs "
-            "(road-only vs cabotage) for a single O→D pair."
+            "(road-only vs cabotage) for a single O→D pair. "
+            "Optionally, this script can drop a user-specified 'all data' "
+            "table before running, but it will never drop the road-legs "
+            "cache (distance) table."
         )
     )
     parser.add_argument(
@@ -448,20 +463,14 @@ def main(argv: Optional[List[str]] = None) -> int:
               "--fallback-to-car"
             , default=True
             , action=BooleanOptionalAction
-            , help="Retry with driving-car if primary fails. Default: True"
-        )
-        parser.add_argument(
-              "--overwrite"
-            , default=False
-            , action=BooleanOptionalAction
-            , help="Recompute legs even if cached. Default: False"
+            , help="Retry with driving-car if primary fails. Default: True."
         )
         parser.add_argument(
               "--include-ops-hotel"
             , dest="include_ops_and_hotel"
             , default=True
             , action=BooleanOptionalAction
-            , help="Include port ops + hotel fuel in cabotage leg. Default: True"
+            , help="Include port ops + hotel fuel in cabotage leg. Default: True."
         )
     except Exception:  # pragma: no cover - very old Python fallback
         parser.add_argument(
@@ -473,17 +482,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.add_argument(
               "--no-fallback-to-car"
             , dest="fallback_to_car"
-            , action="store_false"
-        )
-        parser.add_argument(
-              "--overwrite"
-            , dest="overwrite"
-            , action="store_true"
-            , default=False
-        )
-        parser.add_argument(
-              "--no-overwrite"
-            , dest="overwrite"
             , action="store_false"
         )
         parser.add_argument(
@@ -507,7 +505,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
           "--distance-table"
         , default=DEFAULT_DISTANCE_TABLE
-        , help=f"Road legs cache table name. Default: {DEFAULT_DISTANCE_TABLE}"
+        , help=(
+            "Road-legs cache table name used by the routing layer "
+            "(e.g. heatmap_runs). This script **never** drops this table."
+        )
+    )
+    parser.add_argument(
+          "--data-table"
+        , default=None
+        , help=(
+            "Optional: name of the 'all data' / results table to drop "
+            "before running (DROP TABLE IF EXISTS). Use this for the "
+            "big scenario/results table, not for the routes cache."
+        )
     )
     parser.add_argument(
           "--ports-json"
@@ -546,6 +556,25 @@ def main(argv: Optional[List[str]] = None) -> int:
         , write_output=False
     )
 
+    # ───────────── optional full overwrite of the *data* table (not routes) ─────
+    if args.data_table:
+        try:
+            log.info(
+                  "Full overwrite run: dropping all-data table %r in DB %s."
+                , args.data_table
+                , args.db_path
+            )
+            with sqlite3.connect(str(args.db_path)) as conn:
+                conn.execute(f"DROP TABLE IF EXISTS {args.data_table}")
+                conn.commit()
+        except Exception as exc:  # pragma: no cover
+            log.error(
+                  "Failed to drop all-data table %r in DB %s; continuing anyway. err=%s"
+                , args.data_table
+                , args.db_path
+                , exc
+            )
+
     log.info(
           "CLI multimodal fuel+emissions+costs: origin=%r destiny=%r cargo_t=%.3f truck_key=%s"
         , args.origin
@@ -564,7 +593,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         , include_ops_and_hotel=args.include_ops_and_hotel
         , ors_profile=args.ors_profile
         , fallback_to_car=args.fallback_to_car
-        , overwrite=args.overwrite
         , db_path=args.db_path
         , table_name=args.distance_table
         , ports_json=args.ports_json
